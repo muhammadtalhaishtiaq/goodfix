@@ -11,34 +11,9 @@ import Permissions from './screens/Permissions';
 import Home from './screens/Home';
 import VoiceModal from './screens/VoiceModal';
 
-/**
- * Placeholder for screens built by the other agent (Memory, Privacy,
- * Diagnostics). Loads them lazily; falls back to this if the file isn't
- * there yet, so this half of the app typechecks and runs independently.
- */
-function Placeholder({ route }: any) {
-  return (
-    <View style={styles.placeholder}>
-      <Text style={[fonts.title, { color: theme.ink }]}>{route?.name ?? 'Screen'}</Text>
-      <Text style={[fonts.body, { color: theme.muted, marginTop: 8 }]}>
-        coming right up
-      </Text>
-    </View>
-  );
-}
-
-function lazyScreen(modulePath: './screens/Memory' | './screens/Privacy' | './screens/Diagnostics'): React.ComponentType<any> {
-  try {
-    const m = require(modulePath);
-    return (m && (m.default ?? m)) || Placeholder;
-  } catch {
-    return Placeholder;
-  }
-}
-
-const MemoryScreen = lazyScreen('./screens/Memory');
-const PrivacyScreen = lazyScreen('./screens/Privacy');
-const DiagnosticsScreen = lazyScreen('./screens/Diagnostics');
+import MemoryScreen from './screens/Memory';
+import PrivacyScreen from './screens/Privacy';
+import DiagnosticsScreen from './screens/Diagnostics';
 
 const Stack = createStackNavigator();
 const Tabs = createBottomTabNavigator();
