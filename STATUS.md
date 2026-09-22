@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 18:05 EDT
+Last updated: 2026-09-22 18:10 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,14 +10,14 @@ Last updated: 2026-09-22 18:05 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 10)
+- Status: release build in progress (attempt 11)
 - Attempts 1-5: various Gradle dependency/proxy/repo-filter issues (fixed)
-- Attempts 6-9: lint-gradle:31.12.0 unresolvable — root cause found: the React
-  Native Gradle Plugin auto-adds JitPack to every module's repos
-  (DependencyUtils.configureRepositories, default true). JitPack times out
-  through the proxy.
-- Attempt 10: running — added explicit Google Maven repo URL + disabled RN
-  plugin's JitPack via react.includeJitpackRepository=false
+- Attempts 6-10: lint-gradle:31.12.0 unresolvable — root cause: React Native
+  Gradle Plugin auto-adds JitPack to every module (default true); JitPack
+  times out through the proxy. Fixed via react.includeJitpackRepository=false.
+  (Attempt 10 used a stale daemon that hadn't seen the property.)
+- Attempt 11: running — fresh daemon, JitPack confirmed GONE from :expo repos,
+  lint-gradle should now resolve from Google Maven
 - APK: not produced yet
 
 ## Emulator / device testing
