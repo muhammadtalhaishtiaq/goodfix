@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 17:50 EDT
+Last updated: 2026-09-22 17:55 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,19 +10,14 @@ Last updated: 2026-09-22 17:50 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 7)
-- Attempt 1: failed on Gradle dependency resolution timeouts
-- Attempt 2: failed resolving Kotlin Gradle plugin (proxy not configured for Gradle)
-- Attempt 3: failed on android.arch.lifecycle:runtime:1.1.1 — repo filter blocked
-  Google from serving it, fell through to JitPack which timed out
-- Attempt 4: failed on com.android.tools.lint:lint-gradle — repo filter again
-  misdirected a Google artifact to JitPack (timeout)
-- Attempt 5: failed on lint-gradle again even without the filter
-- Attempt 6: disabled lint in app module — worked, but the :expo module's
-  extractReleaseAnnotations task then failed on the same lint-gradle artifact
-- Attempt 7: running — lint disabled for ALL android modules via root
-  build.gradle (application + library plugins), so no module resolves
-  lint-gradle during assembleRelease
+- Status: release build in progress (attempt 8)
+- Attempts 1-5: various Gradle dependency/proxy/repo-filter issues (fixed)
+- Attempt 6: disabled lint in app module — then :expo module's
+  extractReleaseAnnotations failed on the same lint-gradle artifact
+- Attempt 7: disabled lint for ALL modules via root build.gradle — still failed
+  on :expo:extractReleaseAnnotations (that task resolves lint-gradle regardless)
+- Attempt 8: running — excluding :expo:extractReleaseAnnotations entirely
+  (annotation extraction isn't needed for a test APK)
 - APK: not produced yet
 
 ## Emulator / device testing
