@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 17:20 EDT
+Last updated: 2026-09-22 17:35 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,10 +10,12 @@ Last updated: 2026-09-22 17:20 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 3)
+- Status: release build in progress (attempt 4)
 - Attempt 1: failed on Gradle dependency resolution timeouts
 - Attempt 2: failed resolving Kotlin Gradle plugin (proxy not configured for Gradle)
-- Attempt 3: running — fixed Gradle proxy config, plugin repos, and Java truststore
+- Attempt 3: failed on android.arch.lifecycle:runtime:1.1.1 — repo filter blocked
+  Google from serving it, fell through to JitPack which timed out
+- Attempt 4: running — repo filter widened to include android.arch.* groups
 - APK: not produced yet
 
 ## Emulator / device testing
