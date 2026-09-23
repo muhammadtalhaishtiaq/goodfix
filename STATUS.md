@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 18:10 EDT
+Last updated: 2026-09-22 21:25 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,14 +10,14 @@ Last updated: 2026-09-22 18:10 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 11)
+- Status: release build in progress (attempt 12)
 - Attempts 1-5: various Gradle dependency/proxy/repo-filter issues (fixed)
-- Attempts 6-10: lint-gradle:31.12.0 unresolvable — root cause: React Native
-  Gradle Plugin auto-adds JitPack to every module (default true); JitPack
-  times out through the proxy. Fixed via react.includeJitpackRepository=false.
-  (Attempt 10 used a stale daemon that hadn't seen the property.)
-- Attempt 11: running — fresh daemon, JitPack confirmed GONE from :expo repos,
-  lint-gradle should now resolve from Google Maven
+- Attempts 6-10: lint-gradle unresolvable — React Native Gradle Plugin was
+  auto-adding JitPack (timing out); fixed via react.includeJitpackRepository=false
+- Attempt 11: new error — cmake;3.22.1 not installed (needed for llama.rn
+  native code). SDK manager couldn't download through proxy, so installed
+  CMake 3.22.1 manually into the SDK.
+- Attempt 12: running now
 - APK: not produced yet
 
 ## Emulator / device testing
