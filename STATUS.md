@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 21:35 EDT
+Last updated: 2026-09-22 21:40 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,12 +10,11 @@ Last updated: 2026-09-22 21:35 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 15)
+- Status: release build in progress (attempt 16)
 - Attempts 1-11: fixed Gradle proxy, JitPack (disabled), lint-gradle, CMake
-- Attempts 12-14: proxy config wiped then restored; then TLS cert failure —
-  JDK truststore was missing the real Hatch egress CA (had only public CAs).
-  Imported /etc/ssl/certs/hatch-egress-ca.pem into JDK cacerts.
-- Attempt 15: running
+- Attempts 12-15: TLS cert failure — JDK truststore missing the Hatch egress
+  CA; imported it, but the running daemon hadn't reloaded the truststore.
+- Attempt 16: running — daemon restarted, fresh JVM with correct CA
 - APK: not produced yet (will upload to GitHub Releases when built)
 - Emulator: subagent booting vault_test AVD in parallel
 
