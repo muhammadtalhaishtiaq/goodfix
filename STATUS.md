@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 21:25 EDT
+Last updated: 2026-09-22 21:30 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,15 +10,14 @@ Last updated: 2026-09-22 21:25 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 12)
-- Attempts 1-5: various Gradle dependency/proxy/repo-filter issues (fixed)
-- Attempts 6-10: lint-gradle unresolvable — React Native Gradle Plugin was
-  auto-adding JitPack (timing out); fixed via react.includeJitpackRepository=false
-- Attempt 11: new error — cmake;3.22.1 not installed (needed for llama.rn
-  native code). SDK manager couldn't download through proxy, so installed
-  CMake 3.22.1 manually into the SDK.
-- Attempt 12: running now
+- Status: release build in progress (attempt 14)
+- Attempts 1-11: fixed Gradle proxy, JitPack (disabled via RN plugin property),
+  lint-gradle resolution, and installed CMake 3.22.1 manually
+- Attempts 12-13: failed — /root/.gradle/gradle.properties (proxy config) was
+  wiped, Kotlin plugin couldn't resolve. Restored proxy config.
+- Attempt 14: running — fresh daemon with proxy restored
 - APK: not produced yet
+- Emulator: subagent booting vault_test AVD in parallel
 
 ## Emulator / device testing
 - Not started — waiting on APK
