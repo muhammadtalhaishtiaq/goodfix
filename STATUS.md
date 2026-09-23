@@ -1,6 +1,6 @@
 # Vault build status
 
-Last updated: 2026-09-22 21:30 EDT
+Last updated: 2026-09-22 21:35 EDT
 
 ## Source
 - App + agent core, memory, tools, UI: complete
@@ -10,13 +10,13 @@ Last updated: 2026-09-22 21:30 EDT
 - Icons: Lucide (no emoji)
 
 ## Android build
-- Status: release build in progress (attempt 14)
-- Attempts 1-11: fixed Gradle proxy, JitPack (disabled via RN plugin property),
-  lint-gradle resolution, and installed CMake 3.22.1 manually
-- Attempts 12-13: failed — /root/.gradle/gradle.properties (proxy config) was
-  wiped, Kotlin plugin couldn't resolve. Restored proxy config.
-- Attempt 14: running — fresh daemon with proxy restored
-- APK: not produced yet
+- Status: release build in progress (attempt 15)
+- Attempts 1-11: fixed Gradle proxy, JitPack (disabled), lint-gradle, CMake
+- Attempts 12-14: proxy config wiped then restored; then TLS cert failure —
+  JDK truststore was missing the real Hatch egress CA (had only public CAs).
+  Imported /etc/ssl/certs/hatch-egress-ca.pem into JDK cacerts.
+- Attempt 15: running
+- APK: not produced yet (will upload to GitHub Releases when built)
 - Emulator: subagent booting vault_test AVD in parallel
 
 ## Emulator / device testing
