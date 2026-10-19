@@ -1,0 +1,21 @@
+# Personal data: never commit
+raw/
+private/
+derived/
+memory/
+audit/
+exports/
+backups/
+*.pdf
+*.csv
+*.xlsx
+*.docx
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.key
+*.pem
+.env
+.env.*
+.DS_Store
