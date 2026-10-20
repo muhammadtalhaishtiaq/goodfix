@@ -58,7 +58,7 @@ export default function Home({ navigation }: any) {
 
     if (turn.confirmRequired) {
       const actionKind: string | undefined =
-        typeof (turn as any).actionKind === 'string' ? (turn as any).actionKind : undefined;
+        typeof turn.actionKind === 'string' ? turn.actionKind : undefined;
       const approveNow = async () => {
         try {
           if (turn.approve) {

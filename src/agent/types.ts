@@ -40,6 +40,12 @@ export interface AgentTurn {
   toolCall: ToolCall | null;
   /** Did we ask the user to confirm before acting? */
   confirmRequired: boolean;
+  /**
+   * Coarse kind of the pending action (its tool name, e.g. 'create_reminder')
+   * — set only when confirmRequired is true. The UI uses it for the
+   * "always allow this kind of action" trust gate.
+   */
+  actionKind?: string;
   confirmed?: boolean;
   result: ToolResult | null;
   /** Reply text shown in chat. */

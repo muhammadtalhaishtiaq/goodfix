@@ -1,8 +1,10 @@
 /**
  * Network guard — pure function used to prove that Vault only ever talks to
  * the model-download host. The ONLY outbound traffic allowed in v0.1 is
- * downloading model weights from Hugging Face (assertLocalOnly is called by
- * the model download manager before any fetch). Everything else throws.
+ * downloading model weights from Hugging Face. downloadModel() in
+ * src/inference/modelManager.ts calls assertLocalOnly(spec.url) before
+ * creating any download task, so the guarantee is enforced at the one
+ * network call site, not just asserted here. Everything else throws.
  *
  * Pure on purpose: trivially testable, no device APIs involved.
  */

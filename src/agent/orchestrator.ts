@@ -10,7 +10,8 @@ import type {
 } from './types';
 import type { InferenceEngine } from '../inference/types';
 import type { MemoryStore, RecallHit } from '../memory/types';
-import type { ToolContext, ToolDefinition } from '../tools/types';
+import type { ToolDefinition } from '../tools/types';
+import { ToolExecutor } from '../tools/executor';
 
 /**
  * Orchestrator — the deterministic state machine that owns control flow.
@@ -122,6 +123,7 @@ export class Orchestrator {
     input: string;
     toolCall: ToolCall | null;
     confirmRequired: boolean;
+    actionKind?: string;
     confirmed?: boolean;
     result: ToolResult | null;
     reply: string;
@@ -259,6 +261,9 @@ export class Orchestrator {
           input,
           toolCall: pendingCall,
           confirmRequired: true,
+          // The parked action's kind — the UI's "always allow" gate keys
+          // off this; without it the checkbox can never render.
+          actionKind: call.tool,
           result: null,
           reply: confirmPrompt,
           startedAt,
@@ -347,8 +352,7 @@ export class Orchestrator {
       });
     }
 
-    const def = this.tools.get(call.tool);
-    if (!def) {
+    if (!this.tools.has(call.tool)) {
       await this.audit({
         turnId,
         event: 'error',
@@ -372,53 +376,36 @@ export class Orchestrator {
       });
     }
 
-    const ctx: ToolContext = {
-      tier: 'local',
-      audit: async (entry) => {
-        await this.audit({
-          turnId,
-          event: 'executed',
-          tool: entry.tool,
-          detail: entry.summary,
-        });
-      },
-    };
-
     await this.audit({ turnId, event: 'confirmed', tool: call.tool });
-    try {
-      const r = await def.execute(call.args, ctx);
-      const result: ToolResult = {
-        ok: r.ok,
-        tool: call.tool,
-        summary: r.summary,
-        data: r.data,
-        error: r.error,
-      };
-      await this.audit({ turnId, event: 'executed', tool: call.tool, detail: r.summary });
-      return this.finish({
-        id: turnId,
-        input,
-        toolCall: call,
-        confirmRequired: false,
-        confirmed: true,
-        result,
-        reply: r.ok ? r.summary : `That didn't work: ${r.error ?? r.summary}`,
-        startedAt: pendingTurn.startedAt,
+    // Execution goes through ToolExecutor (the validated-call runner):
+    // it builds the tool context — tools audit their own runs through it,
+    // forwarded here as orchestrator 'executed' entries — and never lets
+    // a throwing tool escape into the turn loop.
+    const executor = new ToolExecutor(this.tools, async (entry) => {
+      await this.audit({
+        turnId,
+        event: 'executed',
+        tool: entry.tool,
+        detail: entry.summary,
       });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      await this.audit({ turnId, event: 'error', tool: call.tool, detail: message });
-      return this.finish({
-        id: turnId,
-        input,
-        toolCall: call,
-        confirmRequired: false,
-        confirmed: true,
-        result: { ok: false, tool: call.tool, summary: 'Tool failed.', error: message },
-        reply: 'That failed on my end. Nothing was changed.',
-        startedAt: pendingTurn.startedAt,
-      });
+    });
+    const result = await executor.run(call, 'local');
+    if (!result.ok && result.error) {
+      await this.audit({ turnId, event: 'error', tool: call.tool, detail: result.error });
     }
+    await this.audit({ turnId, event: 'executed', tool: call.tool, detail: result.summary });
+    return this.finish({
+      id: turnId,
+      input,
+      toolCall: call,
+      confirmRequired: false,
+      confirmed: true,
+      result,
+      reply: result.ok
+        ? result.summary
+        : `That didn't work: ${result.error ?? result.summary}`,
+      startedAt: pendingTurn.startedAt,
+    });
   }
 
   private async conversationalReply(input: string): Promise<string> {

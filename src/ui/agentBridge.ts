@@ -11,6 +11,8 @@ export interface AgentTurn {
   reply: string;
   confirmRequired: boolean;
   confirmPrompt?: string;
+  /** Kind of the pending action (tool name) — drives "always allow". */
+  actionKind?: string;
   approve?: () => Promise<AgentTurn>;
   reject?: () => void;
 }

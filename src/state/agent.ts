@@ -18,6 +18,7 @@ export interface OrchestratorLike {
     input: string;
     reply: string;
     confirmRequired: boolean;
+    actionKind?: string;
     toolCall: { tool: string; args: Record<string, unknown> } | null;
   }>;
   confirm(turnId: string, approved: boolean): Promise<{ reply: string }>;
@@ -28,6 +29,8 @@ export interface UiTurn {
   reply: string;
   confirmRequired: boolean;
   confirmPrompt?: string;
+  /** Kind of the pending action (tool name) — drives "always allow". */
+  actionKind?: string;
   approve: () => Promise<{ reply: string }>;
   reject: () => Promise<{ reply: string }>;
 }
@@ -50,6 +53,13 @@ class AgentFacade {
       reply: t.reply,
       confirmRequired: t.confirmRequired,
       confirmPrompt,
+      // Forward the pending action's kind so Home can park it on the
+      // PendingConfirm and the "always allow" checkbox can render. The
+      // orchestrator sets actionKind when it parks an action; fall back
+      // to the parked call's tool name for older orchestrator shapes.
+      actionKind:
+        t.actionKind ??
+        (t.confirmRequired && t.toolCall ? t.toolCall.tool : undefined),
       approve: () =>
         this.orch.confirm(turnId, true).then((r) => ({ reply: r.reply })),
       reject: () =>
@@ -101,7 +111,6 @@ export async function getAgent(): Promise<OrchestratorLike> {
   const memory = await getMemory();
   const engine = await getEngine();
   const { buildToolRegistry } = await import('../tools/registry');
-  const { ToolExecutor } = await import('../tools/executor');
   const { append } = await import('../privacy/auditLog');
 
   const registry = buildToolRegistry({
@@ -109,10 +118,8 @@ export async function getAgent(): Promise<OrchestratorLike> {
     recall: (q: string) => memory.recall(q),
   });
   const audit = (e: any) => append({ ...e, ts: Date.now() });
-  // Instantiated per the wiring spec; the orchestrator drives execution
-  // through the registry per its own contract.
-  const executor = new ToolExecutor(registry, audit);
-  void executor;
+  // No ToolExecutor here: the orchestrator runs confirmed calls through
+  // ToolExecutor internally (see Orchestrator.confirm).
 
   // @ts-ignore — src/agent/orchestrator.ts is built by the agent-core agent; resolved at runtime
   const { Orchestrator } = await import('../agent/orchestrator');

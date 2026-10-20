@@ -1,9 +1,15 @@
 /**
  * Onboarding — wireframe §A #3 (model download / setup).
  *
- * Centered progress ring while the on-device model downloads, with
- * reassurance copy. The skip path uses plain language ("Explore first —
- * download later"); the wireframes have no "demo mode" concept.
+ * Centered progress ring while the on-device models download, with
+ * reassurance copy. Downloads BOTH models: the chat model (the agent
+ * itself) and the smaller embedding model, without which semantic recall
+ * can never activate and memory search falls back to keywords only. If the
+ * embedding download fails after the chat model landed, setup still
+ * completes — recall honestly degrades to keyword search until the embed
+ * model is present (see memory/index.ts resolveEmbedFn).
+ * The skip path uses plain language ("Explore first — download later");
+ * the wireframes have no "demo mode" concept.
  */
 import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -11,7 +17,10 @@ import { useVault } from '../../state/store';
 import { theme, fonts } from '../theme';
 
 interface ModelManagerModule {
-  downloadModel?: (kind: string, onProgress: (p: number) => void) => Promise<void>;
+  downloadModel?: (
+    kind: string,
+    onProgress?: (bytesWritten: number, totalBytes: number) => void,
+  ) => Promise<unknown>;
 }
 
 /** Lazy-loads the model manager (built by the other agent); null if not ready. */
@@ -76,9 +85,31 @@ export default function Onboarding({ navigation }: any) {
       if (!mm || typeof mm.downloadModel !== 'function') {
         throw new Error('not-ready');
       }
-      await mm.downloadModel('chat', (p) =>
-        useVault.getState().setModelState('downloading', p),
+      // Progress is split by approximate size: chat ~2.0 GB of the ~2.64 GB
+      // total, embed the rest. totalBytes can be -1 when the server omits
+      // Content-Length; then that model's slice just stays where it was.
+      const CHAT_SHARE = 0.75;
+      const toFraction = (written: number, total: number) =>
+        total > 0 ? Math.min(Math.max(written / total, 0), 1) : 0;
+      await mm.downloadModel('chat', (written, total) =>
+        useVault
+          .getState()
+          .setModelState('downloading', toFraction(written, total) * CHAT_SHARE),
       );
+      try {
+        await mm.downloadModel('embed', (written, total) =>
+          useVault
+            .getState()
+            .setModelState(
+              'downloading',
+              CHAT_SHARE + toFraction(written, total) * (1 - CHAT_SHARE),
+            ),
+        );
+      } catch {
+        // Chat model is in; the embed model is not. Setup still completes:
+        // memory recall degrades to keyword (FTS) search until the embed
+        // model exists — it never fakes semantic results.
+      }
       setModelState('ready', 1);
       navigation.replace('Permissions');
     } catch {
@@ -102,8 +133,8 @@ export default function Onboarding({ navigation }: any) {
         <View style={styles.hero}>
           <Text style={styles.title}>Setting up your private AI</Text>
           <Text style={styles.body}>
-            Downloads once, then works offline. About 2 GB — best over Wi-Fi.
-            Nothing you say ever leaves this device.
+            Downloads once, then works offline. About 2.6 GB for both models
+            — best over Wi-Fi. Nothing you say ever leaves this device.
           </Text>
 
           {downloading && <ProgressRing progress={modelProgress} />}

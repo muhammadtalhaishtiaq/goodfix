@@ -15,6 +15,15 @@ jest.mock('expo-file-system/legacy', () => ({
   makeDirectoryAsync: async (uri: string) => {
     fsStore[uri] = '';
   },
+  createDownloadResumable: (url: string, fileUri: string) => ({
+    downloadAsync: async () => {
+      // Record what the model manager tried to download + mark it present.
+      const prev = JSON.parse(fsStore['__downloadUrls'] ?? '[]') as string[];
+      fsStore['__downloadUrls'] = JSON.stringify([...prev, url]);
+      fsStore[fileUri] = 'gguf-bytes';
+      return { uri: fileUri };
+    },
+  }),
   writeAsStringAsync: async (uri: string, contents: string) => {
     fsStore[uri] = contents;
   },
@@ -32,6 +41,11 @@ import { append, clear, list } from '../src/privacy/auditLog';
 import { assertLocalOnly } from '../src/privacy/networkGuard';
 import { ToolExecutor } from '../src/tools/executor';
 import { SIDE_EFFECTING } from '../src/tools/registry';
+import {
+  CHAT_MODEL,
+  EMBED_MODEL,
+  downloadModel,
+} from '../src/inference/modelManager';
 import type { ToolDefinition } from '../src/tools/types';
 
 beforeEach(() => {
@@ -60,6 +74,34 @@ describe('assertLocalOnly', () => {
   ];
   test.each(blocked)('blocks %s', (url) => {
     expect(() => assertLocalOnly(url)).toThrow(/networkGuard/);
+  });
+});
+
+// ── model download path enforces the network guard ─────────────────────
+describe('downloadModel + networkGuard', () => {
+  test('both configured model URLs pass assertLocalOnly', () => {
+    // downloadModel() calls assertLocalOnly(spec.url) before creating any
+    // download task; if a spec URL ever drifted off the Hugging Face
+    // allowlist, this (and the download itself) would throw.
+    expect(() => assertLocalOnly(CHAT_MODEL.url)).not.toThrow();
+    expect(() => assertLocalOnly(EMBED_MODEL.url)).not.toThrow();
+  });
+
+  test('downloads the chat model from its guarded HF URL, then skips re-download', async () => {
+    const path = await downloadModel('chat');
+    expect(path).toBe('/mock-documents/vault-models/' + CHAT_MODEL.fileName);
+    expect(fsStore['__downloadUrls']).toBe(JSON.stringify([CHAT_MODEL.url]));
+
+    // File now present → no second download task is created.
+    const again = await downloadModel('chat');
+    expect(again).toBe(path);
+    expect(fsStore['__downloadUrls']).toBe(JSON.stringify([CHAT_MODEL.url]));
+  });
+
+  test('downloads the embed model from its guarded HF URL', async () => {
+    const path = await downloadModel('embed');
+    expect(path).toBe('/mock-documents/vault-models/' + EMBED_MODEL.fileName);
+    expect(fsStore['__downloadUrls']).toBe(JSON.stringify([EMBED_MODEL.url]));
   });
 });
 

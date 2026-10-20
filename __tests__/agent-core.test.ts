@@ -428,6 +428,22 @@ describe('orchestrator', () => {
     expect(calls[0].args.title as string).toMatch(/stretch/i);
   });
 
+  test('parked side-effecting turns carry actionKind; immediate turns do not', async () => {
+    const { orch } = makeOrchestrator(null);
+    const parked = await orch.turn('remind me to stretch in 3 hours');
+    expect(parked.confirmRequired).toBe(true);
+    // The UI's "always allow this kind of action" gate keys off this.
+    expect(parked.actionKind).toBe('create_reminder');
+
+    const event = await orch.turn('schedule a dentist appointment tomorrow at 2pm');
+    expect(event.confirmRequired).toBe(true);
+    expect(event.actionKind).toBe('create_event');
+
+    const immediate = await orch.turn('remember that I prefer tea over coffee');
+    expect(immediate.confirmRequired).toBe(false);
+    expect(immediate.actionKind).toBeUndefined();
+  });
+
   test('create_reminder rejected -> tool never executes', async () => {
     const { orch, calls, audits } = makeOrchestrator(null);
     const turn = await orch.turn('remind me to call mom tomorrow');

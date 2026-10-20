@@ -6,6 +6,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
+import { assertLocalOnly } from '../privacy/networkGuard';
 
 export interface ModelSpec {
   url: string;
@@ -75,6 +76,12 @@ export async function downloadModel(
   onProgress?: ProgressCallback,
 ): Promise<string> {
   const spec = specFor(kind);
+  // Privacy enforcement at the download call site: the network guard's
+  // allowlist (huggingface.co + its LFS/Xet CDN hosts, which the HF resolve
+  // URLs redirect to) is exactly the set of hosts a legitimate model
+  // download needs. Any spec URL outside it throws here, before a download
+  // task — and therefore any network traffic — is created.
+  assertLocalOnly(spec.url);
   const dir = documentDir() + MODELS_DIR_NAME;
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
   const path = dir + spec.fileName;
