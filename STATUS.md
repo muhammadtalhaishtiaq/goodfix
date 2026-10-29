@@ -1,54 +1,22 @@
-# Vault build status
+# Project Status
 
-Last updated: 2026-10-20
+**Updated:** 2026-10-29
 
-## Meta hackathon
-- Meta Global AI Developer Hackathon 2026: application APPROVED 2026-10-20
-  (Indie Developer Track, Vault split-brain entry). Event runs
-  2026-10-26 to 2026-11-04; submissions due 2026-11-04.
-- Next milestone: the Phase 0 on-device gate — get the chat model running
-  on a real phone and measure the router (tool-calling accuracy), per
-  docs/archive/DECISIONS.md. No APK / device run has happened yet.
+## Active project: Goodfix Web
 
-## Source
-- App + agent core, memory, tools, UI: complete
-- TypeScript: clean, 0 errors (docs/archive/ excluded in tsconfig — it is
-  reference material migrated from the old build HQ, not app code)
-- Jest: 4 suites, 77/77 passing (73 before 2026-10-20, +4 new)
-- Deterministic fallback router: 30/30
-- Icons: Lucide (no emoji)
-- Repo consolidation landed: docs/archive/, .claude/ agents+skills, and
-  the product prime rules in AGENTS.md (from the former bamboo repo).
+- Direction: responsive web experience; desktop Workbench, phone Guided layout.
+- First demo task: a staged, visibly loose cupboard handle.
+- Product and architecture decisions: [`apps/goodfix-web/DECISIONS.md`](apps/goodfix-web/DECISIONS.md).
+- Scope and safety requirements: [`apps/goodfix-web/PRD.md`](apps/goodfix-web/PRD.md).
+- Ordered work and blockers: [`apps/goodfix-web/TASKS.md`](apps/goodfix-web/TASKS.md).
+- Design prototypes: [`apps/goodfix-web/design/`](apps/goodfix-web/design/).
 
-## Fixes landed 2026-10-20 (the five audit gaps)
-1. Permissions screen is real now: Notifications and Reminders & Calendar
-   rows call the actual Expo permission APIs and show real OS status on
-   load. The Microphone row is honestly labeled "First use" — no installed
-   package exposes a mic-permission request, so it is not faked.
-2. "Always allow this kind of action" can render: the orchestrator sets
-   actionKind (the tool name) when it parks a side-effecting action, and
-   the state facade forwards it to the confirmation UI.
-3. ToolExecutor is live: Orchestrator.confirm() executes through it. The
-   dead `void executor;` instantiation in state/agent.ts is gone.
-4. Semantic recall can activate: onboarding now downloads the embedding
-   model (Qwen3-Embedding-0.6B) after the chat model. If that download
-   fails, recall still degrades honestly to keyword search.
-5. Privacy guard enforced: downloadModel() calls
-   networkGuard.assertLocalOnly(url) before creating any download task —
-   only Hugging Face hosts (incl. its CDN redirects) are reachable.
+## Current state
 
-## Android build
-- Status: release build in progress (attempt 17, as of 2026-09-22)
-- Attempt 16: compiled for 15 min then failed on a network timeout downloading
-  react-android AAR (transient). Retrying — Gradle resumes incrementally.
-- Attempt 17: running
-- APK: not produced yet (will upload to GitHub Releases when built)
-- Emulator: CANNOT boot here (no KVM/hardware virtualization in this sandbox).
-  Real-device testing via GitHub Releases APK instead.
+Only planning documents and HTML design prototypes exist. The web app, backend, Meta API calls, and persistent case storage are not implemented. Do not describe a prototype fixture as a live model result.
 
-## Emulator / device testing
-- Not started — waiting on APK. This is the Phase 0 gate above.
+Live Meta media routing remains blocked pending written authorization for the proposed no-login server-side route. Preserve per-request payload preview and consent, local audit records, and provider-file deletion requirements.
 
-## iOS
-- Not started. iOS builds require macOS/Xcode + Apple Developer account;
-  cannot be produced on this Linux build machine.
+The former Vault native app and its history were relocated intact to [`archive/vault-native/`](archive/vault-native/) on 2026-10-29. Keep Goodfix work under `apps/goodfix-web/`.
+
+**Hackathon submission deadline:** 2026-11-04 21:00 ET.

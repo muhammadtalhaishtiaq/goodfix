@@ -3,6 +3,8 @@
 > Companion to `BUILD-PLAN.md` and `DECISIONS.md` (2026-08-29 restart: "continue — Phase 0 gate is the boss").
 > Purpose: (1) lock exactly what v0.1 is, so we never drift into the 53-screen "everything" trap; (2) define the decision tree so the build direction is predetermined the moment the Phase 0 numbers land; (3) be the **build-readiness checklist** — proof we have everything needed before any v0.1 feature code is written. Created 2026-08-29.
 
+> **Status note (2026-10-28):** This document records the earlier React Native v0.1 scope and platform plan. React Native/Expo remains the current implementation per the newest entry in `docs/archive/DECISIONS.md`; the Flutter migration plan is historical and superseded. The local `docs/WIREFRAMES.md` has 53 numbered prompts; the live Stitch project currently returns 63 entries, so reconcile before claiming screen parity. This old six-screen v0.1 scope is historical context, not the current hackathon MVP; see root `PRD.md`.
+
 ## 0. The rule in one line
 
 **A feature may be built ONLY after: the Phase 0 gate clears AND its slice is specified here (or in its slice doc) with a tool contract + acceptance criteria + memory/privacy rule.** No screen is built "because it's in the wireframes."
@@ -65,6 +67,8 @@ Each v0.1 tool needs, written down before build: the **input JSON schema** (the 
 
 ## 4. PLATFORM DECISION (added 2026-08-29 per Talha) — iOS AND Android at launch (hybrid, one RN codebase)
 
+**Implementation status:** the React Native/Expo implementation choice below is superseded by the newer 2026-10-28 decision in `docs/archive/DECISIONS.md` that continues the checked-in React Native app. The dual-platform iOS + Android intent remains. Flutter/Dart migration is not active.
+
 **Locked intent:** v0.1 is a **hybrid, cross-platform app — both iOS and Android can download it at launch**, from one React Native + TypeScript codebase. This is a change from the earlier "iOS first, Android second" framing in `PRODUCT.md` §7/§9 and `MASTER.md` §7.
 
 **What this unlocks / costs (honest):**
@@ -91,7 +95,7 @@ This is the answer to *"make sure we have everything before we start building."*
 - [x] `BUILD-PLAN.md` — architecture, stack, thin-slice workflow, testing pyramid, privacy CI gate, risk register.
 
 ### C. Visual / screen direction ✅ (direction only — see D)
-- [x] `WIREFRAMES.md` — all 53 screens visualized in Stitch (use as reference; only 6 are v0.1).
+- [x] `WIREFRAMES.md` — 53 numbered screen prompts; compare with the 54 unique mobile titles returned by live Stitch (historical v0.1 referenced only 6).
 
 ### D. Buildable spec — the gap to close BEFORE feature code 🔲 🔲
 - [x] **Scope lock** — this document (§1) locks the v0.1 wedge. ✅ done 2026-08-29.

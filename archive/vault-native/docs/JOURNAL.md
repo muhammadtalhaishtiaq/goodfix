@@ -137,3 +137,22 @@ an icon or in a user-facing string was replaced with a Lucide component
 No flow, copy, or screen structure changed; android/ untouched.
 - tsc: zero errors. jest: 4 suites, 73/73 tests passed.
 - Zero emoji remain anywhere in src/ui (verified by unicode sweep).
+
+## 2026-10-28 — Guided video helper concept sketch (not a Vault scope change)
+
+- Created `docs/explainers/guided-video-helper-eli5.html` to visualize the no-login upload page, exact-payload approval, inline clarifying question, grounded step cards, spoken read-aloud, same-session text/voice follow-up, and one optional re-upload.
+- Independent adversarial review found that “repair anything” risks unsafe instructions and may look like the hackathon guide's prohibited simple image analyzer. It recommended one low-risk repair category, visible uncertainty/stop states, and grounding step pictures in the user's own frames.
+- Changed the sketch accordingly: three annotated still frames rather than generated repair images; one optional follow-up upload in the existing session; voice input stays optional and should be deferred if it destabilizes the core loop. This remains a concept hypothesis, not a decision to supersede Vault's locked product thesis.
+
+## 2026-10-28 — Goodfix click-through prototype (separate concept)
+
+- Added `docs/prototypes/fixalong-interactive-demo.html`, a responsive single-file prototype for the guided troubleshooting concept. It includes a sample flow, local file preview, exact-payload consent preview, clarification, three visual step cards, same-session questions, browser read-aloud, optional voice input, and one follow-up file flow.
+- Independent reviewer highlighted the need to keep scope narrow, request consent for every upload, stop when the view is unclear or hazardous, keep questions in-session, and label simulated model behavior. The prototype now withholds steps for “hidden” or “not sure,” reopens consent for a follow-up, and states that no Meta call or file transfer occurs.
+- Pictures are sample illustrations with overlays, not analyzed output. Voice input/output depend on browser support. This prototype does not change Vault's locked mobile product decisions and is not a production repair guide.
+
+## 2026-10-28 — Evidence timeline and layout comparison
+
+- Added `docs/prototypes/goodfix-layout-comparison.html` with three selectable layouts: Workbench (evidence rail + large visual/steps + chat), Guided mode (large active step + compact question drawer + evidence strip), and Conversation (messages with step cards embedded in the history).
+- Independent reviewer recommended preserving each upload as a numbered case item and not letting follow-ups replace the original. It favored Workbench as the default, with a mobile evidence filmstrip and the active step prominent. It also noted that SAM masks identify/track objects but do not diagnose failures or establish a safe repair.
+- Updated the prototype to start with Clip 01 and Photo 02, select an item to bring its evidence into the main visual, append later uploads without rewriting earlier messages, and make new evidence selectable across layouts. Uploads remain browser-local in this simulation.
+- Verified current official Meta docs: Muse Spark can understand video and return text; SAM 3.1 can segment and track objects across video frames and returns geometry, not repair instructions. Files API uploads do not expire and must be deleted explicitly. API Terms allow end-user Integrated Products but restrict standalone/API-gateway/proxy access absent written authorization; public product routing needs Meta confirmation. Broad plumbing/electrical/cooking/"anything" scope remains rejected for the initial version due distinct safety and reliability demands.

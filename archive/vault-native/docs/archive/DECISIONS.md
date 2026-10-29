@@ -2,7 +2,30 @@
 
 Locked product decisions, newest first. When one is reversed, don't delete it — mark it superseded and link the new one.
 
+## 2026-10-29 — Separate responsive web app is the hackathon entry
+- Context: Talha explicitly locked the responsive web direction after reviewing the guided troubleshooting idea and three layout alternatives. The current Vault native plan was consuming the hackathon window in app/platform work unrelated to the user's selected project direction.
+- Decision: create a distinct web project at `apps/goodfix-web/` (working title Goodfix; brand is not locked). Use React + TypeScript + Vite + responsive CSS. Use Workbench on desktop and a step-focused Guided adaptation on phones. Keep the numbered evidence timeline and the entire follow-up history in one case.
+- First demo scope: one staged, visibly loose cupboard-handle task with a real Muse Spark video observation, real SAM 3.1 object geometry, a clarifying question, no more than three bounded steps, and a separately approved numbered follow-up upload. This is not “repair anything.”
+- Keep the existing Vault Expo/React Native product and its own product decisions in this repository. This decision supersedes the **hackathon execution target only**, including “Keep React Native for the hackathon build” from 2026-10-28. It does not retire Vault or migrate its native app to the web.
+- Hard gates: get written Meta clarification for the proposed no-login server-side Integrated Product route before any live public model integration; keep keys off the client; 18+ only; use Standard models for private home media; exact request preview and explicit consent for every media transfer; delete each Meta Files API upload when no longer needed; implement stop states for unclear, unsafe, or out-of-scope footage.
+- Revisit if: Meta does not authorize the architecture, account/model access is unavailable, the staged task cannot produce safe grounded steps, or the event deadline cannot support an honest end-to-end demo. If any gate fails, reassess the entry; never substitute simulated outputs for live results.
+
+## 2026-10-28 — Keep React Native for the hackathon build
+- Status: superseded for the hackathon entry by the 2026-10-29 separate Goodfix web project decision above. React Native remains the implementation for the Vault native product.
+- Context: after comparing Flutter, Ionic, and the existing app against the Nov 4 build window, Talha explicitly chose to continue with React Native rather than migrate to Flutter.
+- Decision: the existing Expo/React Native TypeScript app remains the primary implementation for Android and iOS builds. The existing agent, memory, privacy, and inference code is the implementation base; Stitch screens remain the visual/product map. Continue the planned build and use Expo/EAS for native artifacts.
+- Supersedes: the 2026-10-28 Flutter implementation decision immediately below. Keep its migration analysis as historical evidence; do not start Flutter/Dart migration work.
+- Revisit if: a measured blocker in the existing React Native app prevents the required native Android/iOS demo loop, and a replacement passes a real-device model and camera proof before migration.
+
+## 2026-10-28 — Flutter is the primary hybrid app implementation
+- Status: superseded by the newer 2026-10-28 React Native decision above.
+- Context: Talha explicitly chose Flutter for end-to-end development of Vault as a single hybrid mobile app, using the existing Stitch mobile screen designs and targeting Android and iOS builds.
+- Decision at the time: Flutter/Dart was the primary implementation target. Preserve this record as the reason the migration plan exists; it is no longer the active platform choice.
+- Product scope: the 53 Stitch screens are the complete product design map. The deadline build must be planned from the remaining time and verified build capacity; screen count alone is not a reason to fake functionality or weaken the privacy model.
+- Revisit if: n/a — superseded by the newer decision above.
+
 ## 2026-08-29 — Hybrid dual-platform at launch: iOS AND Android together (one RN codebase)
+- Status: its dual-platform product intent remains in force; the newer 2026-10-28 decision selects React Native again.
 - Why: Talha's explicit intent — build the app hybrid so BOTH iOS and Android users can download it from day one. React Native + EAS Build was chosen (2026-07-14) precisely for one-codebase → both stores.
 - Decision: v0.1 ships on **iOS AND Android at launch**, from one React Native + TypeScript codebase. The 6-screen wedge is IDENTICAL on both (parity, not extensions) in v0.1.
 - Costs locked in (see V01-SCOPE §4): Phase 0 spikes must run on BOTH platforms; native bridges verified on both (`llama.rn`, sqlite-vec, secure-store, calendar/reminders — EventKit on iOS vs CalendarProvider on Android are different APIs, both implemented); TWO honest store privacy labels (Apple App Privacy + Play Data Safety), both saying "local by default / nothing leaves on the local tier."

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5ef">
+  <title>Vault, explained simply</title>
+  <style>
+    :root{--paper:#f7f5ef;--ink:#18302f;--teal:#167b73;--mint:#d9efe8;--peach:#ffe0ca;--blue:#dceaff;--gold:#f4c65d;--muted:#566967;--white:#fff;--line:#d8e0d9}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{max-width:1080px;margin:auto;padding:28px 22px 70px}h1,h2,p{margin-top:0}h1{font-size:clamp(2.8rem,8vw,5.4rem);line-height:.98;letter-spacing:-.06em;max-width:760px;margin-bottom:18px}h2{font-size:clamp(1.7rem,4vw,2.6rem);letter-spacing:-.04em;margin-bottom:10px}p{color:var(--muted)}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;padding:32px 0 52px}.hero p{font-size:1.24rem;max-width:620px}.badge{display:inline-flex;gap:8px;align-items:center;border-radius:99px;background:#e2eee6;padding:8px 14px;color:#28534f;font-size:.9rem;font-weight:700}.badge i{width:10px;height:10px;background:#29956e;border-radius:50%}.hero-art{width:100%;max-height:350px}.section{padding:32px 0;border-top:1px solid var(--line)}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}.card{background:var(--white);border:1px solid var(--line);border-radius:24px;padding:18px;min-width:0}.card svg{display:block;width:100%;height:160px;margin-bottom:8px}.card h3{font-size:1.15rem;margin:6px 0}.card p{font-size:.98rem;margin:0}.status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:18px}.status .card{padding:22px}.status h3{margin:0 0 10px;font-size:1.15rem}.status ul{margin:0;padding-left:19px;color:var(--muted)}.status li{margin:8px 0}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;background:#29956e}.planned{background:#e9a441}.blocked{background:#d76c5a}.next{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:var(--ink);color:white;border-radius:26px;padding:24px;margin-top:18px}.next p{color:#e2eeeb;margin:0}.number{display:grid;place-items:center;width:54px;height:54px;background:var(--gold);color:var(--ink);font-weight:900;font-size:1.5rem;border-radius:18px}.foot{font-size:.88rem;border-top:1px solid var(--line);padding-top:18px;margin-top:38px}.foot a{color:var(--teal)}.tiny{font-size:.86rem}.arrow{stroke:var(--teal);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    @media(max-width:760px){main{padding:20px 16px 50px}.hero{grid-template-columns:1fr;padding-top:22px}.hero-art{max-height:260px}.steps{grid-template-columns:1fr 1fr}.status{grid-template-columns:1fr}.card svg{height:135px}}
+    @media(max-width:420px){.steps{grid-template-columns:1fr}.card svg{height:155px}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Vault · Meta hackathon</div>
+      <h1>A private helper that remembers.</h1>
+      <p>Think of Vault as a little notebook on your phone, with a helper that can find things later.</p>
+      <span class="badge"><i></i> Phone-first. Internet is optional.</span>
+    </div>
+    <svg class="hero-art" viewBox="0 0 360 330" role="img" aria-labelledby="hero-title hero-desc">
+      <title id="hero-title">A phone holding a notebook and a friendly helper</title><desc id="hero-desc">Vault keeps a note on the phone and can find it later.</desc>
+      <circle cx="180" cy="165" r="145" fill="#d9efe8"/><rect x="111" y="35" width="138" height="258" rx="27" fill="#18302f"/><rect x="121" y="54" width="118" height="220" rx="17" fill="#fff"/><rect x="158" y="43" width="44" height="5" rx="3" fill="#9ab0aa"/>
+      <rect x="140" y="90" width="80" height="104" rx="10" fill="#ffe0ca"/><path d="M153 111h52M153 127h44M153 143h49M153 159h34" stroke="#a75e36" stroke-width="5" stroke-linecap="round"/><circle cx="180" cy="233" r="19" fill="#167b73"/><path d="M173 233l5 5 10-12" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="278" cy="83" r="37" fill="#f4c65d"/><circle cx="267" cy="79" r="4" fill="#18302f"/><circle cx="289" cy="79" r="4" fill="#18302f"/><path d="M266 94q12 13 25 0" stroke="#18302f" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M250 120q28-16 55 0v44h-55z" fill="#167b73"/><path d="M253 135l-22 20M302 135l17 12" stroke="#167b73" stroke-width="9" stroke-linecap="round"/>
+      <path d="M62 210q25-20 45 0" class="arrow"/><path d="M97 197l12 13-17 7" fill="#167b73"/>
+    </svg>
+  </header>
+
+  <section class="section">
+    <div class="eyebrow">The big idea</div><h2>One helper. A memory that stays with you.</h2>
+    <p>Some jobs happen on your phone. If you choose online help, Vault must show what it will send and ask first.</p>
+    <div class="steps">
+      <article class="card"><svg viewBox="0 0 180 150" role="img" aria-label="A note saved inside a phone"><rect x="45" y="10" width="90" height="130" rx="18" fill="#18302f"/><rect x="53" y="22" width="74" height="104" rx="10" fill="#fff"/><path d="M67 49h45M67 64h39M67 79h43" stroke="#167b73" stroke-width="7" stroke-linecap="round"/><path d="M68 103h24" stroke="#f4c65d" stroke-width="9" stroke-linecap="round"/></svg><h3>1. Save a note</h3><p>“My keys are in the blue drawer.” It stays on the phone.</p></article>
+      <article class="card"><svg viewBox="0 0 180 150" role="img" aria-label="A person chooses what to share"><rect x="20" y="30" width="82" height="82" rx="15" fill="#dceaff"/><path d="M38 54h45M38 70h32M38 86h39" stroke="#426b9c" stroke-width="6" stroke-linecap="round"/><path d="M113 73h39" class="arrow"/><path d="M142 61l13 12-13 12" class="arrow"/><circle cx="125" cy="32" r="20" fill="#f4c65d"/><path d="M113 105h28" stroke="#167b73" stroke-width="12" stroke-linecap="round"/></svg><h3>2. Ask for help</h3><p>Online help is planned. First, Vault must show exactly what leaves.</p></article>
+      <article class="card"><svg viewBox="0 0 180 150" role="img" aria-label="A camera finds a toy on a table"><rect x="25" y="35" width="130" height="82" rx="15" fill="#18302f"/><rect x="34" y="47" width="112" height="58" rx="8" fill="#dceaff"/><path d="M56 91h69" stroke="#8d715d" stroke-width="8" stroke-linecap="round"/><circle cx="93" cy="74" r="14" fill="#f4c65d"/><circle cx="93" cy="74" r="24" fill="none" stroke="#167b73" stroke-width="5" stroke-dasharray="5 5"/><path d="M48 35l8-13h30l8 13" fill="#18302f"/></svg><h3>3. Find a thing</h3><p>SAM scanning is planned. Vault should point to a real match in your photo.</p></article>
+      <article class="card"><svg viewBox="0 0 180 150" role="img" aria-label="The phone remembers where the toy was even without internet"><path d="M34 42q56-30 111 0v70q-55 29-111 0z" fill="#d9efe8" stroke="#167b73" stroke-width="5"/><path d="M47 58h82M47 75h62M47 92h72" stroke="#167b73" stroke-width="6" stroke-linecap="round"/><path d="M131 25l17 7-7 17" fill="none" stroke="#d76c5a" stroke-width="6" stroke-linecap="round"/><path d="M142 32q-8-17-26-15" fill="none" stroke="#d76c5a" stroke-width="5" stroke-linecap="round"/><path d="M69 120l10 11 24-27" fill="none" stroke="#167b73" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>4. Find it later</h3><p>The goal: remember the sighting and answer later, even offline.</p></article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Today · 28 October 2026</div><h2>What is real right now?</h2>
+    <div class="status">
+      <article class="card"><h3><span class="dot"></span>Already in the app</h3><ul><li>React Native phone app</li><li>Local notes and memory search</li><li>Qwen models are the current local models</li><li>Model downloads are limited to Hugging Face; no Meta API is connected</li></ul></article>
+      <article class="card"><h3><span class="dot planned"></span>Still to build</h3><ul><li>Meta Llama offline model proof</li><li>Muse Spark online planning</li><li>SAM photo scan and real overlay</li><li>Save the scan, then recall offline</li></ul></article>
+      <article class="card"><h3><span class="dot blocked"></span>Must clear first</h3><ul><li>Build and test on real phones</li><li>Meta permission for any relay</li><li>Age check and privacy policy</li><li>Stitch screens need reconciliation</li></ul></article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">The current step</div><h2>Make one honest demo work.</h2>
+    <div class="next"><div class="number">1</div><p><strong>First:</strong> get the existing app running on a real phone and prove that a note can be saved and found again without internet. Then add online models only if permission and real-phone checks pass.</p></div>
+    <p class="tiny" style="margin-top:16px">We are not building every screen. We are making one useful loop work from beginning to end.</p>
+  </section>
+
+  <footer class="foot">This picture separates what exists from what is planned. The app has not yet been proven in a current phone build. The hackathon page lists submissions due 4 November 2026 at 9:00 PM ET and says Indie projects are judged on creativity, technical ambition, and whether they work. <a href="https://dev.meta.ai/events/global-hackathon">Official event page</a>.</footer>
+</main>
+</body>
+</html>

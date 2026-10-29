@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A tiny picture guide to the video helper idea</title>
+<style>
+:root{--ink:#17332e;--muted:#526863;--paper:#f5f3ec;--card:#fff;--teal:#087e72;--mint:#dff2eb;--gold:#f3c96b;--line:#d9e3dc;--red:#9d3c32}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:1050px;margin:auto;padding:28px 20px 70px}h1,h2,h3,p{margin-top:0}h1{font-size:clamp(2.3rem,7vw,4.5rem);line-height:1.02;max-width:850px;letter-spacing:-.04em}h2{font-size:clamp(1.6rem,4vw,2.35rem);letter-spacing:-.025em;margin-bottom:8px}h3{font-size:1.15rem;margin-bottom:6px}.lead{font-size:1.25rem;color:var(--muted);max-width:720px}.eyebrow{color:var(--teal);font-weight:750;letter-spacing:.09em;text-transform:uppercase;font-size:.8rem}.hero,.screen,.scenario,.redteam,.decision{background:var(--card);border:1px solid var(--line);border-radius:25px;padding:24px;margin:22px 0;box-shadow:0 8px 30px #17332e0b}.hero{padding:clamp(22px,5vw,48px)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.phone{max-width:380px;margin:18px auto;border:8px solid #17332e;border-radius:32px;background:#f8faf8;padding:15px;box-shadow:0 10px 25px #17332e20}.phonehead{display:flex;justify-content:space-between;font-size:.85rem;font-weight:700;border-bottom:1px solid var(--line);padding-bottom:10px}.pill{display:inline-block;border-radius:99px;background:var(--mint);padding:5px 10px;color:#075d54;font-size:.8rem;font-weight:700}.button{background:var(--teal);color:white;border-radius:14px;padding:11px 14px;text-align:center;font-weight:750;margin:9px 0}.soft{background:var(--mint);padding:12px;border-radius:14px}.tiny{font-size:.88rem;color:var(--muted)}.visual{display:block;width:100%;height:auto;margin:12px auto}.step{border:1px solid var(--line);padding:12px;border-radius:16px;margin:10px 0;background:#fff}.stepnum{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--gold);font-weight:800;margin-right:7px}.flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:750}.flow span{padding:9px 13px;background:var(--mint);border-radius:99px}.arrow{color:var(--teal);font-size:1.5rem}.safe{border-left:5px solid var(--red);padding:12px 16px;background:#fff1ee;border-radius:10px}.ok{border-left:5px solid var(--teal);padding:12px 16px;background:#edf8f3;border-radius:10px}ul{padding-left:22px}li{margin:6px 0}.tag{font-size:.78rem;font-weight:750;color:var(--teal)}footer{font-size:.85rem;color:var(--muted);padding:10px 4px}.screen{overflow:hidden}.full{grid-column:1/-1}.note{font-size:.88rem;color:var(--muted)}@media(max-width:720px){.grid{grid-template-columns:1fr}.full{grid-column:auto}main{padding:20px 14px 50px}.hero,.screen,.scenario,.redteam,.decision{padding:19px;border-radius:20px}}
+</style>
+</head>
+<body><main>
+<section class="hero">
+  <div class="eyebrow">A picture guide · idea only · not built yet</div>
+  <h1>Show the problem.<br>Get one safe next step.</h1>
+  <p class="lead">Imagine a little website helper. You show it a short video of one kind of small household problem. It looks, asks if it needs more information, and guides you one step at a time.</p>
+  <div class="flow"><span>🎥 Show</span><b class="arrow">→</b><span>❓ Clarify</span><b class="arrow">→</b><span>👣 Try a step</span><b class="arrow">→</b><span>🔁 Check again</span></div>
+  <p class="safe" style="margin-top:18px"><b>Keep the promise small:</b> it cannot fix “anything.” For the first demo, imagine one low-risk example: a visibly loose cupboard handle. It stops when the problem looks unsafe or unfamiliar.</p>
+</section>
+
+<section class="screen">
+  <div class="eyebrow">Screen 1 · start</div><h2>Where do I begin?</h2>
+  <div class="grid">
+    <div><p>One big button. No account, no model choices, no prompt-writing lesson.</p><ul><li>“Show me what’s wrong”</li><li>Pick the supported kind of problem</li><li>Or see a sample before uploading</li></ul></div>
+    <div class="phone"><div class="phonehead"><span>FixAlong</span><span>Help</span></div><h3 style="margin-top:20px">What needs a closer look?</h3><p class="tiny">Start with a loose cupboard handle.</p><div class="soft" style="text-align:center;padding:25px">[ simple cupboard drawing ]</div><div class="button">Show my problem</div><p class="tiny">No account needed</p></div>
+  </div>
+</section>
+
+<section class="screen">
+  <div class="eyebrow">Screen 2 · show the problem</div><h2>Upload a short clip</h2>
+  <div class="grid">
+    <div><p>They can record or choose a clip. Then the page shows exactly what will be sent and asks before sending it.</p><p class="ok"><b>Plain-language permission:</b><br>“This video will go to Meta to help identify the loose handle. Send it?”<br><br><b>Send video</b> · <b>Cancel</b></p><p class="note">The page should not secretly upload. A home video may show people or private details.</p></div>
+    <div class="phone"><div class="phonehead"><span>‹ Back</span><span>Step 1 of 4</span></div><div class="soft" style="text-align:center;margin-top:14px;padding:28px">▶ Your cupboard video</div><p><b>We’ll send:</b> this 8-second video and “loose cupboard handle.”</p><div class="button">Send for a closer look</div><p class="tiny" style="text-align:center">Nothing sent yet</p></div>
+  </div>
+</section>
+
+<section class="screen">
+  <div class="eyebrow">Screen 3 · look and ask</div><h2>The assistant asks right here</h2>
+  <div class="grid">
+    <div><p>After looking, it can point to what it sees and ask a simple question if it needs one. The question appears in the same session, under the video.</p><p><b>Example:</b> “I can see the handle moving. Is the screw head visible on the front?”</p><p>Tap an answer or type. For the first demo, keep voice optional and keep the typed buttons obvious.</p></div>
+    <div class="phone"><div class="phonehead"><span>Loose handle</span><span>Help</span></div><div class="soft" style="margin-top:14px">I can see the handle wobble. I’m not sure which screw is loose yet.</div><p><b>Can you see a screw on the front?</b></p><div class="button">Yes, I can see it</div><div class="step">No, it’s hidden</div><div class="step">I’m not sure</div><p class="tiny">You can also type a question below ↓</p></div>
+  </div>
+</section>
+
+<section class="screen">
+  <div class="eyebrow">Screen 4 · follow one step at a time</div><h2>Use their video as the picture</h2>
+  <div class="grid">
+    <div><p>Start with <b>three short step cards</b>. Each card uses a frame from the person’s own video, with a circle or arrow and a plain sentence.</p><p>That is safer and clearer than making a brand-new AI picture of a repair. A generated picture might show a part that is not really there.</p><p><b>How many pictures?</b> Three still frames—one for each step. No need to generate three new images. A “next step” button keeps the page calm.</p></div>
+    <div class="phone"><div class="phonehead"><span>Step 1 of 3</span><span>●●○</span></div>
+      <svg class="visual" viewBox="0 0 340 190" role="img" aria-label="An original video frame showing a cupboard handle with an arrow to a visible screw"><rect width="340" height="190" rx="18" fill="#e9dfc9"/><rect x="35" y="20" width="270" height="150" rx="8" fill="#c89e66"/><rect x="55" y="39" width="230" height="112" rx="5" fill="#e8c891"/><rect x="145" y="84" width="62" height="18" rx="8" fill="#526863"/><circle cx="157" cy="93" r="4" fill="#fff"/><path d="M252 43 L167 85" stroke="#087e72" stroke-width="7"/><path d="M167 85 L185 81 L176 99Z" fill="#087e72"/><circle cx="157" cy="93" r="23" fill="none" stroke="#087e72" stroke-width="4"/></svg>
+      <div class="step"><span class="stepnum">1</span><b>Look at the visible screw.</b><br><span class="tiny">Use a screwdriver that fits. Turn gently to the right.</span></div><div class="button">I did that · next step</div><div class="tiny" style="text-align:center">🔊 Read this step aloud</div>
+    </div>
+  </div>
+  <p class="ok"><b>Voice output:</b> a speaker button can read the current step. It should read only the words shown, and have pause/stop controls. This is useful while hands are busy.</p>
+</section>
+
+<section class="screen">
+  <div class="eyebrow">Screen 5 · ask, talk, or show again</div><h2>Keep follow-up in the same session</h2>
+  <div class="grid">
+    <div><p>The user does not need a separate “chat app.” Put the question box below the current step:</p><ul><li>Type: “It still wiggles.”</li><li>Tap the mic and say it</li><li>Tap “Show what happened” to add one new photo or short clip</li></ul><p>Then the assistant responds in the same thread and updates the next step. Every new upload gets its own clear send approval.</p></div>
+    <div class="phone"><div class="phonehead"><span>Step 1 of 3</span><span>Help</span></div><div class="step"><b>You:</b> It still wiggles.</div><div class="soft"><b>Helper:</b> Thanks. Stop tightening for now. Can you show one close-up of the handle?</div><div class="step">🎙 Hold to talk</div><div class="step">＋ Add one photo or short clip</div><div style="border:1px solid #d9e3dc;border-radius:14px;padding:10px;color:#526863">Ask about this step…</div><p class="tiny">The new photo is not sent until you approve it.</p></div>
+  </div>
+</section>
+
+<section class="scenario">
+ <div class="eyebrow">Three tiny user stories</div><h2>What happens when…</h2>
+ <div class="grid">
+  <div><h3>“I can see the screw.”</h3><p>The page points to the screw, shows step 1, reads it aloud if asked, then waits for “I did that.”</p></div>
+  <div><h3>“I’m not sure.”</h3><p>It offers a clearer picture or asks for one close-up. It does not pretend it knows.</p></div>
+  <div><h3>“It got worse.”</h3><p>Stop. The helper says not to continue, asks the user to keep clear if needed, and suggests a qualified person.</p></div>
+  <div><h3>“Can I show you again?”</h3><p>Yes. Add one follow-up picture or short clip in the same session, approve sending it, and get the next response there.</p></div>
+ </div>
+</section>
+
+<section class="redteam">
+ <div class="eyebrow">Try to break the idea</div><h2>Safety and demo checks</h2>
+ <div class="grid">
+  <div class="safe"><b>Dangerous problem:</b> If it sees exposed wires, gas, fire, major leaks, or structural damage, stop repair steps and advise getting qualified help.</div>
+  <div class="safe"><b>Wrong or blurry video:</b> Say “I can’t tell.” Ask for a clearer view or end the flow. Never invent a part.</div>
+  <div class="safe"><b>Private faces or papers:</b> Preview the clip before upload and let the person cancel or choose another clip.</div>
+  <div class="safe"><b>Model/network fails:</b> Say it could not check the clip. Keep the original video available for retry; do not show made-up steps.</div>
+ </div>
+ <p class="note"><b>Red-team result:</b> “Repair anything” is too broad and risks unsafe advice. One supported, low-risk task and a visible stop path make a more believable demo. The exact repair category still needs testing against real clips.</p>
+</section>
+
+<section class="decision">
+ <div class="eyebrow">Smallest convincing first version</div><h2>Keep these four things</h2>
+ <ol><li>One no-login webpage and one supported problem type.</li><li>A short video, one plain-language send approval, and one clarifying question.</li><li>Three step cards grounded in the user’s own video frames, with arrows and readable text.</li><li>Text follow-up plus one optional re-upload. Add read-aloud; add voice input only if the main flow is already reliable.</li></ol>
+ <p class="ok"><b>Cut for the first demo:</b> AI-generated repair pictures, unlimited uploads, every kind of home repair, accounts, and a separate chat area. The “smart” part is noticing, asking, guiding, and checking—not making lots of pictures.</p>
+ <p class="note">This is a concept sketch, not a decision to replace Vault’s existing product plan. A public Meta-backed webpage also needs a safe, authorized way to call the model; never put a shared secret in the page.</p>
+</section>
+<footer>Made as a self-contained picture explainer. No external images, tracking, or network calls.</footer>
+</main></body></html>
