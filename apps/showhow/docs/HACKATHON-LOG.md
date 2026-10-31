@@ -133,3 +133,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Planned as stretch T16 "Read step aloud": synthesized once at publish and cached in Storage. Wit.ai is Meta-owned but not one of the hackathon's listed Model API models, so present it as an add-on.
 - Facebook Live Video API (developers.facebook.com/documentation/live-video-api): one-way RTMPS broadcast to a profile/Page; needs Facebook Login + `publish_video`, an account ≥60 days old with ≥100 followers; no AI and no way to receive a user's camera. Not used; at most a vision-slide idea (go live → guide).
 - Video generation: the Meta Model API has none (Muse Image = stills; the video-understanding page is input-only). Not used; seed guides will be real filmed videos.
+
+## 2026-10-31 — T3 database live: schema applied, RLS verified
+
+- Supabase project `tbruclocjvvlxvwdbqnu` (free tier). Keys are the legacy anon/service_role JWTs, both confirmed to belong to this project. `.env.local` `VITE_SUPABASE_URL` still had a mistyped ref (NXDOMAIN); Talha to correct it. The checks below passed the correct URL as an env override.
+- `scripts/apply-schema.ts` applied `supabase/schema.sql` via the Management API (`POST /v1/projects/{ref}/database/query`) with a personal access token in `.env.local`. Tables `guides`, `steps`, `usage`; RLS on all three; `bump_usage()` (server only); public bucket `media` (50 MB, mp4/wav/jpeg/mpeg).
+- `scripts/check-db.ts`: 11/11 PASS. Anon can't see draft guides/steps, insert, read usage, call `bump_usage`, upload, or edit; anon sees a guide and its steps once published; the server can bump usage and create signed upload URLs. Temp guide and counters removed.
+- Remaining for T3: the viewer reading published guides from Supabase (lands with the first real guide from the pipeline).
