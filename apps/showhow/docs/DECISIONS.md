@@ -55,3 +55,12 @@ Approved by Talha 2026-10-31.
 - **Why:** lowers the bar for sharing know-how (Impact); adds a fourth distinct Meta model (Muse Image), which also qualifies for the Best Creative Build bonus.
 - **Priority:** after the core video loop (T1–T6, T8–T12); replaces "Where am I?" as the top stretch; second in the cut order.
 - **Known risk:** separate generations drew different purifiers across steps (spike 2026-10-31). Mitigation: edit the previous step's image; tested first in T17(a).
+
+## 2026-10-31 — Optional AI-enhanced step images for video guides (T18); flat API routes
+
+Approved by Talha 2026-10-31.
+
+- Creators can tick "Enhance with AI". Each step's real keyframe is edited by Muse Image into a cleaner, better-lit version of the same scene, plus a highlight edit on the key part. This helps with blurry, dark or shaky footage.
+- Honesty rules: labelled "Enhanced by AI", with the original frame one tap away; the creator approves each image. **The "I'm stuck" check always uses the real keyframe**, never an enhanced or illustrated image.
+- Order after the core loop: T17 voice guides → T18 enhanced images → T7 Where am I. All before T13 deploy if time allows.
+- API routes are flat (`/api/guides`, `/api/steps`, `/api/outlines`, `/api/publish`, `/api/check`, `/api/voice-guides`, `/api/voice-images`) with ids in the body, mapping 1:1 to files in `api/`.

@@ -29,7 +29,7 @@
 | Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end); voice-guide recordings → text |
 | Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps |
 | SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
-| Muse Image | Voice guides only: one illustration per step in the creator's chosen style, always labelled "Illustration by AI" |
+| Muse Image | Voice guides: one illustration per step in the creator's chosen style ("Illustration by AI"). Video guides (optional): enhanced version of each real keyframe ("Enhanced by AI"). Highlight edits circle the key part. |
 
 Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for "Read step aloud" (stretch T16).
 
@@ -40,6 +40,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 - Guide viewer: step list, looping step segment of the creator video (one video file, start/end times), "Show part" outline, full-video segment bar, instruction, creator tip quote, done/next.
 - **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
 - **Voice guides** (T17, after the core loop): record/upload ≤2 min audio → two-layer safety and quality gate → steps → Muse Image illustrations in one of 6 styles (realistic photo, line art, flat colour, blueprint, watercolour, 3D clay) with stored sample previews → review → publish. The "I'm stuck" photo check is **off** for voice guides (no real reference frame).
+- **AI-enhanced step images for video guides** (T18, optional checkbox at upload): each step's real keyframe → Muse Image edit (same scene, cleaner light, sharper) + highlight edit. Labelled "Enhanced by AI" with a "View original frame" toggle. The creator approves each one. **The "I'm stuck" check always compares against the real frame, never the enhanced one.**
 - **Where am I?** check (stretch; cut first).
 - Creator flow: access code → **creator consent screen** (names Supabase public hosting and the three Meta models) → upload → in-browser shrink → processing stages → review (light edits) → publish → share link.
 - Honest states everywhere: processing, failure, unclear photo, no outline found, rate limited.
@@ -143,7 +144,7 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 
 - **Always:** keep the Meta, Supabase service and Wit.ai keys server-side only (never `VITE_*`); label every AI illustration "Illustration by AI"; run the voice-guide safety gate before saving anything, failing closed; preview and get approval for every learner photo; label fixtures; validate model output; show honest failure states; use absolute dates in docs; run lint, typecheck, test and build before committing.
 - **Ask first:** new dependencies beyond those listed in §4; schema changes after seed data exists; deploying; making the repo public; changing access-code or spend-cap settings; submitting.
-- **Never:** store learner photos, voice recordings, or the transcripts of blocked voice guides; run the "I'm stuck" check against an AI illustration; call a guide "verified" or "safe"; draw an outline that SAM didn't return; present a fixture as a live result; let Spark invent instructions the creator didn't give; give medical, electrical or safety advice; commit secrets; push or deploy without approval.
+- **Never:** compare a learner's photo against an AI-enhanced or AI-illustrated image; store learner photos, voice recordings, or the transcripts of blocked voice guides; run the "I'm stuck" check against an AI illustration; call a guide "verified" or "safe"; draw an outline that SAM didn't return; present a fixture as a live result; let Spark invent instructions the creator didn't give; give medical, electrical or safety advice; commit secrets; push or deploy without approval.
 
 ## 10. Success criteria (all on the same deployed build)
 
@@ -153,6 +154,7 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 4. Learner photos are never stored; every check shows a payload preview first. Creators see a consent screen before their video leaves the device.
 5. The site works on a phone and on desktop; a judge can create a guide with the access code.
 6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
+8. (T18) With "Enhance with AI" ticked, each step shows a cleaner image of the same real scene, with the original frame one tap away; checks still use the real frame.
 7. (T17) A spoken how-to becomes an illustrated guide whose step images show the same object; a staged harmful or gibberish recording is blocked with a reason and nothing appears in the database or Storage.
 
 ## 11. Open questions (resolved on day 1 unless noted)

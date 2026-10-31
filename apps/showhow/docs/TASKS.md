@@ -74,7 +74,7 @@ flowchart LR
   - Submit and post on X.
   - *(Each public step needs Talha's go-ahead.)* **Verify:** the demo claims match the deployed build; the submission is confirmed.
 
-## Stretch (only if everything above is green)
+## After the core loop (in this order: T17 → T18 → T7)
 
 - [ ] **T16 Read step aloud (Wit.ai TTS).** At publish, the server synthesizes each step's instruction once (`POST api.wit.ai/synthesize`, a clean voice such as Rebecca) and stores a ~50 KB MP3 per step in Storage. The viewer gets a "Read aloud" button with pause/stop. Text only, so no user media goes to Wit. **Verify:** audio plays for every step of a seed guide; a missing MP3 hides the button.
 - [ ] **T17 Voice guides (first after the core loop; replaces T7 as top stretch).**
@@ -84,15 +84,17 @@ flowchart LR
   - (d) Create flow: "Talk it through" option, record/upload, consent, style picker with the 6 stored samples (`public/styles/`), progress, blocked-reason screen, review, publish.
   - (e) Viewer: illustration in place of the clip, "Illustration by AI" label, no "I'm stuck" button.
   - **Verify:** one real voice guide published end to end; a staged harmful and a gibberish recording are both blocked with nothing in the DB or Storage.
+- [ ] **T18 AI-enhanced step images for video guides (after T17; reuses its image code).** Optional "Enhance with AI" checkbox at upload. Per step: real keyframe → Muse Image edit (same scene, better light/sharpness) → highlight edit. Store as `{idx}-enhanced.jpg` / `{idx}-enhanced-focus.jpg`; viewer shows "Enhanced by AI" + "View original frame"; checks keep using the real keyframe. **Verify:** on a dim/blurry seed clip the enhanced image shows the same object and parts (by eye, logged); the check route never reads an enhanced path (unit test).
 - [ ] **T7 Where am I?** Learner photo + step keyframes → `{step, reason}` → jump to step.
 
 ## Cut order if behind
 
 1. Where am I? (T7, stretch only)
-2. Voice guides (T17) if the core loop isn't solid by end of Day 3
-3. Gallery search and filters
-4. Creating guides on a phone (desktop Chrome is the supported creator path)
-5. Step editing in review (publish as generated)
-6. Fourth seed guide
+2. AI-enhanced video images (T18)
+3. Voice guides (T17) if the core loop isn't solid by end of Day 3
+4. Gallery search and filters
+5. Creating guides on a phone (desktop Chrome is the supported creator path)
+6. Step editing in review (publish as generated)
+7. Fourth seed guide
 
 Never cut: real model calls, consent screens, honest failure states, a deployed live build.

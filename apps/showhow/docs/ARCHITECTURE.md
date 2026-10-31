@@ -52,15 +52,15 @@ usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate ca
 
 | Route | Auth | Does |
 |---|---|---|
-| `POST /api/check` | rate limit | `{guide, step, photo(base64 ≤1.5 MB), question?, mode:'stuck'|'where'}` → Spark verdict → SAM on learner photo if `differs` → gated result |
-| `POST /api/guides` | access code | create draft, return signed upload URLs |
-| `POST /api/guides/:id/steps` | access code | Transcribe WAV → Spark (video + transcript) → validated steps saved |
-| `POST /api/guides/:id/outlines` | access code | SAM per keyframe with `key_part` → outlines saved |
-| `POST /api/guides/:id/publish` | access code | save creator edits, set `published` |
+| `POST /api/check` | caps | `{guide, step, photo(base64 ≤1.5 MB), question?, mode:'stuck'|'where'}` → Spark verdict → SAM on learner photo if `differs` → gated result |
+| `POST /api/guides` | access code + caps | create draft, return signed upload URLs for `video.mp4` + `audio.wav` |
+| `POST /api/steps` `{guideId}` | access code | Transcribe WAV → Spark (video + transcript) → validated steps saved |
+| `POST /api/outlines` `{guideId}` | access code | SAM per keyframe with `key_part` → outlines saved |
+| `POST /api/publish` `{guideId, edits}` | access code | save creator edits, set `published` |
 | `POST /api/voice-guides` | access code | WAV (≤2 min, single request) → Transcribe → hard-rule gate → Spark review gate (fail closed) → steps → draft saved only if both gates pass |
-| `POST /api/voice-guides/:id/images` | access code | Muse Image: base image in the chosen style → one edit per step (base as reference) → one highlight edit per step → `media/{guide}/{idx}.jpg` + `{idx}-focus.jpg` |
+| `POST /api/voice-images` `{guideId}` | access code | Muse Image: base image in the chosen style → one edit per step (base as reference) → one highlight edit per step → `media/{guide}/{idx}.jpg` + `{idx}-focus.jpg` |
 
-Each route does one model stage so it stays within serverless time limits, and the browser drives the sequence and shows progress. A failure at any stage sets `status='failed'` with a plain `error` the creator sees, plus Retry.
+Routes are flat (`/api/<name>`, ids in the body) so they map 1:1 to files in `api/`, locally and on Vercel. Each route does one model stage so it stays within serverless time limits, and the browser drives the sequence and shows progress. A failure at any stage sets `status='failed'` with a plain `error` the creator sees, plus Retry.
 
 ## 4. Large video handling
 
