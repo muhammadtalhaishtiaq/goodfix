@@ -108,3 +108,12 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Fixture guides show a visible `TEST FIXTURE` tag and a "no video yet" placeholder; the fixture check returns a labelled non-result. No network calls exist yet.
 - Tests (8/8): geometry validation, render test, and stuck-dialog consent tests (nothing sent before Send; a new photo needs a new approval; an unclear verdict draws no outline). Lint, typecheck and build green.
 - Manual check: headless Chrome screenshots of the production build at 1366 px and 500 px (Chrome's minimum headless width) show the layout intact with no horizontal overflow.
+
+## 2026-10-30 — T0 smoke test against the live Meta API (synthetic media only)
+
+- Talha added the Meta key to `apps/showhow/.env.local` (git-ignored; the committed `.env.example` was restored to placeholders after a rename; nothing secret was committed).
+- Added `src/lib/sam.ts` (SAM box parser + `bestOutline` ambiguity rule, 7 tests) and `src/lib/verdict.ts` (fixed prompt, zod schema exported as JSON Schema, parse + gate, 7 tests); 22 tests total green.
+- `scripts/spike-check.ts` run on an ffmpeg test card: Muse Spark (`muse-spark-1.3`, chat completions, 2 base64 images, `json_schema`) gave right → match, upside-down → differs, blurred → unclear (3/3), 4.9–9.5 s each. SAM 3.1 returned zero boxes for "test card" (the card fills the frame), ~1 s.
+- SAM probe on a built-in macOS photo (Parrot.heic → JPEG ≤1600 px, prompt "parrot"): HTTP 200, one box `x1=0;y1=176;x2=1362;y2=1599;w=1600;h=1600;c=0.973`, text at `output[0].content[0].text`. Matches our parser.
+- Finding: Meta responses default to `"store": true`. All requests now send `store: false`, which is accepted with unchanged results; ARCHITECTURE §5 updated.
+- Next: Talha's staged photo set for the real accuracy run; T0b pipeline spike.

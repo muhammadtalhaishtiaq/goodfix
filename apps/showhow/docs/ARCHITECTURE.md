@@ -74,6 +74,7 @@ Each route does one model stage so it stays within serverless time limits, and t
 - **Meta Terms §10.1(i):** fixed prompts, an allowlisted model set, and no prompt passthrough, so the app is a single-purpose Integrated Product, not a gateway. Creating guides requires an access code. Going public needs the dated decision after the Discord answer.
 - **Caps:** `usage` table counters. Per-day global caps on checks and guide builds; per-IP throttle on `/api/check`. When a cap is hit: a clear "daily demo limit reached" message.
 - **Learner photos:** sent only after the user approves the preview; processed in memory; never stored or logged.
+- **Meta request storage:** Meta's API stores responses by default (`"store": true` observed 2026-10-30). Every request sets `store: false`.
 - **Logs:** route, status, timing and model id only; never bodies, photos, transcripts or keys.
 - **Model output:** zod-parsed, rendered as text, outline coordinates bounds-checked against frame size.
 - **Age:** 18+ checkbox on the first check and on creating a guide (Meta Terms).
