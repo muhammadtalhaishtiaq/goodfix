@@ -32,7 +32,7 @@ flowchart LR
   - (d) Spark with an MP4: inline vs URL vs Files API, limits.
   - **Verify:** request/response shapes and measured latency recorded in the log; open questions 1–2 in PRD §11 answered or re-planned.
 - [ ] **T0b Shrink spike.** Mediabunny converts a real ≥500 MB iPhone clip to ≤50 MB 720p MP4 and a WAV in the browser. **Verify:** time and output size logged for at least one desktop browser.
-- [ ] **T1 Foundation.**
+- [x] **T1 Foundation.**
   - Install deps (react, zod, mediabunny, @supabase/supabase-js; dev: vitest, @testing-library/react, jsdom) and commit the lockfile.
   - Add `.env.example` with placeholder names only.
   - **Verify:** `npm ci && npm run lint && npm run typecheck && npm test && npm run build` all green with one render test.

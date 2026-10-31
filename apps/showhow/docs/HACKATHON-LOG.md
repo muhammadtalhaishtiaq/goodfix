@@ -85,3 +85,9 @@ Reviewed (independent subagent following `.claude/agents/hackathon-red-team.md`;
 - Hosting: a judge-access-code build with fixed prompts, allowlisted models, server-only key, per-code rate limit, server-side spend cap, and an 18+ check is likely an Integrated Product rather than a gateway under Terms §10.1(i) (medium confidence; carve-out text paraphrased, not quoted). Build privately now; ask Meta in Discord #office-hours; record a new dated decision before exposing it.
 - Unknowns: Spark video size/duration limits, multi-video input, function calling, whether SAM accepts data URLs, console spend-limit control.
 - Status: recommendation only; awaiting Talha's direction decision before any DECISIONS entry.
+
+## 2026-10-30 — T1 foundation done
+
+- Installed react 19.3, zod 4.6, mediabunny 1.65, @supabase/supabase-js 2.118; dev: vitest 5.0, @testing-library/react 16.3, user-event 14.6, jsdom 30.1. `package-lock.json` committed. npm left the optional `fsevents` install script unapproved (macOS file watcher only).
+- Added `.env.example` (placeholders; server keys documented as never `VITE_*`), jsdom test env, and a render test written first (failed, then passed).
+- Verified on Node 22.22.3 / npm 11.17.0: `npm ci` clean (0 vulnerabilities), `npm run lint`, `npm run typecheck`, `npm test` (1/1), `npm run build` (221 kB JS, 69 kB gzip) all green.

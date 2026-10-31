@@ -4,9 +4,9 @@ export function App() {
   return (
     <main className="page-shell">
       <header className="topbar">
-        <a className="brand" href="#home" aria-label="Goodfix home">
-          <span className="brand-mark" aria-hidden="true">g</span>
-          <span>goodfix</span>
+        <a className="brand" href="#home" aria-label="Showhow home">
+          <span className="brand-mark" aria-hidden="true">s</span>
+          <span>showhow</span>
         </a>
         <span className="mode-badge"><span aria-hidden="true" /> Local preview</span>
       </header>
@@ -15,8 +15,8 @@ export function App() {
         <p className="eyebrow">A small fix, made clearer</p>
         <h1 id="welcome-title">Let’s figure out<br />one next step.</h1>
         <p className="intro">
-          Start with a loose cupboard handle. Goodfix will keep the evidence
-          and instructions together as you work.
+          Follow a guide one step at a time. When you get stuck, Showhow
+          will check a photo of your work against the creator's.
         </p>
 
         <div className="start-panel">
@@ -37,7 +37,7 @@ export function App() {
       </section>
 
       <footer className="page-footer">
-        Goodfix is a prototype for one staged, low-risk cupboard-handle task.
+        Showhow foundation build. The full app is being built from the prototype.
       </footer>
     </main>
   )
