@@ -1,7 +1,0 @@
-interface:
-  display_name: "ELI5 Picture Explainer"
-  short_description: "Explain simply with a visual HTML artifact"
-  brand_color: "#2C7A73"
-  default_prompt: "Use $eli5 to explain this simply with a visual HTML artifact."
-policy:
-  allow_implicit_invocation: true

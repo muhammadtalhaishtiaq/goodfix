@@ -1,6 +1,6 @@
 # Goodfix Web Architecture
 
-**Status:** proposed architecture for the hackathon project, 2026-10-29. No application code or provider integration is implemented yet.
+**Status:** proposed architecture for the hackathon project, 2026-10-29. A minimal React + TypeScript + Vite shell exists; the upload flow, case state, backend, CI, Meta calls, and persistent case storage are not implemented yet.
 
 ## 1. Stack
 
@@ -38,7 +38,7 @@ Browser renderer
 ## 3. Media and model flow
 
 1. The browser reads a selected file locally and creates a preview. Selecting a file does not make a network request.
-2. The user sees the exact image/video, text prompt, model destination, and purpose for the specific request. Cancel means no network call.
+2. The user sees the exact image/video, text prompt, model, purpose, and all recipients/processors (Goodfix server/host and Meta), including retention where known, for the specific request. Cancel means no network call.
 3. After approval, send the approved media through the authorized integration. Muse Spark's video path uses the Files API (`purpose: user_data`) and a `file_id` in a Responses API request; public URLs are only appropriate for already-hosted media, not a default upload strategy.
 4. Ask Muse Spark for a limited, structured observation and, when warranted, one clarification or one safe step proposal. It returns text, not a ready-made annotated frame.
 5. Ask SAM 3.1 to track a concrete named object (for example, “cupboard handle”) in the approved clip. Parse real streaming output with Meta's documented SAM parser; align each returned mask/box to its source frame/timestamp.
@@ -50,6 +50,8 @@ Browser renderer
 ## 4. API access, privacy, and deployment gate
 
 Meta's current terms grant rights to build Integrated Products for end users and separately restrict providing API access via a proxy/gateway without express written authorization. It is not safe to assume an unauthenticated website using an app-owned server key is permitted. Obtain written guidance on the exact architecture before implementing or deploying the live boundary. Until then, UI work may use clearly labeled local fixtures only; no fake success state can be presented as a real integration.
+
+On a no-login route, a browser consent control cannot stop a direct caller from bypassing the UI; client-provided consent metadata is not proof of human approval. Name the app server/host as a recipient whenever it handles media, and keep live routing disabled/private unless Meta authorization and an explicit abuse/consent risk decision both pass.
 
 Never expose an API key in browser code. Request-level consent is required for every media transfer. Use Standard service mode for personal home media; the user's home footage and faces may be sensitive. Any persisted browser data must be user-deletable. Provider file deletion and app-side evidence deletion are separate actions and need honest status.
 
@@ -71,3 +73,13 @@ Never expose an API key in browser code. Request-level consent is required for e
 | Unsafe or out-of-scope repair | Deterministic stop screen; no model-proposed workaround. |
 | Meta Files API delete fails | Show unresolved deletion status and offer a retry. Do not claim remote deletion succeeded. |
 | Browser refresh/close | Until IndexedDB persistence is implemented and verified, warn that the local case is session-only. |
+
+## 7. Secure delivery and test boundaries
+
+- Use the phased gates in [`TASKS.md`](TASKS.md), [`SECURITY-PLAN.md`](SECURITY-PLAN.md), and [`TEST-PLAN.md`](TEST-PLAN.md). The first executable app should use deterministic fixtures only.
+- The browser is an untrusted client. It can preview and collect consent, but the server must independently validate its allowlisted model, request shape, content limits, consent binding, and abuse limits before any approved provider request.
+- On a public no-login route, a client-supplied consent record cannot prove that a human clicked “approve”; direct callers can bypass the UI. Treat consent as informed-user UX, not authentication. Keep live routing disabled/private unless the written Meta authorization and abuse/consent risk review both pass.
+- A provider credential must exist only in a server runtime secret store after route authorization. Vite client-exposed variables are bundled, so `VITE_*` must never contain credentials. Check production bundles and source maps as a release gate.
+- CI uses fake data and no provider credentials. Private preview is fixture-only. Keep preview and production secrets isolated; do not place production secrets in untrusted PR or fork workflows.
+- Hosting remains undecided. Compare Vercel, Render, and Railway only after the approved request flow is concrete. Verify current file limits, execution duration, streaming, secret/build behavior, logging, regional handling, and rollback in each provider's official documentation before selecting one.
+- Release health includes rate-limit/abuse metrics, upstream latency/error status, cleanup failures, and budget alerts without recording user media, raw prompts, or provider keys.

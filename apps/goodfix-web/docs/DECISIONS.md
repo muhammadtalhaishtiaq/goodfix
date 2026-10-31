@@ -14,3 +14,11 @@ Locked decisions for the active hackathon web app. Preserve history; add a newer
 - Review conditions: preserve real outputs and stop behavior; do not replace failed live calls with simulated success. Revisit scope if the authorization gate, model access, or task safety gate fails.
 
 This decision supersedes the Vault-specific 2026-10-28 hackathon platform decision only. It does not retire the separate Vault mobile product archived under `archive/vault-native/`.
+
+## 2026-10-29 — Build and release through gated phases
+
+- Begin with a local web shell, CI checks, deterministic fixtures, and consent/evidence logic. Add Meta integrations only after the existing written-authorization and account/model gates pass.
+- Add test coverage by risk layer from unit and component checks through adapter contracts, browser journeys, security checks, and isolated staging verification. Record evidence in `TEST-PLAN.md`.
+- Keep credentials server-only. Never place a provider key in a Vite-exposed variable, browser bundle, source map, test fixture containing a real value, or Git history. Add secret scanning before implementation work.
+- Evaluate Vercel, Render, and Railway against the approved architecture and tested file/runtime limits before choosing a host. Start with a private fixture-only preview that has no provider credentials; production/live model access is a separate gate.
+- Revisit if Meta does not authorize the no-login route, the live API/file lifecycle cannot be secured, or time does not permit the required verification. Do not claim a deployment is safe because it works in a demo.

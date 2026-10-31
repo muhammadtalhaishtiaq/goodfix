@@ -9,4 +9,4 @@ Explain the requested topic to someone with no background knowledge. Deliver a s
 
 For a project-status explanation, read the current source-of-truth documents and inspect implementation evidence. Visually distinguish **already working**, **planned**, and **blocked or unverified**. Use absolute dates, label stale status clearly, and never make an aspiration look shipped.
 
-Use familiar comparisons only when they preserve the important facts. Keep technical terms out of the main path; add a short optional “grown-up details” note only when needed for accuracy. Make the HTML responsive, accessible, self-contained, and usable without scripts or external services.
+Use familiar comparisons only when they preserve the important facts. Keep technical terms out of the main path; add a short optional "grown-up details" note only when needed for accuracy. Make the HTML responsive, accessible, self-contained, and usable without scripts or external services.

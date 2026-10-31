@@ -38,7 +38,7 @@ The app must not imply that a video model is a qualified tradesperson. The produ
 - **Phone:** use the same Workbench information structure, but adapt it to the Guided layout: large current visual and one step, numbered evidence strip, questions below or in a compact drawer. Do not squeeze three columns onto a narrow screen.
 - **Conversation-first layout:** keep as a comparison concept; it is not the default build.
 
-The interactive comparison is in [`design/goodfix-layout-comparison.html`](design/goodfix-layout-comparison.html). It is a pre-build prototype, not evidence of implemented hackathon functionality.
+The interactive comparison is in [`design/goodfix-layout-comparison.html`](../design/goodfix-layout-comparison.html). It is a pre-build prototype, not evidence of implemented hackathon functionality.
 
 ## 4. User flow storyboard
 
@@ -46,7 +46,7 @@ The interactive comparison is in [`design/goodfix-layout-comparison.html`](desig
 
 1. The user opens the page and sees the supported example and a single “Show the problem” action.
 2. The user selects or records a short clip/photo. The page shows a local preview and lets them replace or cancel it.
-3. A review panel names the exact file, accompanying text, purpose, and destination. No call starts until the user approves that request.
+3. A review panel names the exact file, accompanying text, purpose, model, and every recipient/processor, including the Goodfix server/host and Meta. It states whether each party receives or retains data. No call starts until the user approves that request.
 
 ### B. Understand and clarify
 
@@ -80,7 +80,7 @@ If the user or model indicates electrical wiring, gas, fire, a major leak, struc
 
 ## 7. Privacy, API, and account rules
 
-- No media leaves the browser before an affirmative approval of that specific request. A saved model preference is not consent for later uploads.
+- No media leaves the browser before an affirmative approval of that specific request. The preview names the Goodfix server/host and Meta as recipients/processors, the purpose, model, and any retention. A saved model preference is not consent for later uploads.
 - Never put the Meta API key in JavaScript shipped to the browser, source maps, Git, screenshots, logs, or client build output.
 - A server-side Meta integration for a no-login public product is **not approved for implementation or public use yet**. Meta's terms allow Integrated Products but restrict providing API access through a proxy/gateway without express written authorization. Get written guidance for this exact product and architecture before routing users' requests through an app-operated endpoint.
 - Meta's API Terms require end users to be at least 18. This product is adult-only if those services are used.
@@ -113,12 +113,20 @@ The participant guide requires a public repository and a three-minute demo video
 ## 10. Open gates before live implementation
 
 1. Obtain written confirmation from Meta about the server-side integration path for this no-login public Integrated Product.
-2. Confirm account access and real `muse-spark-1.3` and `sam-3.1` calls with synthetic, non-personal media.
+2. Confirm account access and real `muse-spark-1.3` and `sam-3.1` calls with synthetic, non-personal media. Require an 18+ check before any provider test that uses personal media.
 3. Confirm the exact video payload size/format and SAM streaming parser against official docs and account access. Current docs support MP4 for Muse Spark video and SAM video; do not assume every mobile video codec works.
 4. Capture and evaluate several staged cupboard-handle clips. Confirm safe wording and failure/stop handling with a knowledgeable human before presenting procedural steps.
 5. Select a hosting/deployment path only after the API authorization gate and privacy requirements are clear.
 
-## 11. Sources checked 2026-10-29
+## 11. Build, test, and release gates
+
+- Build in the phases in [`TASKS.md`](TASKS.md), with test evidence captured per phase in [`TEST-PLAN.md`](TEST-PLAN.md). A phase is not complete because the screen appears to work; its exit checks must pass.
+- Follow [`SECURITY-PLAN.md`](SECURITY-PLAN.md) for secrets, media consent, abuse controls, deployment isolation, and incident response. Do not promise perfect or complete security.
+- Start with deterministic local fixtures and automated quality/security checks. No real Meta credentials or user media in tests, previews, logs, or test artifacts.
+- Deploy a private fixture-only preview before considering an isolated staging integration. Public live service requires the written Meta authorization and all P7 exit gates; deployment is not implied by having Vercel, Render, or Railway access.
+- Keep the GitHub repository private until Talha explicitly authorizes a visibility change. Before any public change, inspect the complete Git history because previous Vault commits remain in history.
+
+## 12. Sources checked 2026-10-29
 
 - [Meta Global AI Developer Hackathon participant guide](https://cerebralvalley.ai/e/meta-ai-developer-hackathon/details)
 - [Muse Spark video and audio understanding](https://dev.meta.ai/docs/video-understanding)
