@@ -101,3 +101,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Confirmed from docs (per reviewer): Spark accepts up to 50 images and schema-constrained JSON; SAM accepts base64 data URLs; 3,000 RPM; Vercel Hobby 300 s / 4.5 MB body; Supabase free 50 MB/file, 1 GB, 5 GB egress, pauses after 1 week idle.
 - Plan reordered: day 1 is the check-accuracy spike on staged photos (highest-risk assumption), then the pipeline spike; Where am I? moved to stretch; draft demo on day 4; submit ~15:00 ET.
 - Still unknown: Spark video duration/size limits, SAM mask mapping, a Meta spend-limit control.
+
+## 2026-10-30 — T2 viewer + stuck dialog (fixture mode) done
+
+- Ported the prototype's design tokens and layout to React: gallery (search, categories), guide viewer (step list, single-video segment loop, SAM box overlay, full-video timeline, instruction, creator tip, done/next), stuck dialog (choose → payload preview → working → verdict / error), and a create page that says plainly it isn't connected yet.
+- Fixture guides show a visible `TEST FIXTURE` tag and a "no video yet" placeholder; the fixture check returns a labelled non-result. No network calls exist yet.
+- Tests (8/8): geometry validation, render test, and stuck-dialog consent tests (nothing sent before Send; a new photo needs a new approval; an unclear verdict draws no outline). Lint, typecheck and build green.
+- Manual check: headless Chrome screenshots of the production build at 1366 px and 500 px (Chrome's minimum headless width) show the layout intact with no horizontal overflow.

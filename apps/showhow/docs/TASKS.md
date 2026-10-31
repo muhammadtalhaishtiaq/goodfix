@@ -37,7 +37,7 @@ flowchart LR
   - WAV → Voice Transcribe `ENDPOINTING` turns;
   - Spark with `video_url` + numbered turns → steps by turn index.
   - **Verify:** times, sizes and step quality logged; PRD §11 unknowns updated.
-- [ ] **T2 Viewer + stuck dialog (fixture mode).** Port the prototype's guide viewer (segment loop, box overlay, steps, timeline) and stuck dialog (preview → working → verdict). Gallery and create screens stay minimal. **Verify:** component tests (no send before approval, new photo needs re-approval, unclear draws no outline); manual check at 390 px and 1366 px.
+- [x] **T2 Viewer + stuck dialog (fixture mode).** Port the prototype's guide viewer (segment loop, box overlay, steps, timeline) and stuck dialog (preview → working → verdict). Gallery and create screens stay minimal. **Verify:** component tests (no send before approval, new photo needs re-approval, unclear draws no outline); manual check at 390 px and 1366 px.
 
 ## Day 2: 2026-11-01. Data + creator pipeline on desktop Chrome
 
