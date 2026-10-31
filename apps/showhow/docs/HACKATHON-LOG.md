@@ -117,3 +117,12 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - SAM probe on a built-in macOS photo (Parrot.heic → JPEG ≤1600 px, prompt "parrot"): HTTP 200, one box `x1=0;y1=176;x2=1362;y2=1599;w=1600;h=1600;c=0.973`, text at `output[0].content[0].text`. Matches our parser.
 - Finding: Meta responses default to `"store": true`. All requests now send `store: false`, which is accepted with unchanged results; ARCHITECTURE §5 updated.
 - Next: Talha's staged photo set for the real accuracy run; T0b pipeline spike.
+
+## 2026-10-30 — T0b pipeline spike on live APIs (synthetic narrated video)
+
+- Added `src/lib/shrink.ts` (Mediabunny on-device shrink + WAV, `planShrink`/`boxFor` tested) and `src/lib/steps.ts` (steps schema, prompt, `validateSteps`: turn indices → Transcribe timestamps; overlap/range checks; tips kept only if they are a real quote). 29 tests green.
+- `scripts/spike-pipeline.ts` on a 34 s 1080p test-card video narrated by macOS `say` (no personal media). ffmpeg stood in for the browser shrink here (3.5 s, 0.9 MB → 4.2 MB MP4 + 1.0 MB WAV).
+- Voice Transcribe (`muse-voice-transcribe-1.0`, multipart, `ENDPOINTING`): 7 turns with accurate start/end ms, 5.5 s.
+- Muse Spark (`/v1/responses`, `input_video` as a base64 data URL, `text.format` json_schema, `store:false`): 4 valid steps in 15.6 s. It skipped the greeting and sign-off; titles were sensible; the tip quote passed the grounding check.
+- Not yet done for T0b: in-browser Mediabunny timing on a real ≥100 MB phone clip, and Spark by public `video_url` (needs Supabase).
+- Model list checked (dev.meta.ai/docs/models): Meta offers no text-to-speech model.
