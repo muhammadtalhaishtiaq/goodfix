@@ -80,14 +80,15 @@ for (const task of readdirSync(dir).filter(t => !t.startsWith('_') && !t.startsW
         row.got = v?.status ?? 'INVALID'
         row.message = v?.message ?? raw.slice(0, 200)
         if (v?.status === 'differs') {
-          row.noun = v.differences[0].sam_noun
+          const noun = v.differences[0].sam_noun
+          row.noun = noun
           t = Date.now()
-          row.samRaw = await sam(img, row.noun)
+          const samText = await sam(img, noun)
           row.samMs = Date.now() - t
-          const boxes = parseSamBoxes(row.samRaw)
+          const boxes = parseSamBoxes(samText)
           row.boxes = boxes.length
           row.best = bestOutline(boxes)
-          row.samRaw = row.samRaw.replace(/data=[^|]*/g, 'data=…') // keep the file small
+          row.samRaw = samText.replace(/data=[^|]*/g, 'data=…') // keep the file small
         }
       } catch (e) {
         row.error = String(e instanceof Error ? e.message : e)

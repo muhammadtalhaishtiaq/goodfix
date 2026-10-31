@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: read-only token, no secrets anywhere in CI.
+permissions:
+  contents: read
+
+jobs:
+  showhow:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/showhow
+    env:
+      # Fake canaries: the bundle scan fails if any of these values reach dist/.
+      META_API_KEY: ci-canary-meta-3f9a1c7e
+      SUPABASE_SERVICE_ROLE_KEY: ci-canary-service-7b2e4d9a
+      WIT_TOKEN: ci-canary-wit-9c1d2e6f
+      CREATE_ACCESS_CODES: ci-canary-code-5a8b3c1d
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/showhow/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: No secrets in the browser bundle
+        run: node scripts/scan-bundle.ts
+      - run: npm audit --audit-level=high --omit=dev
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # scan the whole history
+          persist-credentials: false
+      - name: gitleaks (pinned, checksum-verified)
+        run: |
+          V=8.30.1
+          curl -sSfL -o gl.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_linux_x64.tar.gz"
+          curl -sSfL -o sums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_checksums.txt"
+          grep " gitleaks_${V}_linux_x64.tar.gz" sums.txt | sed "s/gitleaks_${V}_linux_x64.tar.gz/gl.tgz/" | sha256sum -c -
+          tar xzf gl.tgz gitleaks
+          ./gitleaks git . --redact --no-banner

@@ -42,7 +42,7 @@ flowchart LR
 ## Day 2: 2026-11-01. Data + creator pipeline on desktop Chrome
 
 - [ ] **T3 Supabase.** `supabase/schema.sql` (tables, RLS, public buckets with UUID paths) applied; viewer reads published guides through the anon key. **Verify:** RLS test (anon can't read drafts or write); the viewer renders a DB guide.
-- [ ] **T4 API skeleton + CI.**
+- [x] **T4 API skeleton + CI.** *(Done 2026-10-31. Every CI step passes locally; the first GitHub run happens on the next push.)*
   - Vercel `/api` shared handler: zod body, access code, usage caps, redacted logs.
   - GitHub Actions: lint, typecheck, test, build, gitleaks, bundle secret scan.
   - **Verify:** unit tests for the access code, caps and redaction; CI green; a seeded fake canary is caught.
