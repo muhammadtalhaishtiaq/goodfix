@@ -58,7 +58,7 @@ usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate ca
 | `POST /api/guides/:id/outlines` | access code | SAM per keyframe with `key_part` → outlines saved |
 | `POST /api/guides/:id/publish` | access code | save creator edits, set `published` |
 | `POST /api/voice-guides` | access code | WAV (≤2 min, single request) → Transcribe → hard-rule gate → Spark review gate (fail closed) → steps → draft saved only if both gates pass |
-| `POST /api/voice-guides/:id/images` | access code | Muse Image: step 1 in the chosen style, later steps by editing the previous image → `media/{guide}/{idx}.jpg` |
+| `POST /api/voice-guides/:id/images` | access code | Muse Image: base image in the chosen style → one edit per step (base as reference) → one highlight edit per step → `media/{guide}/{idx}.jpg` + `{idx}-focus.jpg` |
 
 Each route does one model stage so it stays within serverless time limits, and the browser drives the sequence and shows progress. A failure at any stage sets `status='failed'` with a plain `error` the creator sees, plus Retry.
 

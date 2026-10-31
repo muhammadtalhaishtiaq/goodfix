@@ -147,3 +147,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Same step ("pull the water tank out of an air purifier") in 6 styles: realistic photo, line art, flat colour, blueprint, watercolour, 3D clay. All clean and on-topic; kept as style-picker samples in `public/styles/`.
 - Consistency: 3 consecutive steps generated separately in the realistic style showed **three different purifier designs**. Next: test editing the previous step's image (T17a).
 - Spec, architecture, schema, tasks, decisions and CLAUDE.md updated for voice guides (T17).
+
+## 2026-10-31 — Voice-guide image consistency + focus highlight solved
+
+- A web answer suggested an `edit_type: "composition"` field; Meta rejected it with 400 "`edit_type` is not a supported image edit field". Only documented fields are used.
+- `/v1/images/edits` with a base64 reference image: **B (every step edited from one base image)** kept the identical purifier, angle and background across 3 steps; **A (chained, each step from the previous)** was also consistent but drifted more. 7.7–17.9 s per image. Step content can still be wrong (step 3 drew the tank still attached while filling), so creator review + regenerate stay required.
+- SAM 3.1 on flat illustrations: multi-word or tiny targets ("water tank", "latch") → no boxes; single common words work ("tank" 0.69, "container" 0.76, "tap" 0.94, "faucet" 0.96). Prompts in `steps.ts` and `verdict.ts` now ask for ONE simple common word for `sam_noun` (this applies to video guides too).
+- Muse Image highlight edit ("keep the image exactly the same, only add an orange dashed circle around …") drew an accurate circle on the latch and on the tank, ~10–11 s, rest of the image unchanged. Chosen design: store plain + highlighted per step; "Show part" toggles them. All images labelled "Illustration by AI".

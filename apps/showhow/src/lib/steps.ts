@@ -25,7 +25,7 @@ export function stepsPrompt(turns: Turn[]): string {
     'Split the task into 2-8 steps in order. Each step covers consecutive turns (first_turn..last_turn); steps must not overlap. Skip greetings and sign-offs.',
     'title: imperative, at most 6 words. instruction: 1-2 sentences using only what the creator says or visibly does in those turns. Never add advice they did not give.',
     'tip_quote: an exact quote from those turns that is a useful tip, or "" if none.',
-    'key_part: the main object handled in the step. sam_noun: a 1-3 word concrete noun for it, with no positions or directions.',
+    'key_part: the main object handled in the step. sam_noun: ONE simple, common word for it (e.g. "tank", not "water tank"; "tap", not "faucet handle"), no positions or directions.',
   ].join('\n')
 }
 

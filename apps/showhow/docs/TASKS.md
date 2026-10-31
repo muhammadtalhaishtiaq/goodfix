@@ -78,7 +78,7 @@ flowchart LR
 
 - [ ] **T16 Read step aloud (Wit.ai TTS).** At publish, the server synthesizes each step's instruction once (`POST api.wit.ai/synthesize`, a clean voice such as Rebecca) and stores a ~50 KB MP3 per step in Storage. The viewer gets a "Read aloud" button with pause/stop. Text only, so no user media goes to Wit. **Verify:** audio plays for every step of a seed guide; a missing MP3 hides the button.
 - [ ] **T17 Voice guides (first after the core loop; replaces T7 as top stretch).**
-  - (a) Consistency spike: generate step 1, then edit it for steps 2–3 (Muse Image edit mode). **Verify:** the same object appears across steps, by eye, logged. If it fails, fall back to one consistent "hero" image + per-step crops/labels, or text-only steps.
+  - [x] (a) Consistency spike (2026-10-31): base image + one edit per step keeps the object identical; a highlight edit adds an orange focus circle on the key part. Logged.
   - (b) `src/lib/safety.ts` blocked-topics list + Spark review schema, test-first (harmful, gibberish, incomplete, valid, invalid JSON → blocked).
   - (c) `POST /api/voice-guides` (WAV ≤2 min in one request, gates, steps, draft) and `/images`.
   - (d) Create flow: "Talk it through" option, record/upload, consent, style picker with the 6 stored samples (`public/styles/`), progress, blocked-reason screen, review, publish.

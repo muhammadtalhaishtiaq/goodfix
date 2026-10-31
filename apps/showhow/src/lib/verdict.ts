@@ -26,7 +26,7 @@ export function verdictPrompt(stepTitle: string, instruction: string, question?:
     '- "unclear": image 2 is too blurry or dark, or does not show the area this step is about.',
     '- "match": image 2 matches the reference in everything that matters for this step.',
     '- "differs": something visible that matters for this step differs (wrong part, wrong way round, missing, wrong position). List up to 3 differences.',
-    'For each difference: "part" is a short human name; "sam_noun" is a 1-3 word concrete noun for that object as it appears in image 2, with no positions or directions; "note" says what differs.',
+    'For each difference: "part" is a short human name; "sam_noun" is ONE simple, common word for that object as it appears in image 2 (e.g. "tank", not "water tank"), no positions or directions; "note" says what differs.',
     '"message" is one or two plain sentences to the learner. Never give safety, medical or electrical advice.',
   ].filter(Boolean).join('\n')
 }

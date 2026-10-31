@@ -67,7 +67,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 3. **Gate layer 1, hard rules (code):** a blocked-topics list (weapons, violence or harming people/animals, self-harm, drugs, gas work, mains electrical work, fire/explosives, medical procedures, vehicle brakes/steering, hacking, illegal activity) checked on the transcript. Any hit → blocked.
 4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, missing[], reason}`. Not a how-to, incomplete, blocked, invalid output, error or timeout → **blocked (fail closed)**, with a plain reason and any missing steps listed. The creator can re-record.
 5. Passed → Muse Spark steps from the transcript turns (same `validateSteps` grounding as video) → the guide and steps are saved as a draft.
-6. Muse Image: step 1 is generated in the chosen style; later steps are produced by **editing the previous step's image**, so the object stays the same model (consistency is tested in T17's spike). Images go to Storage as `{guide}/{idx}.jpg`.
+6. Muse Image: one **base image** of the object in the chosen style, then every step is an **edit of that base image** (`/v1/images/edits`, base image as reference), which keeps the object identical across steps (verified 2026-10-31). A second edit per step adds an orange dashed highlight circle around the key part. Both versions are stored (`{guide}/{idx}.jpg`, `{idx}-focus.jpg`) and "Show part" switches between them.
 7. The creator reviews (regenerate one image, edit text) → publish. The badge reads "AI-checked: clear, complete and within safety rules", never "verified fix".
 
 **Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
@@ -162,4 +162,4 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
 4. **Seed guides (decided 2026-10-31):** change an air purifier's water, run a dishwasher, clean a coffee machine (appliance cleaning only; no food or drink-safety claims). Talha films these, plus staged right/wrong/blurry photos for 1–2 steps each.
 5. Final product name.
-6. Muse Image step-to-step consistency: separate generations drew three different purifiers (2026-10-31). Does editing the previous image keep the object the same? Tested first in T17.
+6. ~~Muse Image consistency~~ Resolved 2026-10-31: anchored edits from one base image keep the object identical. Step *content* can still be wrong (e.g. tank still attached while filling), so the creator reviews and can regenerate any image.
