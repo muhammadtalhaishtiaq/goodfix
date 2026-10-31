@@ -126,3 +126,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Muse Spark (`/v1/responses`, `input_video` as a base64 data URL, `text.format` json_schema, `store:false`): 4 valid steps in 15.6 s. It skipped the greeting and sign-off; titles were sensible; the tip quote passed the grounding check.
 - Not yet done for T0b: in-browser Mediabunny timing on a real ≥100 MB phone clip, and Spark by public `video_url` (needs Supabase).
 - Model list checked (dev.meta.ai/docs/models): Meta offers no text-to-speech model.
+
+## 2026-10-30 — Wit.ai text-to-speech checked; Live Video API and video generation ruled out
+
+- Talha created a Wit.ai app; `WIT_TOKEN` is in `.env.local`. `GET /voices` → 200: en_US 23, en_CA 2, en_GB 5 voices (e.g. Rebecca, Charlie, Cooper, Remi). `POST /synthesize?v=20240304` (`voice: Rebecca`, `Accept: audio/mpeg`) → 200, 51 KB MP3 for one step sentence in 3.1 s; played locally.
+- Planned as stretch T16 "Read step aloud": synthesized once at publish and cached in Storage. Wit.ai is Meta-owned but not one of the hackathon's listed Model API models, so present it as an add-on.
+- Facebook Live Video API (developers.facebook.com/documentation/live-video-api): one-way RTMPS broadcast to a profile/Page; needs Facebook Login + `publish_video`, an account ≥60 days old with ≥100 followers; no AI and no way to receive a user's camera. Not used; at most a vision-slide idea (go live → guide).
+- Video generation: the Meta Model API has none (Muse Image = stills; the video-understanding page is input-only). Not used; seed guides will be real filmed videos.

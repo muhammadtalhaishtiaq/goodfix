@@ -76,6 +76,7 @@ flowchart LR
 
 ## Stretch (only if everything above is green)
 
+- [ ] **T16 Read step aloud (Wit.ai TTS).** At publish, the server synthesizes each step's instruction once (`POST api.wit.ai/synthesize`, a clean voice such as Rebecca) and stores a ~50 KB MP3 per step in Storage. The viewer gets a "Read aloud" button with pause/stop. Text only, so no user media goes to Wit. **Verify:** audio plays for every step of a seed guide; a missing MP3 hides the button.
 - [ ] **T7 Where am I?** Learner photo + step keyframes → `{step, reason}` → jump to step.
 
 ## Cut order if behind
