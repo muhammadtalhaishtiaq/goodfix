@@ -22,3 +22,16 @@ This decision supersedes the Vault-specific 2026-10-28 hackathon platform decisi
 - Keep credentials server-only. Never place a provider key in a Vite-exposed variable, browser bundle, source map, test fixture containing a real value, or Git history. Add secret scanning before implementation work.
 - Evaluate Vercel, Render, and Railway against the approved architecture and tested file/runtime limits before choosing a host. Start with a private fixture-only preview that has no provider credentials; production/live model access is a separate gate.
 - Revisit if Meta does not authorize the no-login route, the live API/file lifecycle cannot be secured, or time does not permit the required verification. Do not claim a deployment is safe because it works in a demo.
+
+## 2026-10-30 — Pivot to Showhow: video guides that check your work
+
+Supersedes the 2026-10-29 Goodfix product decision (single cupboard-handle repair flow). Approved by Talha 2026-10-30.
+
+- **Product:** a gallery of step-by-step guides generated from creators' narrated videos (Voice Transcribe → Muse Spark step split → SAM 3.1 key-part outlines). Learners follow along and, only when stuck, send one photo that Muse Spark compares with the creator's step keyframe; SAM 3.1 outlines the differing part on the learner's photo. "Where am I?" locates the learner's step from a photo.
+- **Why:** the red-team review (HACKATHON-LOG 2026-10-30) scored the narrow repair idea ~5–7/10 with an Impact ceiling and anti-project risk ("Simple Image Analyzer"). Showhow has everyday multi-domain use (training, family know-how, product setup), four distinct Meta model roles, and a demo-able "it caught my mistake" moment.
+- **Folder/name:** app moved to `apps/showhow/`; "Showhow" is a working title.
+- **Stack:** React + TS + Vite; Vercel Hobby serverless `/api` (holds secrets); Supabase free (Postgres + Storage); Mediabunny in-browser shrink to ≤50 MB 720p MP4 (accept ≤2 GB / ≤5 min input); zod; Vitest. All free tiers.
+- **Access:** gallery and checks open without login; guide creation behind an access code; daily caps and per-IP throttle. Public URL exposure needs a further dated decision after asking Meta in #office-hours about Terms §10.1(i).
+- **Retained rules:** keys server-only; fresh preview + consent per learner photo; learner photos never stored; no fabricated outlines or fixture-as-live; 18+.
+- **Retired rules:** cupboard-only scope, repair stop rules, written-authorization blocker for all live calls (replaced by the access-code gate and the Discord question).
+- **Tests:** written test-first for risk-bearing logic (approved 2026-10-30).

@@ -1,7 +1,7 @@
-# Goodfix Web
+# Showhow
 
-Goodfix is the active Meta Global AI Developer Hackathon project in this repository. It explores a focused, video-guided workflow for troubleshooting one staged, visibly loose cupboard handle.
+Showhow is this repository's Meta Global AI Developer Hackathon entry. It turns a creator's narrated how-to video into a step-by-step guide that can check your work: stuck on a step, send one photo, and Meta's models compare it with the creator's step and outline what's different.
 
-The app, product docs, and design prototypes live in [`apps/goodfix-web/`](apps/goodfix-web/); specs are in [`apps/goodfix-web/docs/`](apps/goodfix-web/docs/). The upload flow, backend, and Meta integration are not implemented yet.
+The app, specs, and design prototype live in [`apps/showhow/`](apps/showhow/); specs are in [`apps/showhow/docs/`](apps/showhow/docs/).
 
 Start with [`CLAUDE.md`](CLAUDE.md) and [`STATUS.md`](STATUS.md). The previous Vault Expo/React Native product is preserved under [`archive/vault-native/`](archive/vault-native/) and is not part of this hackathon entry.

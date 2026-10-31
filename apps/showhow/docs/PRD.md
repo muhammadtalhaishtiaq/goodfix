@@ -1,0 +1,146 @@
+# Spec: Showhow
+
+**Working title:** Showhow (brand open) · **Status:** approved direction 2026-10-30 (see `DECISIONS.md`)
+**Event:** Meta Global AI Developer Hackathon, Indie track, theme "Build for Your World"
+**Deadline:** 2026-11-04 21:00 ET · **Code:** `apps/showhow/` · **Prototype:** [`design/showhow-prototype.html`](../design/showhow-prototype.html)
+
+## 1. Objective
+
+**One line:** step-by-step guides made from real people's videos that can check your work. *"YouTube can't see you're stuck. This can."*
+
+**Problem.** Know-how lives in people's hands. Tutorials are one-way: you pause and rewind, you can't tell which "small screw" they mean, and nobody tells you when you got a step wrong.
+
+**Users.**
+- **Creator:** films themselves doing a task once, talking as they go (a technician, a parent, a maker, a brand).
+- **Learner:** follows the guide on a phone or laptop. Usually just watches; occasionally gets stuck.
+
+**Core stories.**
+1. As a learner I browse a gallery, open a guide, and follow one step at a time. Each step is a short looping clip of the creator's video, with the key part outlined.
+2. As a learner stuck on a step, I send **one photo** of my work and get a verdict ("matches", "this part differs", or "photo unclear"), with the differing part outlined **on my photo**.
+3. As a learner who lost track, I tap **Where am I?**, send a photo, and get told which step I'm on.
+4. As a creator I upload a video (up to 2 GB / 5 min). It becomes an editable step-by-step guide: steps, timestamps, instructions in my own words, key parts outlined. I review, publish, and get a share link.
+
+**How each Meta model is used (each has a distinct role):**
+
+| Model | Role |
+|---|---|
+| Muse Voice Transcribe | Creator narration → timestamped transcript |
+| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step |
+| SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
+
+## 2. Scope
+
+**In (demo build):**
+- Gallery: browse, search, category filter, guide cards. Seeded with 3–4 real guides we film and build **through our own pipeline**.
+- Guide viewer: step list, looping step segment of the creator video (one video file, start/end times), "Show part" outline, full-video segment bar, instruction, creator tip quote, done/next.
+- **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
+- **Where am I?** check (cut first if time runs short).
+- Creator flow: access code → upload → in-browser shrink → processing stages → review and edit → publish → share link.
+- Honest states everywhere: processing, failure, unclear photo, no outline found, rate limited.
+
+**Out:** accounts and logins, comments, ratings, public uploads without a code, mobile app, live/real-time video, Muse Image, voice questions, learner video uploads (photos only), translation, automatic moderation.
+
+## 3. Key flows
+
+**Learner check** (`POST /api/check`)
+1. Browser resizes the photo to ≤1600 px JPEG and shows the payload preview (photo, reference frame, question, recipients). Nothing is sent before the user taps Send.
+2. Server: Muse Spark gets the learner photo, the creator's keyframe, the step text and the optional question, and returns strict JSON `{status: "match"|"differs"|"unclear", differences:[{part, note}], message}`.
+3. If `differs`: SAM 3.1 runs on the learner photo with `differences[0].part` as the text prompt and returns a mask/box.
+4. Gate: zero or invalid SAM geometry → show the verdict text with "couldn't pinpoint it on your photo", never a made-up outline. `unclear` → ask for a closer, better-lit photo. The photo is not stored.
+
+**Creator build** (client-driven, so each server call stays short)
+1. Browser checks the file (video, ≤2 GB, ≤5 min), then shrinks it with Mediabunny/WebCodecs to H.264 720p MP4 (≤50 MB, lowering bitrate if needed) and extracts a 16 kHz mono WAV.
+2. `POST /api/guides` (access code required) creates a draft and returns signed upload URLs. The browser uploads the MP4 and WAV straight to Supabase Storage.
+3. `POST /api/guides/:id/steps`: Voice Transcribe on the WAV, then Muse Spark on the video and transcript, returning `steps[{title, start_s, end_s, instruction, tip_quote, key_part, keyframe_s}]`, validated (ordered, non-overlapping, inside the duration, 2–8 steps).
+4. The browser grabs a JPEG keyframe per step from its local copy and uploads it. `POST /api/guides/:id/outlines` runs SAM 3.1 per keyframe with `key_part` and stores the geometry (or null).
+5. The creator edits titles and instructions, then `POST /api/guides/:id/publish`.
+
+**Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
+
+## 4. Tech stack
+
+- **Web:** React 19 + TypeScript + Vite 8, plain CSS ported from the prototype tokens. Hash routing is enough for a three-view app (no router dependency).
+- **Video in the browser:** Mediabunny (WebCodecs) for shrinking and WAV extraction; `<video>` + canvas for keyframes.
+- **API:** Vercel serverless functions in `apps/showhow/api/` (Node, TypeScript). The Meta key lives only here.
+- **Data:** Supabase free tier. Postgres for `guides`, `steps`, `usage`; Storage buckets `videos` (public read) and `frames` (public read). Writes happen only from the server with the service role key.
+- **Validation:** zod schemas for every model response and API body.
+- **Hosting:** Vercel Hobby (web + API) + Supabase free. Cost: $0 apart from Meta usage, which the $150 credits cover.
+
+## 5. Commands (in `apps/showhow/`)
+
+```bash
+npm ci                 # install from lockfile
+npm run dev            # vite dev server (UI, fixture mode)
+npx vercel dev         # UI + /api locally (needs .env.local)
+npm run build          # tsc -b && vite build
+npm run lint           # oxlint
+npm run typecheck      # tsc -b --pretty false
+npm test               # vitest run
+```
+
+## 6. Project structure
+
+```
+apps/showhow/
+  api/                 serverless routes (check, guides, steps, outlines, publish)
+  src/
+    app/               routing + top-level views (Gallery, Guide, Create)
+    components/        UI pieces (StepCard, StuckDialog, OutlineOverlay…)
+    lib/               pure logic: schemas, verdict gate, geometry, step validation, video shrink
+    fixtures/          TEST FIXTURE data for offline UI work and tests
+  supabase/schema.sql  tables, RLS, buckets
+  docs/                PRD (this), ARCHITECTURE, TASKS, DECISIONS, HACKATHON-LOG
+  design/              HTML prototypes
+```
+
+## 7. Code style
+
+```ts
+// src/lib/verdict.ts: pure, typed, validated at the boundary
+export const Verdict = z.object({
+  status: z.enum(['match', 'differs', 'unclear']),
+  differences: z.array(z.object({ part: z.string().min(1), note: z.string() })).max(3),
+  message: z.string().max(400),
+})
+export type Verdict = z.infer<typeof Verdict>
+
+export function gateVerdict(v: Verdict, outline: Outline | null): Shown {
+  if (v.status === 'differs' && !outline) return { ...v, pinpointed: false }
+  return { ...v, pinpointed: v.status === 'differs' }
+}
+```
+
+- Named function components and named exports. Small modules; pure logic in `src/lib/` with no React.
+- Model output is untrusted: parse with zod, render as text, never as HTML.
+- Fixture content is labelled `TEST FIXTURE` in the UI and filenames.
+- Match existing formatting: 2 spaces, no semicolons, single quotes in TS, as in `src/App.tsx`.
+
+## 8. Testing strategy
+
+- **Vitest unit tests** (`src/lib/*.test.ts`, `api/**/*.test.ts`) for anything that can mislead a user: verdict gate, zod parsers on recorded/synthetic model output, step validation (order, overlap, bounds), geometry scaling to the displayed frame, shrink bitrate maths, rate-limit/spend-cap counter, access-code check.
+- **Component tests** (Vitest + Testing Library) for the stuck dialog: no request before Send; a new photo invalidates prior consent; an unclear verdict shows no outline.
+- **Manual end-to-end checks** recorded in `HACKATHON-LOG.md`: real iPhone and Android video through the creator flow; real stuck check on desktop and phone; failure drills (bad photo, no SAM match, Meta timeout, over the cap).
+- Synthetic media and fake keys in automated tests. Never claim a run that didn't happen.
+
+## 9. Boundaries
+
+- **Always:** keep the Meta and Supabase service keys server-side only (never `VITE_*`); preview and get approval for every learner photo; label fixtures; validate model output; show honest failure states; use absolute dates in docs; run lint, typecheck, test and build before committing.
+- **Ask first:** new dependencies beyond those listed in §4; schema changes after seed data exists; deploying; making the repo public; changing access-code or spend-cap settings; submitting.
+- **Never:** store learner photos; draw an outline that SAM didn't return; present a fixture as a live result; let Spark invent instructions the creator didn't give; give medical, electrical or safety advice; commit secrets; push or deploy without approval.
+
+## 10. Success criteria (all on the same deployed build)
+
+1. A real iPhone video of ≥500 MB uploads, shrinks to ≤50 MB in the browser, and becomes a published guide with correct-looking steps, in under 3 minutes end to end.
+2. Each step plays its own segment; at least 70% of steps in the seed guides have a SAM outline that lands on the right part. The rest show none rather than a wrong one.
+3. A deliberately wrong learner photo returns `differs` with an outline on the wrong part; a correct photo returns `match`; a blurry photo returns `unclear`.
+4. Learner photos are never stored; every check shows a payload preview first.
+5. The site works on a phone and on desktop; a judge can create a guide with the access code.
+6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
+
+## 11. Open questions (resolved on day 1 unless noted)
+
+1. Exact Meta request formats: Spark multi-image input, video by URL vs inline vs Files API, size/duration limits; SAM mask format; Voice Transcribe response timestamps.
+2. Vercel Hobby function max duration and memory, against real Spark/SAM latency.
+3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
+4. **Seed guides (Talha):** which 3–4 tasks can you film at home? Each needs clear right/wrong steps (e.g. flat-pack assembly, a gadget setup, a filter swap, a recipe step with a visible result).
+5. Final product name.

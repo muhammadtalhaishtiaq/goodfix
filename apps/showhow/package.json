@@ -1,6 +1,6 @@
 {
-  "name": "goodfix-web",
-  "description": "A focused, privacy-aware video-guided household fix prototype.",
+  "name": "showhow",
+  "description": "Step-by-step guides from real videos that can check your work.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
