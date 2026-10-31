@@ -18,13 +18,15 @@ flowchart LR
     PG[(Postgres: guides, steps, usage)]
     ST[(Storage: media/)]
   end
-  META[Meta Model API: Voice Transcribe · Muse Spark · SAM 3.1]
+  META[Meta Model API: Voice Transcribe · Muse Spark · SAM 3.1 · Muse Image]
+  WIT[Wit.ai TTS: stretch]
   UI --> API
   MB -- signed upload URL --> ST
   KF -- signed upload URL --> ST
   API --> PG
   API --> ST
   API --> META
+  API -.-> WIT
   UI -- public read --> ST
   UI -- anon read published --> PG
 ```
@@ -32,12 +34,12 @@ flowchart LR
 ## 2. Data model (`supabase/schema.sql`)
 
 ```sql
-guides(id uuid pk, slug text unique, title text, category text, creator_name text,
+guides(id uuid pk, kind text check (kind in ('video','voice')), image_style text, title text, category text, creator_name text,
        status text check (status in ('draft','processing','ready','published','failed')),
        video_path text, duration_s real, error text, created_at timestamptz default now())
 steps(id uuid pk, guide_id uuid fk, idx int, title text, instruction text,
       tip_quote text, tip_s real, start_s real, end_s real,
-      key_part text, keyframe_path text, outline jsonb, unique(guide_id, idx))
+      key_part text, keyframe_path text, outline jsonb, image_path text, audio_path text, unique(guide_id, idx))
 usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate caps
 ```
 
@@ -55,6 +57,8 @@ usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate ca
 | `POST /api/guides/:id/steps` | access code | Transcribe WAV → Spark (video + transcript) → validated steps saved |
 | `POST /api/guides/:id/outlines` | access code | SAM per keyframe with `key_part` → outlines saved |
 | `POST /api/guides/:id/publish` | access code | save creator edits, set `published` |
+| `POST /api/voice-guides` | access code | WAV (≤2 min, single request) → Transcribe → hard-rule gate → Spark review gate (fail closed) → steps → draft saved only if both gates pass |
+| `POST /api/voice-guides/:id/images` | access code | Muse Image: step 1 in the chosen style, later steps by editing the previous image → `media/{guide}/{idx}.jpg` |
 
 Each route does one model stage so it stays within serverless time limits, and the browser drives the sequence and shows progress. A failure at any stage sets `status='failed'` with a plain `error` the creator sees, plus Retry.
 
@@ -78,6 +82,8 @@ Each route does one model stage so it stays within serverless time limits, and t
 - **Logs:** route, status, timing and model id only; never bodies, photos, transcripts or keys.
 - **Model output:** zod-parsed, rendered as text, outline coordinates bounds-checked against frame size.
 - **Age:** 18+ checkbox on the first check and on creating a guide (Meta Terms).
+- **Voice-guide safety gate:** layer 1 is a deterministic blocked-topics list in `src/lib/safety.ts` (unit-tested). Layer 2 is a schema-constrained Muse Spark review. Any hit, invalid output, error or timeout → blocked; the recording and transcript are dropped from memory; nothing is written to Postgres or Storage. Muse Image's own `content_policy_violation` also blocks.
+- **AI illustrations:** every image carries an "Illustration by AI" label in the UI; voice guides never offer the "I'm stuck" photo check. Style samples are generated once and shipped as static files (`public/styles/*.jpg`), so the picker makes no model calls.
 
 ## 6. Failure states
 
@@ -90,3 +96,5 @@ Each route does one model stage so it stays within serverless time limits, and t
 | Check `unclear` | Ask for a closer, well-lit photo of the step |
 | Meta timeout / 429 / 5xx | "The checker didn't answer. Try again"; never a fake verdict |
 | Daily cap reached | Plain message; viewing guides still works |
+| Voice guide blocked by the gate | The reason (unsafe topic / not a how-to / missing steps listed); nothing saved; Re-record |
+| Muse Image fails or is policy-blocked for a step | That step shows text only with "No illustration"; Regenerate offered |

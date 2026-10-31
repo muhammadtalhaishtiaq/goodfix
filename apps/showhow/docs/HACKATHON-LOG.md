@@ -140,3 +140,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - `scripts/apply-schema.ts` applied `supabase/schema.sql` via the Management API (`POST /v1/projects/{ref}/database/query`) with a personal access token in `.env.local`. Tables `guides`, `steps`, `usage`; RLS on all three; `bump_usage()` (server only); public bucket `media` (50 MB, mp4/wav/jpeg/mpeg).
 - `scripts/check-db.ts`: 11/11 PASS. Anon can't see draft guides/steps, insert, read usage, call `bump_usage`, upload, or edit; anon sees a guide and its steps once published; the server can bump usage and create signed upload URLs. Temp guide and counters removed.
 - Remaining for T3: the viewer reading published guides from Supabase (lands with the first real guide from the pipeline).
+
+## 2026-10-31 — Muse Image spike for voice guides
+
+- `muse-image-1.0` via `POST /v1/images/generations` (`size: 1536x1024`, `output_format: jpeg`), $0.01/image per docs. 9 images generated in parallel, 9.7–20.9 s each, none failed.
+- Same step ("pull the water tank out of an air purifier") in 6 styles: realistic photo, line art, flat colour, blueprint, watercolour, 3D clay. All clean and on-topic; kept as style-picker samples in `public/styles/`.
+- Consistency: 3 consecutive steps generated separately in the realistic style showed **three different purifier designs**. Next: test editing the previous step's image (T17a).
+- Spec, architecture, schema, tasks, decisions and CLAUDE.md updated for voice guides (T17).

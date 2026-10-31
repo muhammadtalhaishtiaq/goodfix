@@ -7,6 +7,8 @@ create table if not exists public.guides (
   category text not null check (char_length(category) between 1 and 40),
   creator_name text not null check (char_length(creator_name) between 1 and 60),
   status text not null default 'draft' check (status in ('draft', 'processing', 'ready', 'published', 'failed')),
+  kind text not null default 'video' check (kind in ('video', 'voice')),
+  image_style text,
   video_path text,
   duration_s real,
   error text,
@@ -27,9 +29,15 @@ create table if not exists public.steps (
   keyframe_path text,
   outline jsonb,      -- {frameW, frameH, box:[x,y,w,h], score} from SAM, or null
   audio_path text,    -- Wit.ai read-aloud MP3 (stretch)
+  image_path text,    -- voice guides: Muse Image illustration (labelled as AI)
   unique (guide_id, idx),
   check (end_s > start_s)
 );
+
+-- Columns added after the first apply (2026-10-31): keep the script re-runnable on existing tables.
+alter table public.guides add column if not exists kind text not null default 'video' check (kind in ('video', 'voice'));
+alter table public.guides add column if not exists image_style text;
+alter table public.steps add column if not exists image_path text;
 
 -- Daily counters for spend/abuse caps. No policies: invisible to the public.
 create table if not exists public.usage (

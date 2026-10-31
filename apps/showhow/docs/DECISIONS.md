@@ -44,3 +44,14 @@ Supersedes the 2026-10-29 Goodfix product decision (single cupboard-handle repai
 - Creator input capped at 500 MB / 3 min; desktop Chrome/Edge is the supported creator path for the demo; encoder support checked at runtime.
 - Creators get a consent screen before upload. Video reaches Spark by public Supabase URL; Files API (with deletion) only as fallback.
 - No food/recipe seed guides. "Where am I?" moved to stretch. Target submission ~15:00 ET on 2026-11-04.
+
+## 2026-10-31 — Add voice guides with a safety gate and AI illustrations (T17)
+
+Approved by Talha 2026-10-31.
+
+- **What:** creators can talk a fix through (≤2 min audio, no video). Voice Transcribe → two-layer gate → Muse Spark steps → Muse Image illustration per step in one of 6 styles (realistic photo, line art, flat colour, blueprint, watercolour, 3D clay), chosen from stored sample previews.
+- **Gate:** layer 1 is hard-coded blocked topics (weapons/violence/harm, self-harm, drugs, gas, mains electrical, fire/explosives, medical, vehicle brakes/steering, hacking, illegal). Layer 2 is a Muse Spark review: a real how-to, complete, safe, category, missing steps. Fail closed. **Nothing is saved until both pass**; recordings are never stored.
+- **Honesty rules:** every image is labelled "Illustration by AI"; voice guides have no "I'm stuck" photo check (no real reference frame); the badge says "AI-checked: clear, complete and within safety rules", never "verified fix" or "safe".
+- **Why:** lowers the bar for sharing know-how (Impact); adds a fourth distinct Meta model (Muse Image), which also qualifies for the Best Creative Build bonus.
+- **Priority:** after the core video loop (T1–T6, T8–T12); replaces "Where am I?" as the top stretch; second in the cut order.
+- **Known risk:** separate generations drew different purifiers across steps (spike 2026-10-31). Mitigation: edit the previous step's image; tested first in T17(a).

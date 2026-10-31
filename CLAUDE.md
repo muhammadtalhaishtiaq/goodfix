@@ -1,6 +1,6 @@
 # Showhow — Meta Global AI Developer Hackathon entry
 
-Showhow (working title) turns a creator's narrated how-to video into a step-by-step guide that can check your work: Voice Transcribe → Muse Spark splits steps → SAM 3.1 outlines the key part. Learners follow along and, only when stuck, send one photo; Muse Spark compares it with the creator's step and SAM 3.1 outlines what differs on their photo. *"YouTube can't see you're stuck. This can."*
+Showhow (working title) turns a creator's narrated how-to video, or just a spoken explanation (voice guides, T17), into a step-by-step guide that can check your work: Voice Transcribe → Muse Spark splits steps → SAM 3.1 outlines the key part. Learners follow along and, only when stuck, send one photo; Muse Spark compares it with the creator's step and SAM 3.1 outlines what differs on their photo. *"YouTube can't see you're stuck. This can."*
 
 - **Code and docs:** `apps/showhow/` only. Specs in `apps/showhow/docs/`; HTML prototypes in `apps/showhow/design/` (`showhow-prototype.html` is the UI reference).
 - **Archive:** `archive/` holds the retired Vault Expo/React Native app. Do not read or modify it (blocked in `.claude/settings.json`) unless Talha explicitly asks.
@@ -48,6 +48,7 @@ At every substantive milestone, run the `adversarial-hackathon-review` skill (it
 - Draw only outlines SAM 3.1 actually returned, scaled from source-frame coordinates. No match → no outline, said plainly.
 - A check verdict is `match`, `differs`, or `unclear`; it describes what is visible, never safety, medical, or electrical advice.
 - Model, network, and cap failures show an honest message and a retry — never a fabricated result. Fixtures are labeled `TEST FIXTURE`.
+- Voice guides: nothing is saved until the two-layer safety gate (hard blocked-topics list, then Muse Spark review) passes; it fails closed. Muse Image illustrations are always labeled "Illustration by AI", never used as evidence, and voice guides have no "I'm stuck" check. Never call a guide "verified" or "safe".
 
 ## Privacy, keys, and Meta terms
 

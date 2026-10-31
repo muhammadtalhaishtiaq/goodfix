@@ -6,8 +6,9 @@ process.loadEnvFile('.env.local')
 const { VITE_SUPABASE_URL: url, VITE_SUPABASE_ANON_KEY: anonKey, SUPABASE_SERVICE_ROLE_KEY: serverKey } = process.env
 if (!url || !anonKey || !serverKey) throw new Error('Missing Supabase vars in .env.local')
 const opts = { auth: { persistSession: false } }
-const server = createClient(url, serverKey, opts)
-const anon = createClient(url, anonKey, opts)
+const base = new URL(url).origin // tolerate a pasted .../rest/v1/ suffix
+const server = createClient(base, serverKey, opts)
+const anon = createClient(base, anonKey, opts)
 
 let failed = 0
 const check = (name: string, ok: boolean) => { if (!ok) failed++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`) }

@@ -77,14 +77,22 @@ flowchart LR
 ## Stretch (only if everything above is green)
 
 - [ ] **T16 Read step aloud (Wit.ai TTS).** At publish, the server synthesizes each step's instruction once (`POST api.wit.ai/synthesize`, a clean voice such as Rebecca) and stores a ~50 KB MP3 per step in Storage. The viewer gets a "Read aloud" button with pause/stop. Text only, so no user media goes to Wit. **Verify:** audio plays for every step of a seed guide; a missing MP3 hides the button.
+- [ ] **T17 Voice guides (first after the core loop; replaces T7 as top stretch).**
+  - (a) Consistency spike: generate step 1, then edit it for steps 2–3 (Muse Image edit mode). **Verify:** the same object appears across steps, by eye, logged. If it fails, fall back to one consistent "hero" image + per-step crops/labels, or text-only steps.
+  - (b) `src/lib/safety.ts` blocked-topics list + Spark review schema, test-first (harmful, gibberish, incomplete, valid, invalid JSON → blocked).
+  - (c) `POST /api/voice-guides` (WAV ≤2 min in one request, gates, steps, draft) and `/images`.
+  - (d) Create flow: "Talk it through" option, record/upload, consent, style picker with the 6 stored samples (`public/styles/`), progress, blocked-reason screen, review, publish.
+  - (e) Viewer: illustration in place of the clip, "Illustration by AI" label, no "I'm stuck" button.
+  - **Verify:** one real voice guide published end to end; a staged harmful and a gibberish recording are both blocked with nothing in the DB or Storage.
 - [ ] **T7 Where am I?** Learner photo + step keyframes → `{step, reason}` → jump to step.
 
 ## Cut order if behind
 
 1. Where am I? (T7, stretch only)
-2. Gallery search and filters
-3. Creating guides on a phone (desktop Chrome is the supported creator path)
-4. Step editing in review (publish as generated)
-5. Fourth seed guide
+2. Voice guides (T17) if the core loop isn't solid by end of Day 3
+3. Gallery search and filters
+4. Creating guides on a phone (desktop Chrome is the supported creator path)
+5. Step editing in review (publish as generated)
+6. Fourth seed guide
 
 Never cut: real model calls, consent screens, honest failure states, a deployed live build.

@@ -6,12 +6,13 @@
 
 ## 1. Objective
 
-**One line:** step-by-step guides made from real people's videos that can check your work. *"YouTube can't see you're stuck. This can."*
+**One line:** step-by-step guides made from real people's know-how, filmed or just spoken, that can check your work. *"YouTube can't see you're stuck. This can."*
 
 **Problem.** Know-how lives in people's hands. Tutorials are one-way: you pause and rewind, you can't tell which "small screw" they mean, and nobody tells you when you got a step wrong.
 
 **Users.**
 - **Creator:** films themselves doing a task once, talking as they go (a technician, a parent, a maker, a brand).
+- **Voice creator:** has the know-how but no video. They talk the fix through (≤2 min) and get an illustrated guide (a grandparent, a technician on a call).
 - **Learner:** follows the guide on a phone or laptop. Usually just watches; occasionally gets stuck.
 
 **Core stories.**
@@ -19,14 +20,18 @@
 2. As a learner stuck on a step, I send **one photo** of my work and get a verdict ("matches", "this part differs", or "photo unclear"), with the differing part outlined **on my photo**.
 3. As a learner who lost track, I tap **Where am I?**, send a photo, and get told which step I'm on.
 4. As a creator I upload a video (up to 500 MB / 3 min; desktop Chrome or Edge is the supported path for the demo). It becomes an editable step-by-step guide: steps, timestamps, instructions in my own words, key parts outlined. I review, publish, and get a share link.
+5. As a voice creator I record or upload ≤2 min of audio and pick an illustration style from sample previews. The recording is checked against the safety and quality gate **before anything is saved**. If it passes, it becomes steps in my words, each with an AI illustration labelled as one. If it fails, I'm told why (unsafe topic, not a how-to, or missing steps) and nothing is kept.
 
 **How each Meta model is used (each has a distinct role):**
 
 | Model | Role |
 |---|---|
-| Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end) |
-| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step |
+| Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end); voice-guide recordings → text |
+| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps |
 | SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
+| Muse Image | Voice guides only: one illustration per step in the creator's chosen style, always labelled "Illustration by AI" |
+
+Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for "Read step aloud" (stretch T16).
 
 ## 2. Scope
 
@@ -34,11 +39,12 @@
 - Gallery: browse, search, category filter, guide cards. Seeded with 3–4 real guides we film and build **through our own pipeline**.
 - Guide viewer: step list, looping step segment of the creator video (one video file, start/end times), "Show part" outline, full-video segment bar, instruction, creator tip quote, done/next.
 - **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
+- **Voice guides** (T17, after the core loop): record/upload ≤2 min audio → two-layer safety and quality gate → steps → Muse Image illustrations in one of 6 styles (realistic photo, line art, flat colour, blueprint, watercolour, 3D clay) with stored sample previews → review → publish. The "I'm stuck" photo check is **off** for voice guides (no real reference frame).
 - **Where am I?** check (stretch; cut first).
 - Creator flow: access code → **creator consent screen** (names Supabase public hosting and the three Meta models) → upload → in-browser shrink → processing stages → review (light edits) → publish → share link.
 - Honest states everywhere: processing, failure, unclear photo, no outline found, rate limited.
 
-**Out:** accounts and logins, comments, ratings, public uploads without a code, mobile app, live/real-time video, Muse Image, voice questions, learner video uploads (photos only), translation, automatic moderation.
+**Out:** accounts and logins, comments, ratings, public uploads without a code, mobile app, live/real-time video, AI images as evidence, voice questions, learner video uploads (photos only), translation, automatic moderation.
 
 ## 3. Key flows
 
@@ -55,6 +61,15 @@
 4. The browser grabs a JPEG keyframe per step (step midpoint) from its local copy and uploads it. `POST /api/guides/:id/outlines` runs SAM 3.1 per keyframe with `sam_noun` and stores the best box (or null when there are zero or ambiguous matches).
 5. The creator edits titles and instructions, then `POST /api/guides/:id/publish`.
 
+**Voice guide build** (`POST /api/voice-guides`, access code required; nothing stored until the gate passes)
+1. Browser records (MediaRecorder) or takes an audio file, converts it to a 16 kHz mono WAV (≤2 min, ≈3.8 MB, so it fits one request under Vercel's 4.5 MB body limit) and shows the consent screen (Showhow server, Voice Transcribe, Muse Spark, Muse Image; published guides are public).
+2. Server, in memory: Voice Transcribe → transcript.
+3. **Gate layer 1, hard rules (code):** a blocked-topics list (weapons, violence or harming people/animals, self-harm, drugs, gas work, mains electrical work, fire/explosives, medical procedures, vehicle brakes/steering, hacking, illegal activity) checked on the transcript. Any hit → blocked.
+4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, missing[], reason}`. Not a how-to, incomplete, blocked, invalid output, error or timeout → **blocked (fail closed)**, with a plain reason and any missing steps listed. The creator can re-record.
+5. Passed → Muse Spark steps from the transcript turns (same `validateSteps` grounding as video) → the guide and steps are saved as a draft.
+6. Muse Image: step 1 is generated in the chosen style; later steps are produced by **editing the previous step's image**, so the object stays the same model (consistency is tested in T17's spike). Images go to Storage as `{guide}/{idx}.jpg`.
+7. The creator reviews (regenerate one image, edit text) → publish. The badge reads "AI-checked: clear, complete and within safety rules", never "verified fix".
+
 **Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
 
 ## 4. Tech stack
@@ -62,7 +77,7 @@
 - **Web:** React 19 + TypeScript + Vite 8, plain CSS ported from the prototype tokens. Hash routing is enough for a three-view app (no router dependency).
 - **Video in the browser:** Mediabunny (WebCodecs) for shrinking and WAV extraction; `<video>` + canvas for keyframes.
 - **API:** Vercel serverless functions in `apps/showhow/api/` (Node, TypeScript). The Meta key lives only here.
-- **Data:** Supabase free tier. Postgres for `guides`, `steps`, `usage`; Storage buckets `videos` (public read) and `frames` (public read). Writes happen only from the server with the service role key.
+- **Data:** Supabase free tier. Postgres for `guides`, `steps`, `usage`; one public-read Storage bucket `media`. Writes happen only from the server with the service role key.
 - **Validation:** zod schemas for every model response and API body.
 - **Hosting:** Vercel Hobby (web + API) + Supabase free. Cost: $0 apart from Meta usage, which the $150 credits cover.
 
@@ -96,17 +111,19 @@ apps/showhow/
 ## 7. Code style
 
 ```ts
-// src/lib/verdict.ts: pure, typed, validated at the boundary
-export const Verdict = z.object({
-  status: z.enum(['match', 'differs', 'unclear']),
-  differences: z.array(z.object({ part: z.string().min(1), note: z.string() })).max(3),
-  message: z.string().max(400),
-})
-export type Verdict = z.infer<typeof Verdict>
+// src/lib/verdict.ts: pure, typed, validated at the boundary (excerpt of the real file)
+export function parseVerdict(text: string): ModelVerdict | null {
+  try {
+    const r = VerdictSchema.safeParse(JSON.parse(text))
+    return r.success ? r.data : null
+  } catch {
+    return null
+  }
+}
 
-export function gateVerdict(v: Verdict, outline: Outline | null): Shown {
-  if (v.status === 'differs' && !outline) return { ...v, pinpointed: false }
-  return { ...v, pinpointed: v.status === 'differs' }
+// What the learner may be shown: an outline only for differs, and only one SAM actually returned.
+export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
+  return { verdict, outline: verdict.status === 'differs' ? outline : null }
 }
 ```
 
@@ -117,16 +134,16 @@ export function gateVerdict(v: Verdict, outline: Outline | null): Shown {
 
 ## 8. Testing strategy
 
-- **Vitest unit tests** (`src/lib/*.test.ts`, `api/**/*.test.ts`) for anything that can mislead a user: verdict gate, zod parsers on recorded/synthetic model output, step validation (order, overlap, bounds), geometry scaling to the displayed frame, shrink bitrate maths, rate-limit/spend-cap counter, access-code check.
+- **Vitest unit tests** (`src/lib/*.test.ts`, `api/**/*.test.ts`) for anything that can mislead a user: verdict gate, voice-guide safety gate (blocked topics, fail-closed on invalid output/errors), zod parsers on recorded/synthetic model output, step validation (order, overlap, bounds), geometry scaling to the displayed frame, shrink bitrate maths, rate-limit/spend-cap counter, access-code check.
 - **Component tests** (Vitest + Testing Library) for the stuck dialog: no request before Send; a new photo invalidates prior consent; an unclear verdict shows no outline.
 - **Manual end-to-end checks** recorded in `HACKATHON-LOG.md`: real iPhone and Android video through the creator flow; real stuck check on desktop and phone; failure drills (bad photo, no SAM match, Meta timeout, over the cap).
 - Synthetic media and fake keys in automated tests. Never claim a run that didn't happen.
 
 ## 9. Boundaries
 
-- **Always:** keep the Meta and Supabase service keys server-side only (never `VITE_*`); preview and get approval for every learner photo; label fixtures; validate model output; show honest failure states; use absolute dates in docs; run lint, typecheck, test and build before committing.
+- **Always:** keep the Meta, Supabase service and Wit.ai keys server-side only (never `VITE_*`); label every AI illustration "Illustration by AI"; run the voice-guide safety gate before saving anything, failing closed; preview and get approval for every learner photo; label fixtures; validate model output; show honest failure states; use absolute dates in docs; run lint, typecheck, test and build before committing.
 - **Ask first:** new dependencies beyond those listed in §4; schema changes after seed data exists; deploying; making the repo public; changing access-code or spend-cap settings; submitting.
-- **Never:** store learner photos; draw an outline that SAM didn't return; present a fixture as a live result; let Spark invent instructions the creator didn't give; give medical, electrical or safety advice; commit secrets; push or deploy without approval.
+- **Never:** store learner photos, voice recordings, or the transcripts of blocked voice guides; run the "I'm stuck" check against an AI illustration; call a guide "verified" or "safe"; draw an outline that SAM didn't return; present a fixture as a live result; let Spark invent instructions the creator didn't give; give medical, electrical or safety advice; commit secrets; push or deploy without approval.
 
 ## 10. Success criteria (all on the same deployed build)
 
@@ -136,11 +153,13 @@ export function gateVerdict(v: Verdict, outline: Outline | null): Shown {
 4. Learner photos are never stored; every check shows a payload preview first. Creators see a consent screen before their video leaves the device.
 5. The site works on a phone and on desktop; a judge can create a guide with the access code.
 6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
+7. (T17) A spoken how-to becomes an illustrated guide whose step images show the same object; a staged harmful or gibberish recording is blocked with a reason and nothing appears in the database or Storage.
 
 ## 11. Open questions (resolved on day 1 unless noted)
 
 1. Still unknown after the docs review (2026-10-30): Muse Spark video duration/size limits and frame sampling; how SAM's mask maps onto the frame; whether Meta offers a spend-limit control (until confirmed, the app's own caps are the only guaranteed limit).
 2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit (stream Spark responses).
 3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
-4. **Seed guides (Talha):** which 3–4 tasks can you film at home? Each needs clear right/wrong steps with distinct parts (e.g. flat-pack assembly, a gadget setup, a filter swap, LEGO). No food/recipe guides: a "match" verdict could read as food-safety advice.
+4. **Seed guides (decided 2026-10-31):** change an air purifier's water, run a dishwasher, clean a coffee machine (appliance cleaning only; no food or drink-safety claims). Talha films these, plus staged right/wrong/blurry photos for 1–2 steps each.
 5. Final product name.
+6. Muse Image step-to-step consistency: separate generations drew three different purifiers (2026-10-31). Does editing the previous image keep the object the same? Tested first in T17.
