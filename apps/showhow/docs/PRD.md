@@ -58,9 +58,9 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 **Creator build** (client-driven, so each server call stays short)
 1. Browser checks the file (video, ≤500 MB, ≤3 min) and checks encoder support at runtime (`canEncode`, not a browser-name guess). It then shrinks the video with Mediabunny/WebCodecs to H.264 720p MP4 at ~1 Mbps (~23 MB for 3 min, hard cap 48 MB) and extracts a 16 kHz mono WAV.
 2. `POST /api/guides` (access code required) creates a draft and returns signed upload URLs. The browser uploads the MP4 and WAV straight to Supabase Storage.
-3. `POST /api/guides/:id/steps`: Voice Transcribe on the WAV in `ENDPOINTING` mode, which returns `turns[]` with start/end ms. Muse Spark gets the video (by its Supabase URL as `video_url`) plus the numbered turns and returns `steps[{title, first_turn, last_turn, instruction, tip_quote, key_part, sam_noun}]`. **Step times come from Transcribe turn timestamps, not from Spark.** Validated: turn indices in range, ordered, non-overlapping, 2–8 steps.
-4. The browser grabs a JPEG keyframe per step (step midpoint) from its local copy and uploads it. `POST /api/guides/:id/outlines` runs SAM 3.1 per keyframe with `sam_noun` and stores the best box (or null when there are zero or ambiguous matches).
-5. The creator edits titles and instructions, then `POST /api/guides/:id/publish`.
+3. `POST /api/steps {guideId}`: Voice Transcribe on the WAV in `ENDPOINTING` mode, which returns `turns[]` with start/end ms. Muse Spark gets the video (by its Supabase URL as `video_url`) plus the numbered turns and returns `steps[{title, first_turn, last_turn, instruction, tip_quote, key_part, sam_noun}]`. **Step times come from Transcribe turn timestamps, not from Spark.** Validated: turn indices in range, ordered, non-overlapping, 2–8 steps.
+4. The browser grabs a JPEG keyframe per step (step midpoint) from its local copy and uploads it. `POST /api/outlines {guideId}` runs SAM 3.1 per keyframe with `sam_noun` and stores the best box (or null when there are zero or ambiguous matches).
+5. The creator edits titles and instructions, then `POST /api/publish {guideId, edits}`.
 
 **Voice guide build** (`POST /api/voice-guides`, access code required; nothing stored until the gate passes)
 1. Browser records (MediaRecorder) or takes an audio file, converts it to a 16 kHz mono WAV (≤2 min, ≈3.8 MB, so it fits one request under Vercel's 4.5 MB body limit) and shows the consent screen (Showhow server, Voice Transcribe, Muse Spark, Muse Image; published guides are public).
@@ -68,8 +68,10 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 3. **Gate layer 1, hard rules (code):** a blocked-topics list (weapons, violence or harming people/animals, self-harm, drugs, gas work, mains electrical work, fire/explosives, medical procedures, vehicle brakes/steering, hacking, illegal activity) checked on the transcript. Any hit → blocked.
 4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, missing[], reason}`. Not a how-to, incomplete, blocked, invalid output, error or timeout → **blocked (fail closed)**, with a plain reason and any missing steps listed. The creator can re-record.
 5. Passed → Muse Spark steps from the transcript turns (same `validateSteps` grounding as video) → the guide and steps are saved as a draft.
-6. Muse Image: one **base image** of the object in the chosen style, then every step is an **edit of that base image** (`/v1/images/edits`, base image as reference), which keeps the object identical across steps (verified 2026-10-31). A second edit per step adds an orange dashed highlight circle around the key part. Both versions are stored (`{guide}/{idx}.jpg`, `{idx}-focus.jpg`) and "Show part" switches between them.
+6. Muse Image: one **base image** of the object in the chosen style, then every step is an **edit of that base image** (`/v1/images/edits`, base image as reference), which keeps the object identical across steps (verified 2026-10-31). A second edit per step adds an orange dashed highlight circle around the key part. Both are stored (`{guide}/{idx}-ai.jpg`, `{idx}-ai-focus.jpg`); "Show part" switches between them.
 7. The creator reviews (regenerate one image, edit text) → publish. The badge reads "AI-checked: clear, complete and within safety rules", never "verified fix".
+
+**End-to-end diagrams, data model, storage layout, env vars and failure states:** see [`ARCHITECTURE.md`](ARCHITECTURE.md) §4–§12.
 
 **Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
 
@@ -86,8 +88,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 ```bash
 npm ci                 # install from lockfile
-npm run dev            # vite dev server (UI, fixture mode)
-npx vercel dev         # UI + /api locally (needs .env.local)
+npm run dev            # Vite UI + /api routes locally (dev bridge; reads .env.local server-side)
 npm run build          # tsc -b && vite build
 npm run lint           # oxlint
 npm run typecheck      # tsc -b --pretty false
@@ -98,7 +99,8 @@ npm test               # vitest run
 
 ```
 apps/showhow/
-  api/                 serverless routes (check, guides, steps, outlines, publish)
+  api/                 flat routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, tts, health
+    _lib/              route wrapper, caps, server DB client, Meta calls (not deployed as routes)
   src/
     app/               routing + top-level views (Gallery, Guide, Create)
     components/        UI pieces (StepCard, StuckDialog, OutlineOverlay…)

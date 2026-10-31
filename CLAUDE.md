@@ -19,8 +19,7 @@ Showhow (working title) turns a creator's narrated how-to video, or just a spoke
 
 ```bash
 npm ci               # install from lockfile (npm install only when changing deps)
-npm run dev          # Vite dev server (fixture mode)
-npx vercel dev       # UI + /api locally (needs .env.local)
+npm run dev          # Vite UI + /api routes locally (reads .env.local server-side)
 npm run build        # tsc -b && vite build
 npm run lint         # oxlint
 npm run typecheck    # tsc -b

@@ -1,100 +1,93 @@
 # Showhow Plan and Tasks
 
-**Updated:** 2026-10-30 (reordered after red-team review) · **Deadline:** 2026-11-04 21:00 ET, target submit ~15:00 ET
-Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+**Updated:** 2026-10-31 · **Deadline:** 2026-11-04 21:00 ET (target submit ~15:00 ET)
+Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) · Decisions: [`DECISIONS.md`](DECISIONS.md)
 
-A task is `[x]` only when its **Verify** step has passed and is noted in `HACKATHON-LOG.md`. Each task is one `/build` run: test first where there's logic, then lint, typecheck, test and build, then commit.
+**Rules.** A task is `[x]` only when its **Verify** step has passed and is logged in `HACKATHON-LOG.md`. Each task is one `/build` run: test first where there's logic, then lint, typecheck, test and build, then commit. **Docs are updated in the same commit as the change** (PRD, ARCHITECTURE, TASKS, DECISIONS as relevant).
 
-**Talha's inputs (needed by the day shown):**
-- [ ] D1: Meta API key with the $150 credits claimed, in `apps/showhow/.env.local` (never pasted in chat). Meta documents no spend-limit control, so the app's own caps are the guaranteed limit.
-- [ ] D1: post the hosting/terms question in Discord #office-hours (don't wait for 11-02).
-- [ ] D1: pick 3–4 candidate seed tasks (no food) and take the staged photo set for T0: 5 right, 5 wrong, 2 blurry per task.
-- [ ] D2: free Supabase project + Vercel account.
-- [ ] D3: film the chosen seed videos (≤3 min, narrated, distinct parts).
+## Status at a glance
+
+| Done ✅ | In progress 🔨 | Next ⏭ | Waiting on Talha 📥 |
+|---|---|---|---|
+| T1 foundation · T2 UI (fixtures) · T3 database + RLS · T4 API + CI · T17a image-consistency spike · live checks of all Meta APIs + Wit.ai | T8 upload | T9 steps → T10 outlines → T5/T6 check | Videos (air purifier first) · staged photos · Vercel account (Day 4) |
+
+## Talha's inputs
+
+- [x] Meta API key in `.env.local` (2026-10-30)
+- [x] Supabase project + keys (2026-10-31); `VITE_SUPABASE_URL` still ends in `/rest/v1/` (code tolerates it; please trim)
+- [x] Wit.ai token (2026-10-30)
+- [ ] **Air purifier video** (1–3 min, narrated, landscape preferred): unlocks T0b and the first real guide
+- [ ] **Staged photos** for 1–2 steps per video (2 right, 2 wrong, 1 blurry): unlocks T0
+- [ ] Dishwasher + coffee machine videos (by Day 3)
+- [ ] Optional: Discord #office-hours hosting question
+- [ ] Vercel account (Day 4, for T13)
 
 ## Dependency graph
 
 ```mermaid
 flowchart LR
-  T0[T0 check-accuracy spike] --> T5[T5 /api/check]
-  T0b[T0b pipeline spike] --> T8
-  T1[T1 foundation ✓] --> T2[T2 viewer + stuck dialog]
-  T2 --> T3[T3 Supabase] --> T4[T4 API skeleton + CI]
-  T4 --> T8[T8 consent + shrink + upload] --> T9[T9 steps] --> T10[T10 outlines]
-  T4 --> T5 --> T6[T6 stuck dialog live]
-  T10 --> T12[T12 seed guides]
-  T6 --> T12 --> T11[T11 publish lite] --> T13[T13 deploy] --> T14[T14 hardening + draft demo] --> T15[T15 demo + submit]
+  T4[T4 ✅] --> T8[T8 upload] --> T9[T9 steps] --> T10[T10 outlines] --> T11[T11 publish]
+  T0[T0 accuracy 📥] --> T5[T5 /api/check] --> T6[T6 dialog live]
+  T10 --> T5
+  T11 --> T12[T12 seed guides 📥]
+  T6 --> T12
+  T12 --> T17[T17 voice guides] --> T18[T18 enhanced images] --> T16[T16 read aloud]
+  T16 --> T13[T13 deploy] --> T14[T14 hardening + draft demo] --> T15[T15 submit]
+  T7[T7 Where am I?] -.->|only if time| T13
 ```
 
-## Day 0–1: 2026-10-30 → 2026-10-31. Prove the riskiest assumption first
+## Day 1: Sat 2026-10-31
 
-- [x] **T1 Foundation.** Deps, lockfile, vitest, `.env.example`; lint, typecheck, test and build green.
-- [ ] **T0 Check-accuracy spike (highest risk).** `scripts/spike-check.ts` runs Muse Spark (2 images, `json_schema` verdict with `sam_noun`) then SAM 3.1 (`include_confidence`) on Talha's staged photo set. **Verify:**
-  - log accuracy (right → match, wrong → differs with a box on the right part, blurry → unclear), match counts and latency per task;
-  - pick only the seed tasks that pass.
-- [ ] **T0b Pipeline spike.** On a real phone clip in desktop Chrome:
-  - Mediabunny shrink, timed; output ≤48 MB;
-  - WAV → Voice Transcribe `ENDPOINTING` turns;
-  - Spark with `video_url` + numbered turns → steps by turn index.
-  - **Verify:** times, sizes and step quality logged; PRD §11 unknowns updated.
-- [x] **T2 Viewer + stuck dialog (fixture mode).** Port the prototype's guide viewer (segment loop, box overlay, steps, timeline) and stuck dialog (preview → working → verdict). Gallery and create screens stay minimal. **Verify:** component tests (no send before approval, new photo needs re-approval, unclear draws no outline); manual check at 390 px and 1366 px.
+- [x] **T1 Foundation.** Deps, lockfile, vitest, `.env.example`; lint/typecheck/test/build green.
+- [x] **T2 Viewer + stuck dialog (fixture mode).** Gallery, guide viewer, stuck dialog with consent tests; 390/1366 px checked.
+- [x] **T3 Database.** Schema applied via Management API; RLS 11/11 on the live DB; `kind`, `image_style`, `image_path` columns added. *(Reading published guides into the viewer lands with T11.)*
+- [x] **T4 API skeleton + CI.** `route()` wrapper, caps (fail closed), dev `/api` bridge, bundle + history secret scans, CI workflow. First GitHub run happens on the next push.
+- [ ] **T8 Creator upload.** `/api/guides` (access code, caps, consent + 18+, draft, signed URLs) → Create flow: form + consent → `canShrinkHere` → shrink with progress → direct uploads. **Verify:** route tests (401 without code, 400 without consent, signed URLs returned); a real phone file lands in Storage at ≤48 MB.
+- [ ] **T9 Steps.** `/api/steps`: download WAV → Transcribe → Spark (public `video_url` + turns) → `validateSteps` → save → delete WAV → `ready`; Create flow shows the steps. **Verify:** route test with mocked Meta/DB (valid, invalid output → `failed`, <2 turns); one real video gives sensible steps; Spark fetching the Supabase URL confirmed.
 
-## Day 2: 2026-11-01. Data + creator pipeline on desktop Chrome
+## Day 2: Sun 2026-11-01
 
-- [ ] **T3 Supabase.** `supabase/schema.sql` (tables, RLS, public buckets with UUID paths) applied; viewer reads published guides through the anon key. **Verify:** RLS test (anon can't read drafts or write); the viewer renders a DB guide.
-- [x] **T4 API skeleton + CI.** *(Done 2026-10-31. Every CI step passes locally; the first GitHub run happens on the next push.)*
-  - Vercel `/api` shared handler: zod body, access code, usage caps, redacted logs.
-  - GitHub Actions: lint, typecheck, test, build, gitleaks, bundle secret scan.
-  - **Verify:** unit tests for the access code, caps and redaction; CI green; a seeded fake canary is caught.
-- [ ] **T8 Creator consent + shrink + upload.** Consent screen, `canEncode` check, Mediabunny shrink with progress, signed uploads. **Verify:** sizing unit test; a real phone file lands in Storage at ≤48 MB.
-- [ ] **T9 Steps.** Transcribe turns → Spark steps by turn index → `validateSteps` → saved. **Verify:** validation unit tests; one real video gives sensible steps.
+- [ ] **T0 Check accuracy** *(needs staged photos)*. `scripts/spike-check.ts` on the staged set. **Verify:** right → match, wrong → differs with the box on the right part, blurry → unclear; accuracy and latency logged; only passing tasks are used in the demo.
+- [ ] **T0b Real-video pipeline** *(needs the air purifier video)*. Browser shrink time on the real file + step quality. **Verify:** logged; PRD §11 updated.
+- [ ] **T10 Outlines.** Keyframes at step midpoints uploaded → `/api/outlines` → SAM with `sam_noun` → `bestOutline` → save. **Verify:** boxes on the right parts for the first real guide; no-match steps show none.
+- [ ] **T11 Publish.** Review screen (rename steps/instructions) → `/api/publish` → share link; gallery and viewer read published guides from Supabase (fixtures only when no DB is configured). **Verify:** end-to-end creator run on desktop Chrome, timed and logged.
+- [ ] **T5 `/api/check`.** Real keyframe vs learner photo → Spark verdict → SAM if `differs` → gate; caps. **Verify:** unit tests (match, differs + box, ambiguous, unclear, malformed, timeout, cap hit); one live call logged.
+- [ ] **T6 Stuck dialog live.** Photo resize ≤1600 px, real preview, `/api/check`, box on the learner's photo, error states, 18+ on first check. **Verify:** staged right/wrong/blurry photos on phone and desktop give the expected verdicts.
 
-## Day 3: 2026-11-02. The learner check + seeds
+## Day 3: Mon 2026-11-02
 
-- [ ] **T10 Outlines.** Midpoint keyframes uploaded → SAM per step with `sam_noun` → best box or null (ambiguity rule). **Verify:** gate unit tests; boxes land on the right parts for one real guide.
-- [ ] **T5 `/api/check`.** Spark verdict (zod) → SAM box on the learner photo → gate. **Verify:** unit tests (match, differs+box, differs ambiguous, unclear, malformed, timeout); one live call logged.
-- [ ] **T6 Stuck dialog live.** Resize to ≤1600 px, real preview, `/api/check`, box rendering, error states. **Verify:** staged right/wrong/blurry photos on phone and desktop give the expected verdicts, logged.
-- [ ] **T12 Seed guides.** Talha films; we build them through the real pipeline. **Verify:** each guide checked by hand; outline accuracy (≥70% of steps) measured and logged.
+- [ ] **T12 Seed guides** *(needs the 3 videos)*. Build air purifier, dishwasher and coffee machine guides through the real pipeline. **Verify:** each checked by hand; outline accuracy (≥70% of steps) measured and logged.
+- [ ] **T17 Voice guides.**
+  - [x] (a) Image-consistency spike: one base image + one edit per step keeps the object identical; a highlight edit circles the key part.
+  - [ ] (b) `src/lib/safety.ts` blocked-topics list + Spark review schema, test-first (harmful, gibberish, incomplete, valid, invalid JSON → blocked).
+  - [ ] (c) `/api/voice-guides` (WAV ≤2 min inline, gates, steps, draft only after passing) and `/api/voice-images` (base → per-step edit → highlight edit).
+  - [ ] (d) Create flow: "Talk it through" option, record/upload, consent, style picker (6 samples in `public/styles/`), blocked-reason screen, review + regenerate, publish.
+  - [ ] (e) Viewer: illustration + "Illustration by AI", "Show part" switches plain/highlighted, no "I'm stuck".
+  - **Verify:** one real voice guide published end to end; a staged harmful and a gibberish recording are blocked with nothing in the DB or Storage.
 
-## Day 4: 2026-11-03. Ship a live build + draft demo
+## Day 4: Tue 2026-11-03
 
-- [ ] **T11 Publish lite.** Rename steps, publish, share link, gallery list (search/filters only if time allows). **Verify:** an end-to-end creator run on desktop Chrome, timed and logged.
-- [ ] **T13 Deploy.** Vercel production with env vars, access codes, daily caps; Supabase keep-alive through 2026-11-09. *(Ask Talha first.)* **Verify:** T6 and T11 checks pass on the deployed build; no secret in the client bundle.
-- [ ] **T14 Hardening + draft demo.**
-  - Failure states (ARCHITECTURE §6), 18+ checkbox, privacy note, accessibility pass.
-  - Record a draft demo.
-  - **Verify:** failure drill logged; red-team review of the deployed build and draft video.
+- [ ] **T18 AI-enhanced step images (video guides, optional checkbox).** `/api/enhance`: keyframe → Muse Image edit (same scene, clearer) → highlight edit → `{idx}-ai.jpg` / `{idx}-ai-focus.jpg`. Viewer: "Enhanced by AI" + "View original frame". **Verify:** on a dim/blurry seed clip the enhanced image shows the same parts (by eye, logged); unit test that `/api/check` only reads `keyframe_path`.
+- [ ] **T16 Read aloud (Wit.ai).** `/api/tts` at publish → MP3 per step → "Read aloud" with pause/stop. **Verify:** plays on every step of a seed guide; no MP3 hides the button.
+- [ ] **T13 Deploy** *(needs Talha's OK + Vercel account)*. Vercel project (root `apps/showhow`), env vars, `vercel.json` `maxDuration`, access codes, Supabase keep-alive through 2026-11-09. **Verify:** T6 and T11 checks pass on the live URL; bundle scan clean; CI green on GitHub.
+- [ ] **T14 Hardening + draft demo.** Every failure state in ARCHITECTURE §12, privacy note, accessibility pass (keyboard, focus, labels, contrast), phone check. Record a draft demo. **Verify:** failure drill logged; red-team review of the live build and draft video.
 
-## Day 5: 2026-11-04. Final demo and submit by ~15:00 ET (hard deadline 21:00 ET)
+## Day 5: Wed 2026-11-04 (submit by ~15:00 ET; hard deadline 21:00 ET)
 
-- [ ] **T15 Demo + submission.**
-  - Final 3-minute video: problem → creator upload (desktop Chrome, ≤3 min clip) → guide → "I'm stuck" catches a mistake → vision.
-  - README listing what was built during 2026-10-27 to 2026-11-04.
-  - Git history scan before the repo goes public.
-  - Submit and post on X.
-  - *(Each public step needs Talha's go-ahead.)* **Verify:** the demo claims match the deployed build; the submission is confirmed.
+- [ ] **T15 Demo + submission** *(each public step needs Talha's go-ahead)*. Final 3-minute video: problem → video guide built from a phone clip → "I'm stuck" catches a mistake → voice guide with illustrations → vision (Ray-Ban Meta live help). README listing work done 2026-10-27 → 11-04. Git history scan, repo public, submit, post on X. **Verify:** every demo claim matches the live build; submission confirmed.
 
-## After the core loop (in this order: T17 → T18 → T7)
+## Stretch (only if everything above is green)
 
-- [ ] **T16 Read step aloud (Wit.ai TTS).** At publish, the server synthesizes each step's instruction once (`POST api.wit.ai/synthesize`, a clean voice such as Rebecca) and stores a ~50 KB MP3 per step in Storage. The viewer gets a "Read aloud" button with pause/stop. Text only, so no user media goes to Wit. **Verify:** audio plays for every step of a seed guide; a missing MP3 hides the button.
-- [ ] **T17 Voice guides (first after the core loop; replaces T7 as top stretch).**
-  - [x] (a) Consistency spike (2026-10-31): base image + one edit per step keeps the object identical; a highlight edit adds an orange focus circle on the key part. Logged.
-  - (b) `src/lib/safety.ts` blocked-topics list + Spark review schema, test-first (harmful, gibberish, incomplete, valid, invalid JSON → blocked).
-  - (c) `POST /api/voice-guides` (WAV ≤2 min in one request, gates, steps, draft) and `/images`.
-  - (d) Create flow: "Talk it through" option, record/upload, consent, style picker with the 6 stored samples (`public/styles/`), progress, blocked-reason screen, review, publish.
-  - (e) Viewer: illustration in place of the clip, "Illustration by AI" label, no "I'm stuck" button.
-  - **Verify:** one real voice guide published end to end; a staged harmful and a gibberish recording are both blocked with nothing in the DB or Storage.
-- [ ] **T18 AI-enhanced step images for video guides (after T17; reuses its image code).** Optional "Enhance with AI" checkbox at upload. Per step: real keyframe → Muse Image edit (same scene, better light/sharpness) → highlight edit. Store as `{idx}-enhanced.jpg` / `{idx}-enhanced-focus.jpg`; viewer shows "Enhanced by AI" + "View original frame"; checks keep using the real keyframe. **Verify:** on a dim/blurry seed clip the enhanced image shows the same object and parts (by eye, logged); the check route never reads an enhanced path (unit test).
 - [ ] **T7 Where am I?** Learner photo + step keyframes → `{step, reason}` → jump to step.
 
 ## Cut order if behind
 
-1. Where am I? (T7, stretch only)
-2. AI-enhanced video images (T18)
-3. Voice guides (T17) if the core loop isn't solid by end of Day 3
-4. Gallery search and filters
-5. Creating guides on a phone (desktop Chrome is the supported creator path)
+1. T7 Where am I?
+2. T16 Read aloud
+3. T18 AI-enhanced images
+4. T17 voice guides (if the core loop isn't solid by end of Day 3)
+5. Gallery search/filters
 6. Step editing in review (publish as generated)
-7. Fourth seed guide
+7. Third seed guide
 
-Never cut: real model calls, consent screens, honest failure states, a deployed live build.
+**Never cut:** real model calls, consent screens, honest failure states, the "I'm stuck" check on video guides, a deployed live build.
