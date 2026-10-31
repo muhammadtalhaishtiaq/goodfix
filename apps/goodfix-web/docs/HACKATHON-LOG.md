@@ -58,3 +58,30 @@ Append dated, evidence-based notes here. Never include API keys, raw user media,
 - Moved the seven spec docs from `apps/goodfix-web/` to `apps/goodfix-web/docs/` and fixed links. Removed a duplicated threat-model row in `SECURITY-PLAN.md`.
 - Process change approved by Talha: tests are now written test-first for risk-bearing logic (consent, stop gate, evidence numbering, parsers, deletion state) instead of only on explicit request.
 - No app code, model requests, or deployments changed.
+
+## 2026-10-30 — Participant guide re-checked
+
+Source: Cerebral Valley participant guide (text supplied by Talha from the signed-in page, 2026-10-30); event overview page and dev.meta.ai event page fetched the same day.
+
+- Rubric confirmed (Stage Two, 0–10 each): Impact 30%, Use of Meta AI Tooling 25% ("go beyond a basic integration… surface capabilities that surprised even us"), Technical Depth & Execution 20%, Demo 25% ("Does the product hold up live? Is the demo video genuinely cool to watch?"). Stage One is pass/fail on theme fit and reasonable Meta model use. Top 5 per track go to a live final on 2026-11-09.
+- Judges use the 3-minute video, the code, **and the live product**. This weakens a local-only demo plan; a judge-accessible hosted build likely matters for the Demo score.
+- Anti-projects list includes "Simple Image Analyzers" and AI medical advice. Goodfix must read as a closed-loop guided task, not an image analyzer.
+- Rules: public repo; solo allowed (max team 4); only work built 2026-10-27–2026-11-04 may be demoed, clearly identified, or disqualification is possible.
+- Models available: Muse Spark series, Muse Wonder, Muse Image, Muse Voice Transcribe, SAM 3.1 (Model API); Muse Glimmer and Muse Spark Open (open weights); Muse Code.
+- Credits: $150 Meta Model API credits per participant, claimed via form by 2026-11-04 21:00 ET; requires a card on the account; set a spend limit.
+- Bonus prizes relevant to us: Best Agentic Use-Case ($5K), Most Viral on X ($20K, engagement until 2026-11-08), Community Vote ($10K).
+- Discord #office-hours (Meta team) runs weekdays 10–11 AM ET; next sessions are 2026-11-02 and 2026-11-03. Use it to ask about the hosted-route terms question.
+
+## 2026-10-30 — Red-team review of idea directions
+
+Reviewed (independent subagent following `.claude/agents/hackathon-red-team.md`; it checked dev.meta.ai docs and Terms): A = single cupboard handle status quo; B = multi-playbook fastener coach + hands-free voice + before/after verification; C = B framed as a verifiable agent.
+
+- Estimated weighted score: A 5.0, B as written 5.9 (low confidence it can be finished solo), **B-cut + C framing 7.0** (recommended).
+- Key finding 1: browser recordings (WebM) and iPhone clips (HEVC MOV) are likely rejected; docs list MP4 for Spark video and SAM rejects WebM/VP9. Server-side ffmpeg transcode to H.264 MP4 and day-1 tests with real phone files.
+- Key finding 2: SAM 3.1 accepts point prompts and tracks bidirectionally, up to 16 objects per request; one video per request, so before/after comparison is app code across two requests. A text prompt for a small screw may miss; tap-to-track is safer.
+- Key finding 3: "hands-free" voice conflicts with per-request media consent, and the realtime WebSocket has no documented ephemeral token. If kept, use push-to-talk via the file endpoint with a one-tap send preview; first to cut.
+- Proposed signature moment: deterministic before/after "wobble" measure from SAM geometry (handle box motion relative to door box), explained by Spark, with the gate refusing to claim "fixed" on ambiguous evidence; plus a visible agent trace panel (plan → ask → SAM tool → gate → verify).
+- Scope cuts proposed: chair/table legs and door hinges (load-bearing/injury risk), in-browser recording, IndexedDB, Muse Image.
+- Hosting: a judge-access-code build with fixed prompts, allowlisted models, server-only key, per-code rate limit, server-side spend cap, and an 18+ check is likely an Integrated Product rather than a gateway under Terms §10.1(i) (medium confidence; carve-out text paraphrased, not quoted). Build privately now; ask Meta in Discord #office-hours; record a new dated decision before exposing it.
+- Unknowns: Spark video size/duration limits, multi-video input, function calling, whether SAM accepts data URLs, console spend-limit control.
+- Status: recommendation only; awaiting Talha's direction decision before any DECISIONS entry.
