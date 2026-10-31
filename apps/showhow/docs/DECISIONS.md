@@ -35,3 +35,12 @@ Supersedes the 2026-10-29 Goodfix product decision (single cupboard-handle repai
 - **Retained rules:** keys server-only; fresh preview + consent per learner photo; learner photos never stored; no fabricated outlines or fixture-as-live; 18+.
 - **Retired rules:** cupboard-only scope, repair stop rules, written-authorization blocker for all live calls (replaced by the access-code gate and the Discord question).
 - **Tests:** written test-first for risk-bearing logic (approved 2026-10-30).
+
+## 2026-10-30 — Spec corrections after red-team review
+
+- Correction: Showhow uses **three** Meta models (Voice Transcribe, Muse Spark, SAM 3.1), not four as written in the pivot entry above.
+- Step start/end times come from Voice Transcribe `ENDPOINTING` turn timestamps; Muse Spark returns turn indices, not seconds.
+- SAM 3.1 returns boxes plus a base85 mask; the UI draws the box until the mask-to-frame mapping is verified. Zero or ambiguous matches mean no outline.
+- Creator input capped at 500 MB / 3 min; desktop Chrome/Edge is the supported creator path for the demo; encoder support checked at runtime.
+- Creators get a consent screen before upload. Video reaches Spark by public Supabase URL; Files API (with deletion) only as fallback.
+- No food/recipe seed guides. "Where am I?" moved to stretch. Target submission ~15:00 ET on 2026-11-04.

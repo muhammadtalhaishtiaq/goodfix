@@ -91,3 +91,13 @@ Reviewed (independent subagent following `.claude/agents/hackathon-red-team.md`;
 - Installed react 19.3, zod 4.6, mediabunny 1.65, @supabase/supabase-js 2.118; dev: vitest 5.0, @testing-library/react 16.3, user-event 14.6, jsdom 30.1. `package-lock.json` committed. npm left the optional `fsevents` install script unapproved (macOS file watcher only).
 - Added `.env.example` (placeholders; server keys documented as never `VITE_*`), jsdom test env, and a render test written first (failed, then passed).
 - Verified on Node 22.22.3 / npm 11.17.0: `npm ci` clean (0 vulnerabilities), `npm run lint`, `npm run typecheck`, `npm test` (1/1), `npm run build` (221 kB JS, 69 kB gzip) all green.
+
+## 2026-10-30 — Red-team review of Showhow spec and plan
+
+Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` subagent; checked dev.meta.ai docs, Vercel limits, Supabase pricing, Mediabunny codec docs).
+
+- Spec errors found and fixed: SAM returns box + base85 mask (no polygons); Voice Transcribe needs `ENDPOINTING` for turns (per-turn timestamps only; 32 MB / 10 min); Spark video should go by `video_url` (inline 50 MB cap, base64 inflation); "four models" was wrong (three).
+- Design changes: step times from Transcribe turns, Spark returns turn indices; `sam_noun` + `include_confidence` with an ambiguity rule; creator consent screen; input cap 500 MB / 3 min; runtime `canEncode` check; no food seeds.
+- Confirmed from docs (per reviewer): Spark accepts up to 50 images and schema-constrained JSON; SAM accepts base64 data URLs; 3,000 RPM; Vercel Hobby 300 s / 4.5 MB body; Supabase free 50 MB/file, 1 GB, 5 GB egress, pauses after 1 week idle.
+- Plan reordered: day 1 is the check-accuracy spike on staged photos (highest-risk assumption), then the pipeline spike; Where am I? moved to stretch; draft demo on day 4; submit ~15:00 ET.
+- Still unknown: Spark video duration/size limits, SAM mask mapping, a Meta spend-limit control.

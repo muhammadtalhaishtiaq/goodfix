@@ -18,13 +18,13 @@
 1. As a learner I browse a gallery, open a guide, and follow one step at a time. Each step is a short looping clip of the creator's video, with the key part outlined.
 2. As a learner stuck on a step, I send **one photo** of my work and get a verdict ("matches", "this part differs", or "photo unclear"), with the differing part outlined **on my photo**.
 3. As a learner who lost track, I tap **Where am I?**, send a photo, and get told which step I'm on.
-4. As a creator I upload a video (up to 2 GB / 5 min). It becomes an editable step-by-step guide: steps, timestamps, instructions in my own words, key parts outlined. I review, publish, and get a share link.
+4. As a creator I upload a video (up to 500 MB / 3 min; desktop Chrome or Edge is the supported path for the demo). It becomes an editable step-by-step guide: steps, timestamps, instructions in my own words, key parts outlined. I review, publish, and get a share link.
 
 **How each Meta model is used (each has a distinct role):**
 
 | Model | Role |
 |---|---|
-| Muse Voice Transcribe | Creator narration → timestamped transcript |
+| Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end) |
 | Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step |
 | SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
 
@@ -34,8 +34,8 @@
 - Gallery: browse, search, category filter, guide cards. Seeded with 3–4 real guides we film and build **through our own pipeline**.
 - Guide viewer: step list, looping step segment of the creator video (one video file, start/end times), "Show part" outline, full-video segment bar, instruction, creator tip quote, done/next.
 - **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
-- **Where am I?** check (cut first if time runs short).
-- Creator flow: access code → upload → in-browser shrink → processing stages → review and edit → publish → share link.
+- **Where am I?** check (stretch; cut first).
+- Creator flow: access code → **creator consent screen** (names Supabase public hosting and the three Meta models) → upload → in-browser shrink → processing stages → review (light edits) → publish → share link.
 - Honest states everywhere: processing, failure, unclear photo, no outline found, rate limited.
 
 **Out:** accounts and logins, comments, ratings, public uploads without a code, mobile app, live/real-time video, Muse Image, voice questions, learner video uploads (photos only), translation, automatic moderation.
@@ -44,15 +44,15 @@
 
 **Learner check** (`POST /api/check`)
 1. Browser resizes the photo to ≤1600 px JPEG and shows the payload preview (photo, reference frame, question, recipients). Nothing is sent before the user taps Send.
-2. Server: Muse Spark gets the learner photo, the creator's keyframe, the step text and the optional question, and returns strict JSON `{status: "match"|"differs"|"unclear", differences:[{part, note}], message}`.
-3. If `differs`: SAM 3.1 runs on the learner photo with `differences[0].part` as the text prompt and returns a mask/box.
-4. Gate: zero or invalid SAM geometry → show the verdict text with "couldn't pinpoint it on your photo", never a made-up outline. `unclear` → ask for a closer, better-lit photo. The photo is not stored.
+2. Server: Muse Spark gets the learner photo, the creator's keyframe, the step text and the optional question, and returns schema-constrained JSON `{status: "match"|"differs"|"unclear", differences:[{part, sam_noun, note}], message}`. `sam_noun` is a short noun with no spatial words, as SAM expects.
+3. If `differs`: SAM 3.1 runs on the learner photo with `differences[0].sam_noun` and `include_confidence`, returning boxes plus masks in source pixels.
+4. Gate: zero matches, or several matches with no clear winner, or invalid geometry → show the verdict text with "couldn't pinpoint it on your photo", never a guessed outline. The demo draws the **box**; the mask is used only once its mapping to the frame has been verified. `unclear` → ask for a closer, better-lit photo. The photo is not stored.
 
 **Creator build** (client-driven, so each server call stays short)
-1. Browser checks the file (video, ≤2 GB, ≤5 min), then shrinks it with Mediabunny/WebCodecs to H.264 720p MP4 (≤50 MB, lowering bitrate if needed) and extracts a 16 kHz mono WAV.
+1. Browser checks the file (video, ≤500 MB, ≤3 min) and checks encoder support at runtime (`canEncode`, not a browser-name guess). It then shrinks the video with Mediabunny/WebCodecs to H.264 720p MP4 at ~1 Mbps (~23 MB for 3 min, hard cap 48 MB) and extracts a 16 kHz mono WAV.
 2. `POST /api/guides` (access code required) creates a draft and returns signed upload URLs. The browser uploads the MP4 and WAV straight to Supabase Storage.
-3. `POST /api/guides/:id/steps`: Voice Transcribe on the WAV, then Muse Spark on the video and transcript, returning `steps[{title, start_s, end_s, instruction, tip_quote, key_part, keyframe_s}]`, validated (ordered, non-overlapping, inside the duration, 2–8 steps).
-4. The browser grabs a JPEG keyframe per step from its local copy and uploads it. `POST /api/guides/:id/outlines` runs SAM 3.1 per keyframe with `key_part` and stores the geometry (or null).
+3. `POST /api/guides/:id/steps`: Voice Transcribe on the WAV in `ENDPOINTING` mode, which returns `turns[]` with start/end ms. Muse Spark gets the video (by its Supabase URL as `video_url`) plus the numbered turns and returns `steps[{title, first_turn, last_turn, instruction, tip_quote, key_part, sam_noun}]`. **Step times come from Transcribe turn timestamps, not from Spark.** Validated: turn indices in range, ordered, non-overlapping, 2–8 steps.
+4. The browser grabs a JPEG keyframe per step (step midpoint) from its local copy and uploads it. `POST /api/guides/:id/outlines` runs SAM 3.1 per keyframe with `sam_noun` and stores the best box (or null when there are zero or ambiguous matches).
 5. The creator edits titles and instructions, then `POST /api/guides/:id/publish`.
 
 **Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
@@ -130,17 +130,17 @@ export function gateVerdict(v: Verdict, outline: Outline | null): Shown {
 
 ## 10. Success criteria (all on the same deployed build)
 
-1. A real iPhone video of ≥500 MB uploads, shrinks to ≤50 MB in the browser, and becomes a published guide with correct-looking steps, in under 3 minutes end to end.
+1. A real phone video (≤500 MB, ≤3 min) uploads on desktop Chrome, shrinks to ≤48 MB in the browser, and becomes a published guide with sensible steps. End-to-end time is measured in T0b/T11 and stated as measured, never promised in advance.
 2. Each step plays its own segment; at least 70% of steps in the seed guides have a SAM outline that lands on the right part. The rest show none rather than a wrong one.
-3. A deliberately wrong learner photo returns `differs` with an outline on the wrong part; a correct photo returns `match`; a blurry photo returns `unclear`.
-4. Learner photos are never stored; every check shows a payload preview first.
+3. On the seed tasks' staged photo set (5 right, 5 wrong, 2 blurry), wrong photos return `differs` with a box on the differing part, right photos return `match`, and blurry photos return `unclear`. Accuracy is measured and logged; only tasks that pass are filmed for the demo.
+4. Learner photos are never stored; every check shows a payload preview first. Creators see a consent screen before their video leaves the device.
 5. The site works on a phone and on desktop; a judge can create a guide with the access code.
 6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
 
 ## 11. Open questions (resolved on day 1 unless noted)
 
-1. Exact Meta request formats: Spark multi-image input, video by URL vs inline vs Files API, size/duration limits; SAM mask format; Voice Transcribe response timestamps.
-2. Vercel Hobby function max duration and memory, against real Spark/SAM latency.
+1. Still unknown after the docs review (2026-10-30): Muse Spark video duration/size limits and frame sampling; how SAM's mask maps onto the frame; whether Meta offers a spend-limit control (until confirmed, the app's own caps are the only guaranteed limit).
+2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit (stream Spark responses).
 3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
-4. **Seed guides (Talha):** which 3–4 tasks can you film at home? Each needs clear right/wrong steps (e.g. flat-pack assembly, a gadget setup, a filter swap, a recipe step with a visible result).
+4. **Seed guides (Talha):** which 3–4 tasks can you film at home? Each needs clear right/wrong steps with distinct parts (e.g. flat-pack assembly, a gadget setup, a filter swap, LEGO). No food/recipe guides: a "match" verdict could read as food-safety advice.
 5. Final product name.

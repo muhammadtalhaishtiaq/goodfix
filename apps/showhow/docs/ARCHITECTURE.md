@@ -41,9 +41,10 @@ steps(id uuid pk, guide_id uuid fk, idx int, title text, instruction text,
 usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate caps
 ```
 
-- `outline` = `{frame_w, frame_h, box:[x,y,w,h], polygon:[[x,y],…]}` in source-frame pixels, or `null`. The renderer scales it to the displayed size; it is never fabricated.
+- `outline` = `{frame_w, frame_h, box:[x,y,w,h], score, mask_raw?}` in source-frame pixels, or `null`. SAM returns a box plus a base85 mask that is smaller than the frame and whose mapping is undocumented, so the UI draws the **box** until that mapping is verified. Nothing is ever fabricated.
 - RLS: anonymous users can `select` published guides and their steps only. All writes use the service role inside `/api`.
-- Storage: `videos/{guide}/video.mp4`, `videos/{guide}/audio.wav` (WAV deleted after transcription), `frames/{guide}/{idx}.jpg`. Learner photos never touch Storage.
+- Storage: `videos/{guide-uuid}/video.mp4`, `videos/{guide-uuid}/audio.wav` (WAV deleted after transcription), `frames/{guide-uuid}/{idx}.jpg`. Buckets are public-read so Spark can fetch `video_url` and the viewer can stream. Draft paths are unguessable UUIDs, and failed or abandoned drafts are deleted. Learner photos never touch Storage.
+- Free-tier budget: 1 GB storage and 5 GB egress a month. At ~23 MB a guide that is ~40 guides stored and ~200 full plays, so creation is capped per day.
 
 ## 3. API routes
 
@@ -59,8 +60,10 @@ Each route does one model stage so it stays within serverless time limits, and t
 
 ## 4. Large video handling
 
-- Input accepted: `video/*`, ≤2 GB, ≤5 min (checked from metadata before any work).
-- Mediabunny converts on-device to H.264 720p, 30 fps max, target 1 Mbps, AAC audio. If the estimated size is over 48 MB it lowers the bitrate; if it still can't fit, it says so. The original never leaves the device.
+- Input accepted: `video/*`, ≤500 MB, ≤3 min (checked from metadata before any work). Encoder support is checked at runtime with Mediabunny `canEncode`; AAC may need the `@mediabunny/aac-encoder` polyfill in some browsers.
+- Mediabunny converts on-device to H.264 720p, 30 fps max, ~1 Mbps (~23 MB for 3 min), AAC audio. If the estimate is over 48 MB it lowers the bitrate; if it still can't fit, it says so. The original never leaves the device.
+- Muse Spark receives the video by public URL (`video_url`); inline base64 is avoided because 50 MB becomes ~66 MB. Fallback: the Files API (1 GiB), with `expires_after` set and an explicit `DELETE /v1/files/{id}` afterwards.
+- Voice Transcribe uses `ENDPOINTING` mode (the default push-to-talk mode returns no turns). Limits are 32 MB and 10 min; a 3-min 16 kHz WAV is ~5.8 MB.
 - A WAV (16 kHz mono 16-bit) is extracted on-device for Voice Transcribe.
 - Uploads go straight from the browser to Supabase Storage with signed URLs, so Vercel's ~4.5 MB request-body limit never applies to media.
 - The viewer plays one MP4 per guide and loops `[start_s, end_s]` per step; there is no clip cutting.
@@ -80,9 +83,9 @@ Each route does one model stage so it stays within serverless time limits, and t
 | Condition | User sees |
 |---|---|
 | Video too long/large or unreadable | Reason + supported limits, nothing uploaded |
-| Shrink not supported in browser | "Use Chrome, Edge or Safari 16.4+" |
+| Encoder not supported (`canEncode` false) | "This browser can't prepare video. Use desktop Chrome or Edge." |
 | Spark returns invalid steps | Retry, or "we couldn't split this video"; no partial guide published |
-| SAM finds nothing | Step without outline; "Show part" disabled for that step |
+| SAM finds nothing, or several equal matches | No outline; "Show part" disabled for that step; check says "couldn't pinpoint" |
 | Check `unclear` | Ask for a closer, well-lit photo of the step |
 | Meta timeout / 429 / 5xx | "The checker didn't answer. Try again"; never a fake verdict |
 | Daily cap reached | Plain message; viewing guides still works |
