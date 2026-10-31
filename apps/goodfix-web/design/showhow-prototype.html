@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showhow · prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F0E6; --surface:#FFFCF6; --surface-2:#EEE6D7; --line:#DCD2C0;
+  --ink:#1D1B18; --ink-2:#5A5248; --ink-3:#857B6E;
+  --primary:#1F5A4C; --primary-hover:#174538; --primary-soft:#DCE9E3; --on-primary:#FFFFFF;
+  --signal:#EE5A17; --signal-soft:#FDE4D5;
+  --ok:#2C7A4B; --ok-soft:#DDEFE3; --warn:#A8500B; --warn-soft:#FBE9D2;
+  --wood:#D9B98A; --wood-edge:#A7834F; --wood-dark:#C2A06E; --board:#CDB99D; --metal:#C9CDD2;
+  --radius:14px; --radius-sm:9px;
+  --shadow:0 1px 0 rgba(29,27,24,.04),0 6px 18px -10px rgba(29,27,24,.25);
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;letter-spacing:-.01em}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* top */
+.proto{background:var(--ink);color:#EDE6D8;font-size:13px;text-align:center;padding:6px 16px}
+.proto b{color:#fff}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 20px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:800;font-size:21px}
+.logo-mark{width:32px;height:32px}
+.nav{margin-left:auto;display:flex;gap:6px;align-items:center}
+.nav a{text-decoration:none;padding:9px 12px;border-radius:999px;color:var(--ink-2);font-weight:700;font-size:15px}
+.nav a[aria-current="page"]{color:var(--ink);background:var(--surface-2)}
+.nav a.btn{color:var(--on-primary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid transparent;font-weight:700;text-decoration:none;transition:background .15s,border-color .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-ghost{background:var(--surface);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--ink-3)}
+.btn-signal{background:var(--signal);color:#fff}
+.btn-signal:hover{background:#D24C10}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+main{max-width:1240px;margin:0 auto;padding:28px 20px 80px}
+
+/* gallery */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:20px 0 36px}
+.hero h1{font-size:clamp(38px,5.4vw,64px);font-weight:800}
+.hero h1 em{font-style:normal;color:var(--primary);background:linear-gradient(transparent 62%,var(--signal-soft) 62%)}
+.hero p{font-size:19px;color:var(--ink-2);max-width:34em;margin:16px 0 0}
+.how{display:grid;gap:12px}
+.how li{list-style:none;display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.how ol{margin:0;padding:0;display:grid;gap:10px}
+.how .n{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-family:var(--display);font-weight:800;font-size:18px}
+.how li:nth-child(2) .n{background:var(--signal-soft);color:var(--signal)}
+.how li:nth-child(3) .n{background:var(--ok-soft);color:var(--ok)}
+.how b{display:block}
+.how span{color:var(--ink-2);font-size:15px}
+.filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0 22px}
+.search{flex:1 1 260px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 16px;min-height:46px;color:var(--ink-3)}
+.search input{border:0;background:transparent;outline:0;flex:1;min-width:0;color:var(--ink)}
+.search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:14px;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;text-decoration:none;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.thumb{position:relative;aspect-ratio:16/10;background:var(--surface-2)}
+.thumb>svg,.thumb>video{display:block;width:100%;height:100%;object-fit:cover}
+.thumb .badge{position:absolute;left:10px;bottom:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(29,27,24,.82);color:#fff;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+.badge.new{background:var(--signal)}
+.card-b{padding:14px 16px 16px;display:grid;gap:8px}
+.card h3{font-size:19px;font-weight:700}
+.meta{display:flex;align-items:center;gap:8px;color:var(--ink-2);font-size:14px;flex-wrap:wrap}
+.av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;flex:none}
+.dot{width:3px;height:3px;border-radius:50%;background:var(--ink-3)}
+.checkable{display:inline-flex;align-items:center;gap:6px;color:var(--primary);font-weight:700;font-size:13.5px}
+.empty{padding:40px;text-align:center;color:var(--ink-2);background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius)}
+
+/* guide */
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);text-decoration:none;font-weight:700;margin-bottom:14px;min-height:40px}
+.g-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.g-head h1{font-size:clamp(28px,3.6vw,42px);font-weight:800}
+.g-layout{display:grid;grid-template-columns:290px 1fr;gap:24px;align-items:start}
+.g-layout>*{min-width:0}
+.steps{position:sticky;top:84px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px;display:grid;gap:4px}
+.steps .prog{padding:8px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.bar{height:6px;border-radius:9px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--primary);transition:width .3s}
+.step-btn{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;text-align:left;background:transparent;border:0;border-radius:10px;padding:9px 10px;min-height:48px}
+.step-btn:hover{background:var(--paper)}
+.step-btn .num{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-weight:700;font-size:14px;color:var(--ink-2)}
+.step-btn[aria-current="step"]{background:var(--primary-soft)}
+.step-btn[aria-current="step"] .num{border-color:var(--primary);background:var(--primary);color:#fff}
+.step-btn.done .num{border-color:var(--ok);color:var(--ok)}
+.step-btn small{display:block;color:var(--ink-3);font-size:12.5px}
+.step-btn span{font-weight:700;font-size:15px;line-height:1.25}
+.player{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.stage{position:relative;aspect-ratio:16/10;background:#E9DFCC}
+.stage svg.scene,.stage video{display:block;width:100%;height:100%;object-fit:cover}
+.stage-ui{position:absolute;inset:auto 12px 12px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 14px;border-radius:999px;background:rgba(29,27,24,.84);color:#fff;font-weight:700;font-size:13.5px;border:0}
+.pill.on{background:var(--signal)}
+.pill.round{width:44px;height:44px;padding:0;justify-content:center}
+.stage-label{position:absolute;top:12px;left:12px}
+.timeline{display:flex;gap:4px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.timeline .lbl{font-size:12.5px;color:var(--ink-3);font-weight:700;margin-right:6px;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.seg{height:28px;flex:var(--w,1);border-radius:6px;border:0;background:var(--surface-2);font-size:12px;font-weight:700;color:var(--ink-3);min-width:24px}
+.seg:hover{background:var(--line)}
+.seg[aria-current="true"]{background:var(--primary);color:#fff}
+.instr{display:grid;gap:14px;padding:20px 22px 22px}
+.instr .k{font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.06em}
+.instr h2{font-size:clamp(24px,2.6vw,32px);font-weight:800}
+.instr p{margin:0;font-size:18px;max-width:42em}
+.part{display:inline-flex;align-items:center;gap:8px;background:var(--signal-soft);color:#8A3A0C;font-weight:700;font-size:14px;padding:6px 12px;border-radius:999px;width:max-content;max-width:100%}
+.part i{width:10px;height:10px;border-radius:3px;border:2px solid var(--signal)}
+.tip{display:grid;grid-template-columns:36px 1fr;gap:12px;background:var(--paper);border-radius:var(--radius-sm);padding:12px 14px;color:var(--ink-2)}
+.tip .mic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);color:var(--ink)}
+.tip q{font-style:italic;color:var(--ink)}
+.tip small{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:4px}
+.actions .sp{flex:1}
+.stuck-cta{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;margin-top:16px;background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:16px 18px}
+.stuck-cta b{font-family:var(--display);font-size:20px;display:block;color:#fff}
+.stuck-cta span{color:#CFC6B6;font-size:15px}
+.stuck-cta .btns{display:flex;gap:10px;flex-wrap:wrap}
+.stuck-cta .btn-ghost{background:transparent;color:#fff;border-color:#5A5248}
+
+/* dialog */
+dialog{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 24px);background:var(--surface);color:var(--ink);box-shadow:0 30px 80px -20px rgba(0,0,0,.45)}
+dialog::backdrop{background:rgba(29,27,24,.55)}
+.d-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.d-head h2{font-size:22px}
+.d-body{padding:20px;display:grid;gap:16px}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{display:grid;gap:8px;justify-items:start;text-align:left;padding:18px;border-radius:var(--radius);border:2px dashed var(--line);background:var(--paper);min-height:130px;cursor:pointer;position:relative}
+.opt:hover,.opt:focus-within{border-color:var(--primary)}
+.opt b{font-size:17px}
+.opt span{color:var(--ink-2);font-size:14.5px}
+.opt input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.opt .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary)}
+label.fl{font-weight:700;font-size:15px;display:grid;gap:6px}
+textarea{width:100%;min-height:72px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface);resize:vertical}
+textarea:focus,input.txt:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.review{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rv{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--paper)}
+.rv .im{aspect-ratio:16/10;background:var(--surface-2)}
+.rv .im img,.rv .im svg{width:100%;height:100%;object-fit:cover;display:block}
+.rv p{margin:0;padding:8px 10px;font-size:13.5px;color:var(--ink-2)}
+.rv p b{color:var(--ink)}
+.recip{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.recip li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:14.5px}
+.recip .tag{font-size:12px;font-weight:700;color:var(--ink-3);text-align:right}
+.note{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink-2);background:var(--paper);padding:10px 12px;border-radius:var(--radius-sm)}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding:16px 20px;border-top:1px solid var(--line)}
+.stages{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.stages li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;color:var(--ink-3)}
+.stages li .st{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.stages li.run{color:var(--ink)}
+.stages li.run .st{border-color:var(--primary);border-top-color:transparent;animation:spin 0.9s linear infinite}
+.stages li.done{color:var(--ink)}
+.stages li.done .st{border-color:var(--ok);background:var(--ok);color:#fff}
+.stages li.done .st svg{width:14px;height:14px;stroke-width:3}
+.stages b{display:block}
+.stages small{font-size:13.5px;color:var(--ink-3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.verdict{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;align-items:start}
+.v-photo{position:relative;border-radius:var(--radius-sm);overflow:hidden;aspect-ratio:16/10;background:var(--surface-2)}
+.v-photo img,.v-photo>svg{width:100%;height:100%;object-fit:cover;display:block}
+.v-photo .ov{position:absolute;inset:0;width:100%;height:100%}
+.v-card{border-radius:var(--radius-sm);padding:14px;display:grid;gap:10px}
+.v-card.warn{background:var(--warn-soft)}
+.v-card.ok{background:var(--ok-soft)}
+.v-card h3{font-size:20px;display:flex;gap:8px;align-items:center}
+.v-card.warn h3{color:var(--warn)}
+.v-card.ok h3{color:var(--ok)}
+.v-card p{margin:0}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:6px;font-size:14.5px}
+.checks li{display:flex;gap:8px;align-items:center}
+.checks .y{color:var(--ok)} .checks .n{color:var(--warn)}
+.src{font-size:12.5px;color:var(--ink-3)}
+
+/* create */
+.c-wrap{max-width:980px;margin:0 auto}
+.c-steps{display:flex;gap:8px;margin:6px 0 24px;flex-wrap:wrap}
+.c-steps li{list-style:none;display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px;color:var(--ink-3);padding:8px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.c-steps li[aria-current="step"]{color:var(--paper);background:var(--ink);border-color:var(--ink)}
+.c-steps li.done{color:var(--ok)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.drop{display:grid;place-items:center;text-align:center;gap:10px;padding:44px 20px;border:2px dashed var(--line);border-radius:var(--radius);background:var(--paper);position:relative}
+.drop.over{border-color:var(--primary);background:var(--primary-soft)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop .ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary)}
+.drop .ic svg{width:28px;height:28px}
+.or{display:flex;align-items:center;gap:12px;color:var(--ink-3);font-size:14px;margin:16px 0}
+.or::before,.or::after{content:"";height:1px;flex:1;background:var(--line)}
+.sample{display:grid;grid-template-columns:160px 1fr auto;gap:16px;align-items:center;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--paper)}
+.sample .th{aspect-ratio:16/10;border-radius:8px;overflow:hidden}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+input.txt,select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface)}
+.proc{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.trans{background:var(--paper);border-radius:var(--radius-sm);padding:14px;display:grid;gap:8px;max-height:300px;overflow:auto;font-size:15px}
+.trans .ln{display:grid;grid-template-columns:52px 1fr;gap:8px;animation:fade .35s ease both}
+.trans .ts{font-variant-numeric:tabular-nums;color:var(--ink-3);font-size:13px;padding-top:2px}
+.trans .ln.cut{border-top:2px solid var(--primary);padding-top:8px;margin-top:2px}
+.trans .ln.cut .ts::after{content:"STEP";display:block;color:var(--primary);font-weight:700;font-size:11px}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}}
+.gen{display:grid;gap:12px}
+.gen-row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--surface)}
+.gen-row .th{aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:var(--surface-2);position:relative}
+.gen-row .th video,.gen-row .th svg{width:100%;height:100%;object-fit:cover;display:block}
+.gen-row input.txt{font-weight:700}
+.gen-row textarea{min-height:60px;margin-top:8px}
+.gen-row .ts{font-size:13px;color:var(--ink-3);font-weight:700;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.share{display:grid;gap:14px;text-align:center;justify-items:center;padding:28px 10px}
+.share .ok-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--ok-soft);color:var(--ok)}
+.share .ok-ic svg{width:32px;height:32px;stroke-width:2.5}
+.linkbox{display:flex;gap:8px;align-items:center;width:min(520px,100%);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 16px}
+.linkbox code{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;transition:.2s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* scene animation */
+.sam{fill:color-mix(in srgb,var(--signal) 16%,transparent);stroke:var(--signal);stroke-width:4;stroke-dasharray:12 8;animation:ants 1.2s linear infinite;vector-effect:non-scaling-stroke}
+.sam-tag rect{fill:var(--signal)} .sam-tag text{fill:#fff;font:700 15px var(--body)}
+.hide-sam .sam,.hide-sam .sam-tag{display:none}
+@keyframes ants{to{stroke-dashoffset:-40}}
+.a-in{animation:pop 6s ease-in-out infinite both}
+.a-drop{animation:dropIn 4s cubic-bezier(.3,.7,.3,1) infinite both}
+.a-slideL{animation:slideL 5s cubic-bezier(.3,.7,.3,1) infinite both}
+.a-slideD{animation:slideD 5s cubic-bezier(.3,.7,.3,1) infinite both}
+.a-turn{animation:turn 4s ease-in-out infinite both;transform-box:fill-box;transform-origin:center}
+.a-blink{animation:blink 5s ease infinite both}
+@keyframes pop{0%,8%{opacity:0;transform:translateY(-14px)}20%,92%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes dropIn{0%,10%{transform:translateY(-70px);opacity:0}40%,90%{transform:none;opacity:1}100%{opacity:0}}
+@keyframes slideL{0%,10%{transform:translateX(150px);opacity:0}45%,90%{transform:none;opacity:1}100%{opacity:0}}
+@keyframes slideD{0%,10%{transform:translateY(-120px);opacity:0}45%,90%{transform:none;opacity:1}100%{opacity:0}}
+@keyframes turn{0%,20%{transform:rotate(0)}55%,85%{transform:rotate(90deg)}100%{transform:rotate(0)}}
+@keyframes blink{0%,30%{opacity:0}45%,90%{opacity:1}100%{opacity:0}}
+.paused *{animation-play-state:paused!important}
+.hand{animation:hand 6s ease-in-out infinite}
+@keyframes hand{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,-16px)}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}.sam{animation:none}}
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:24px;padding-top:4px}
+  .g-layout{grid-template-columns:1fr}
+  .steps{position:static;display:flex;overflow-x:auto;gap:6px;padding:8px;scroll-snap-type:x mandatory}
+  .steps .prog{display:none}
+  .step-btn{flex:0 0 auto;grid-template-columns:28px auto;scroll-snap-align:start;padding:6px 12px 6px 6px;border:1px solid var(--line)}
+  .step-btn small{display:none}
+  .step-btn span{font-size:14px;white-space:nowrap}
+  .proc,.verdict,.review{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  main{padding:18px 16px 70px}
+  .top-in{padding:10px 16px}
+  .nav .lbl-sm{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .nav a.btn{padding:10px 14px}
+  .choose,.form{grid-template-columns:1fr}
+  .sample{grid-template-columns:96px 1fr}
+  .sample .btn{grid-column:1/-1}
+  .gen-row{grid-template-columns:1fr}
+  .instr{padding:16px}
+  .instr p{font-size:17px}
+  .timeline .lbl{display:none}
+  .actions .btn{flex:1}
+  .actions .sp{display:none}
+}
+</style>
+</head>
+<body>
+<div class="proto" role="note"><b>Design prototype</b> · dummy data · no AI calls · files you pick stay in this browser tab</div>
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="#/"><svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1F5A4C"/><rect x="7" y="8" width="18" height="14" rx="3" fill="none" stroke="#F5F0E6" stroke-width="2.4"/><path d="M11.5 15.5l3 3 6-6.5" fill="none" stroke="#EE5A17" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 25.5h8" stroke="#F5F0E6" stroke-width="2.4" stroke-linecap="round"/></svg>Showhow</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" id="nav-gallery">Gallery</a>
+      <a class="btn btn-primary" href="#/create" id="nav-create"><svg class="i"><use href="#i-plus"/></svg><span class="lbl-sm">Create guide</span></a>
+    </nav>
+  </div>
+</header>
+<main id="app" tabindex="-1"></main>
+<dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-locate" viewBox="0 0 24 24"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-frame" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></symbol>
+  <symbol id="i-steps" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ic = (n, cls = "i") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = ms => new Promise(r => setTimeout(r, reduce ? Math.min(ms, 120) : ms));
+
+/* ---------- scenes (SVG illustrations standing in for video frames) ---------- */
+const W = 640, H = 400;
+const bench = `<rect width="${W}" height="${H}" fill="#E9DFCC"/><g stroke="#DDD0B8" stroke-width="2">${[60,140,220,300,380].map(y=>`<path d="M0 ${y} C 160 ${y-8} 480 ${y+8} 640 ${y}"/>`).join("")}</g>`;
+const panel = (x,y,w,h,extra="") => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="var(--wood)" stroke="var(--wood-edge)" stroke-width="2.5" ${extra}/>`;
+const hole = (x,y,r=7) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#6B5233"/>`;
+const cam = (x,y) => `<g><circle cx="${x}" cy="${y}" r="11" fill="var(--metal)" stroke="#8E949B" stroke-width="2"/><path d="M${x-6} ${y}h12" stroke="#6E747B" stroke-width="2.5"/></g>`;
+const tag = (x,y,text) => { const w = text.length*8.4+22; return `<g class="sam-tag"><rect x="${x}" y="${y}" width="${w}" height="28" rx="14"/><text x="${x+11}" y="${y+19}">${esc(text)}</text></g>`; };
+const hand = (x,y) => `<g class="hand" opacity=".9"><path d="M${x} ${y} q 18 -40 40 -30 q 10 -22 26 -8 q 14 -14 26 4 q 22 -6 22 22 l -6 46 q -6 26 -40 30 l -36 0 q -30 -6 -40 -40 z" fill="#E7B98F" stroke="#B9875D" stroke-width="2.5"/></g>`;
+
+const SCENES = {
+  b1: () => `${bench}
+    <g class="a-in" style="animation-delay:0s">${panel(40,40,58,310)}${panel(112,40,58,310)}</g>
+    <g class="a-in" style="animation-delay:.3s">${panel(200,48,250,42)}${panel(200,104,250,42)}${panel(200,160,250,42)}</g>
+    <g class="a-in" style="animation-delay:.6s"><rect x="200" y="226" width="250" height="124" rx="4" fill="var(--board)" stroke="#A8957A" stroke-width="2.5"/></g>
+    <g class="a-in" style="animation-delay:.9s">
+      ${[["A",90],["B",190],["C",290]].map(([l,y])=>`<circle cx="535" cy="${y}" r="34" fill="#F4EFE6" stroke="#B8AE9E" stroke-width="2.5"/><text x="535" y="${y-12}" text-anchor="middle" font-family="var(--display)" font-weight="800" font-size="16" fill="#5A5248">${l}</text>${[0,1,2,3].map(k=>`<rect x="${515+k*11}" y="${y+2}" width="6" height="${l==="A"?18:l==="B"?11:16}" rx="2" fill="${l==="C"?"var(--wood-dark)":"#8E949B"}"/>`).join("")}`).join("")}
+    </g>
+    <rect class="sam" x="494" y="150" width="82" height="82" rx="20"/>${tag(398,240,"Bag B · 16 short screws")}`,
+  b2: () => `${bench}${panel(50,175,540,74)}
+    ${[110,250,390,530].map((x,i)=>`${hole(x,212)}<rect class="a-drop" style="animation-delay:${i*.35}s" x="${x-6}" y="${150}" width="12" height="40" rx="3" fill="var(--wood-dark)" stroke="var(--wood-edge)" stroke-width="2"/>`).join("")}
+    ${[180,460].map(x=>hole(x,212,9)).join("")}
+    <rect class="sam" x="86" y="190" width="468" height="44" rx="22"/>${tag(86,262,"Dowel holes · 4")}`,
+  b3: () => `${bench}${panel(80,30,64,340)}
+    <g class="a-slideL">${panel(144,172,400,46)}${cam(176,195)}${cam(512,195)}<circle class="sam" cx="176" cy="195" r="22"/><circle class="sam" cx="512" cy="195" r="22"/>${tag(200,232,"Cam holes · face up")}</g>
+    ${hand(470,300)}`,
+  b4: () => `${bench}${panel(60,120,520,160)}
+    <g class="a-turn"><circle cx="320" cy="200" r="78" fill="var(--metal)" stroke="#8E949B" stroke-width="4"/><path d="M276 200h88" stroke="#6E747B" stroke-width="12" stroke-linecap="round"/><path d="M320 140 l10 14 h-20z" fill="#6E747B"/></g>
+    <path d="M420 118 a 120 120 0 0 1 22 108" fill="none" stroke="var(--primary)" stroke-width="5" stroke-linecap="round"/><path d="M432 228 l12 6 4 -14" fill="none" stroke="var(--primary)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="sam" cx="320" cy="200" r="92"/>${tag(222,316,"Cam nut · ¼ turn")}`,
+  b5: (done) => `${bench}${panel(100,30,40,340)}
+    ${[50,185,320].map(y=>panel(140,y,360,30)).join("")}
+    <g class="${done?"":"a-slideL"}">${panel(500,30,40,340)}${done?"":`<rect class="sam" x="488" y="22" width="64" height="356" rx="14"/>${tag(352,354,"Right side panel")}`}</g>`,
+  b6: () => `${bench}${panel(100,30,40,340)}${[50,185,320].map(y=>panel(140,y,360,30)).join("")}${panel(500,30,40,340)}
+    <g class="a-slideD"><rect x="104" y="34" width="432" height="332" rx="4" fill="var(--board)" fill-opacity=".92" stroke="#A8957A" stroke-width="2.5"/></g>
+    <g class="a-blink">${[60,200,335].flatMap(y=>[150,320,490].map(x=>`<circle cx="${x}" cy="${y}" r="5" fill="#6E747B"/>`)).join("")}</g>
+    <rect class="sam" x="96" y="26" width="448" height="348" rx="12"/>${tag(110,336,"Back panel · smooth side in")}`,
+};
+
+const GLYPH = {
+  printer: `<rect x="190" y="150" width="260" height="140" rx="18" fill="#F4F1EC" stroke="#9C958B" stroke-width="3"/><rect x="230" y="100" width="180" height="60" rx="6" fill="#fff" stroke="#9C958B" stroke-width="3"/><rect x="230" y="250" width="180" height="70" rx="6" fill="#fff" stroke="#9C958B" stroke-width="3"/><circle cx="410" cy="180" r="10" fill="var(--primary)"/>`,
+  vacuum: `<rect x="250" y="90" width="140" height="220" rx="60" fill="#B9C3CC" stroke="#7E8A95" stroke-width="3"/><rect x="270" y="150" width="100" height="110" rx="40" fill="#E6ECF0" stroke="#7E8A95" stroke-width="3"/><path d="M390 140 q 90 -20 110 80" fill="none" stroke="#7E8A95" stroke-width="10" stroke-linecap="round"/>`,
+  espresso: `<rect x="210" y="80" width="220" height="240" rx="16" fill="#3C3A37"/><rect x="250" y="120" width="140" height="40" rx="8" fill="#5A5753"/><rect x="290" y="170" width="60" height="30" rx="6" fill="#9C9790"/><path d="M290 250 h60 v34 a 20 20 0 0 1 -20 20 h-20 a 20 20 0 0 1 -20 -20z" fill="#fff"/><rect x="240" y="306" width="160" height="10" rx="5" fill="#6B6762"/>`,
+  sheet: `<path d="M170 140 h300 l-30 150 h-240z" fill="#DCE6EE" stroke="#8FA3B4" stroke-width="3"/><path d="M170 140 q 40 30 0 60" fill="none" stroke="#8FA3B4" stroke-width="3"/><path d="M470 140 q -40 30 0 60" fill="none" stroke="#8FA3B4" stroke-width="3"/>`,
+  bike: `<circle cx="220" cy="240" r="80" fill="none" stroke="#3C3A37" stroke-width="10"/><circle cx="420" cy="240" r="80" fill="none" stroke="#3C3A37" stroke-width="10"/><path d="M220 240 l70 -100 h90 l40 100 M290 140 l40 100" fill="none" stroke="var(--primary)" stroke-width="8" stroke-linejoin="round"/>`,
+  plant: `<path d="M250 230 h140 l-18 100 h-104z" fill="#C77F55" stroke="#9A5B37" stroke-width="3"/><path d="M320 230 q -70 -60 -40 -140 q 40 50 40 140 q 10 -90 70 -120 q 10 80 -70 120" fill="#5E9B6B" stroke="#3F7A4C" stroke-width="3"/><rect x="236" y="222" width="168" height="18" rx="6" fill="#B26E47"/>`,
+};
+function genericScene(kind, hot, label) {
+  const [x, y] = hot || [320, 200];
+  return `${bench}${GLYPH[kind] || ""}${hot ? `<circle class="sam" cx="${x}" cy="${y}" r="42"/>${tag(Math.min(x - 40, 420), Math.min(y + 52, 356), label || "Key part")}` : ""}
+    <text x="620" y="30" text-anchor="end" font-size="13" font-weight="700" fill="#857B6E">ILLUSTRATION</text>`;
+}
+const svg = inner => `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">${inner}</svg>`;
+
+/* sample "learner photos" */
+const PHOTOS = {
+  shelfFlipped: () => `<rect width="${W}" height="${H}" fill="#CDBFA6"/><rect y="300" width="${W}" height="100" fill="#B9A585"/>
+    <g transform="rotate(-2 320 200)">${panel(90,30,60,330)}${panel(150,300,380,40)}${cam(182,320)}${cam(498,320)}
+    ${panel(150,165,380,40)}<circle cx="182" cy="205" r="10" fill="none" stroke="#6E747B" stroke-width="2" stroke-dasharray="4 3"/><circle cx="498" cy="205" r="10" fill="none" stroke="#6E747B" stroke-width="2" stroke-dasharray="4 3"/></g>
+    ${hand(520,250)}<rect width="${W}" height="${H}" fill="url(#vig)"/>
+    <defs><radialGradient id="vig"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".28"/></radialGradient></defs>`,
+  shelfFlippedOverlay: () => `<g transform="rotate(-2 320 200)"><rect class="sam" x="142" y="157" width="396" height="56" rx="14"/></g>${tag(170,226,"Middle shelf · upside down")}`,
+  frameUnlocked: () => `<rect width="${W}" height="${H}" fill="#CDBFA6"/><rect y="310" width="${W}" height="90" fill="#B9A585"/>
+    <g transform="rotate(1.5 320 200)">${panel(100,30,40,330)}${[50,180,310].map(y=>panel(140,y,360,30)).join("")}${[65,195,325].map(y=>`<circle cx="120" cy="${y}" r="9" fill="var(--metal)" stroke="#8E949B" stroke-width="2"/><path d="M120 ${y-6}v12" stroke="#6E747B" stroke-width="2.5"/>`).join("")}</g>
+    <rect width="${W}" height="${H}" fill="url(#vig2)"/><defs><radialGradient id="vig2"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".28"/></radialGradient></defs>`,
+  frameUnlockedOverlay: () => `<g transform="rotate(1.5 320 200)">${[65,195,325].map(y=>`<circle class="sam" cx="120" cy="${y}" r="20"/>`).join("")}</g>${tag(150,180,"Cam nuts · not locked")}`,
+};
+
+/* ---------- dummy data ---------- */
+const GUIDES = [
+  { id:"bookcase", title:"Assemble a 3‑shelf bookcase", cat:"DIY", creator:"Ahmed R.", color:"#1F5A4C", mins:18, checks:"1.4k", thumb:()=>SCENES.b5(true),
+    steps:[
+      {t:"Sort the parts", s:"00:00", e:"00:31", scene:"b1", part:"Bag B · 16 short screws", text:"Lay every panel flat and open the three bags. Bag B has the short screws. You'll need them in step 5, so keep them apart.", tip:"Honestly, ninety percent of mistakes are using the long screws where the short ones go. Count them now."},
+      {t:"Fit dowels into the left side", s:"00:31", e:"00:58", scene:"b2", part:"Dowel holes · 4", text:"Push one wooden dowel into each of the four small holes on the inside face of the left panel. Tap gently. Don't glue yet.", tip:"If a dowel is tight, twist it in, don't hammer it. You'll split the edge."},
+      {t:"Attach shelves to the left side", s:"00:58", e:"01:40", scene:"b3", part:"Cam holes · face up", text:"Slide each shelf onto the dowels. The round cam holes on each shelf must face up, towards the ceiling.", tip:"Look for the two big round holes. If you can't see them from above, your shelf is upside down.",
+        stuck:{photo:"shelfFlipped", overlay:"shelfFlippedOverlay", level:"warn", head:"Middle shelf is upside down", msg:"Its cam holes are facing the floor. In Ahmed's frame at 01:22 they face up. Pull the shelf off, flip it, and slide it back on.", checks:[["y","Left side panel and dowels match"],["y","Bottom shelf orientation matches"],["n","Middle shelf is flipped (cam holes underneath)"]]}},
+      {t:"Lock the cam nuts", s:"01:40", e:"02:05", scene:"b4", part:"Cam nut · ¼ turn", text:"Drop a cam nut into each round hole, arrow pointing at the edge. Turn it a quarter turn clockwise with a screwdriver until it bites.", tip:"Stop at a quarter turn. Overtightening strips the particle board."},
+      {t:"Attach the right side", s:"02:05", e:"02:44", scene:"b5", part:"Right side panel", text:"Fit the right panel over the free shelf ends and fix it with the short screws from bag B.", tip:"Get someone to hold the frame upright here. It wobbles until both sides are on."},
+      {t:"Nail on the back panel", s:"02:44", e:"03:30", scene:"b6", part:"Back panel · smooth side in", text:"Lay the frame face down. Place the back panel smooth side in and nail it at the nine marked points.", tip:"Measure corner to corner both ways first. Equal numbers mean the frame is square."},
+    ],
+    where:{photo:"frameUnlocked", overlay:"frameUnlockedOverlay", step:3, msg:"Steps 1–3 look done: the left side, dowels and all three shelves match Ahmed's frames. The cam nuts aren't turned yet, so you're on step 4."}},
+  { id:"printer", title:"Set up a Wi‑Fi printer", cat:"Gadgets", creator:"Mei L.", color:"#3A5A8C", mins:7, checks:"860", kind:"printer",
+    steps:[
+      {t:"Remove all orange tape", s:"00:00", e:"00:24", hot:[410,180], part:"Shipping tape", text:"Pull off every strip of orange tape, including the one inside the cartridge door."},
+      {t:"Load paper", s:"00:24", e:"00:51", hot:[320,290], part:"Paper tray", text:"Fan a stack of paper and slide it in until it stops. Move the guide to touch the edge."},
+      {t:"Hold the Wi‑Fi button for 3 s", s:"00:51", e:"01:10", hot:[410,180], part:"Wi‑Fi button", text:"Press and hold until the light blinks blue, then let go."},
+      {t:"Confirm on your phone", s:"01:10", e:"01:42", hot:[320,130], part:"Status light", text:"Open the printer's app and pick the printer. The light turns solid when it's connected."}]},
+  { id:"espresso", title:"Descale an espresso machine", cat:"Kitchen", creator:"Bruno C.", color:"#7A4B2A", mins:22, checks:"2.1k", kind:"espresso",
+    steps:[
+      {t:"Empty the drip tray", s:"00:00", e:"00:20", hot:[320,310], part:"Drip tray", text:"Slide out the drip tray, empty it, and put it back."},
+      {t:"Mix the descaler", s:"00:20", e:"00:55", hot:[320,140], part:"Water tank", text:"Fill the tank to the MAX line with water and add one sachet of descaler."},
+      {t:"Run the hot water cycle", s:"00:55", e:"01:40", hot:[320,185], part:"Group head", text:"Put a jug under the spout and run hot water until the tank is half empty."},
+      {t:"Rinse twice", s:"01:40", e:"02:30", hot:[320,140], part:"Water tank", text:"Refill with clean water and repeat the cycle two times."}]},
+  { id:"vacuum", title:"Swap a vacuum's HEPA filter", cat:"Home", creator:"Grace O.", color:"#5B4B8A", mins:4, checks:"530", kind:"vacuum",
+    steps:[
+      {t:"Unlock the bin", s:"00:00", e:"00:18", hot:[320,120], part:"Grey latch", text:"Press the grey latch on top. The bin drops into your hand."},
+      {t:"Twist out the old filter", s:"00:18", e:"00:40", hot:[320,205], part:"HEPA filter", text:"Turn the filter anticlockwise and lift it out."},
+      {t:"Seat the new filter", s:"00:40", e:"01:05", hot:[320,205], part:"HEPA filter", text:"Drop it in and turn clockwise until it clicks."}]},
+  { id:"tube", title:"Replace a bike inner tube", cat:"DIY", creator:"Kofi A.", color:"#2E6B7A", mins:15, checks:"990", kind:"bike",
+    steps:[
+      {t:"Release the brake", s:"00:00", e:"00:25", hot:[290,140], part:"Brake quick‑release", text:"Open the brake quick‑release so the wheel can pass the pads."},
+      {t:"Lever the tyre off", s:"00:25", e:"01:10", hot:[420,180], part:"Tyre bead", text:"Hook two levers under the bead 10 cm apart and run one around the rim."},
+      {t:"Fit the new tube", s:"01:10", e:"02:05", hot:[420,240], part:"Valve hole", text:"Valve first through the rim hole, then tuck the tube in all the way around."},
+      {t:"Inflate to sidewall pressure", s:"02:05", e:"02:40", hot:[420,160], part:"Sidewall label", text:"Pump to the pressure printed on the tyre sidewall."}]},
+  { id:"plant", title:"Re‑pot a houseplant", cat:"Garden", creator:"Priya S.", color:"#3F7A4C", mins:10, checks:"410", kind:"plant",
+    steps:[
+      {t:"Water the day before", s:"00:00", e:"00:15", hot:[320,240], part:"Soil", text:"Moist soil slides out of the old pot in one piece."},
+      {t:"Loosen the roots", s:"00:15", e:"00:50", hot:[320,280], part:"Root ball", text:"Tease the outer roots apart with your fingers."},
+      {t:"Set it at the same depth", s:"00:50", e:"01:30", hot:[320,232], part:"Soil line", text:"The old soil line should sit 2 cm below the new rim."}]},
+];
+const CATS = ["All", "DIY", "Home", "Kitchen", "Gadgets", "Garden"];
+
+/* ---------- state ---------- */
+const S = { cat:"All", q:"", playing:true, showPart:true, done:{}, created:null };
+const guideById = id => GUIDES.find(g => g.id === id);
+const sceneFor = (g, st) => g.video ? null : st.scene ? SCENES[st.scene]() : genericScene(g.kind, st.hot, st.part);
+
+/* ---------- router ---------- */
+function route() {
+  const [, a, b, c] = location.hash.split("/");
+  if (a) $("#nav-gallery").removeAttribute("aria-current"); else $("#nav-gallery").setAttribute("aria-current", "page");
+  if (a === "guide" && guideById(b)) return viewGuide(guideById(b), Math.max(0, (parseInt(c, 10) || 1) - 1));
+  if (a === "create") return viewCreate();
+  return viewGallery();
+}
+addEventListener("hashchange", () => { route(); scrollTo({top:0}); $("#app").focus({preventScroll:true}); });
+
+/* ---------- gallery ---------- */
+function thumbFor(g) {
+  if (g.video) return `<video src="${g.video}" muted playsinline preload="metadata"></video>`;
+  return svg(g.thumb ? g.thumb() : genericScene(g.kind));
+}
+function viewGallery() {
+  const app = $("#app");
+  app.innerHTML = `
+    <section class="hero">
+      <div>
+        <h1>Follow along.<br><em>Get unstuck.</em></h1>
+        <p>Step-by-step guides made from real people's videos. Stuck on a step? Show it one photo. It checks your work against the creator's and points at what's off.</p>
+      </div>
+      <div class="how" aria-label="How it works"><ol>
+        <li><span class="n">1</span><div><b>Watch one step at a time</b><span>Each step is a short clip from the creator's video</span></div></li>
+        <li><span class="n">2</span><div><b>Stuck? Snap a photo</b><span>Only when you need it, only the step you're on</span></div></li>
+        <li><span class="n">3</span><div><b>See what's different</b><span>The exact part is outlined on your own photo</span></div></li>
+      </ol></div>
+    </section>
+    <div class="filters">
+      <label class="search">${ic("search")}<span class="sr">Search guides</span><input id="q" type="search" placeholder="Search guides — bookcase, printer, filter…" value="${esc(S.q)}"></label>
+      <div class="chips" role="group" aria-label="Category">${CATS.map(c => `<button class="chip" aria-pressed="${S.cat === c}" data-cat="${c}">${c}</button>`).join("")}</div>
+    </div>
+    <div class="grid" id="grid"></div>`;
+  const draw = () => {
+    const q = S.q.trim().toLowerCase();
+    const list = GUIDES.filter(g => (S.cat === "All" || g.cat === S.cat) && (!q || (g.title + g.creator + g.cat).toLowerCase().includes(q)));
+    $("#grid").innerHTML = list.length ? list.map(g => `
+      <a class="card" href="#/guide/${g.id}/1">
+        <div class="thumb">${thumbFor(g)}<span class="badge ${g.isNew ? "new" : ""}">${g.isNew ? "New · " : ""}${ic("steps")} ${g.steps.length} steps · ${g.mins} min</span></div>
+        <div class="card-b">
+          <h3>${esc(g.title)}</h3>
+          <div class="meta"><span class="av" style="background:${g.color}">${esc(g.creator.split(" ").map(w => w[0]).join(""))}</span>${esc(g.creator)}<span class="dot"></span>${esc(g.cat)}</div>
+          <span class="checkable">${ic("camera")} ${g.isNew ? "Photo checks on" : g.checks + " photo checks"}</span>
+        </div>
+      </a>`).join("") : `<p class="empty">No guides match “${esc(S.q)}”. Try another word, or <a href="#/create">create one</a>.</p>`;
+  };
+  draw();
+  $("#q").addEventListener("input", e => { S.q = e.target.value; draw(); });
+  app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+    S.cat = b.dataset.cat; app.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === b)); draw();
+  }));
+}
+
+/* ---------- guide viewer ---------- */
+let segTimer = null;
+function viewGuide(g, i) {
+  i = Math.min(i, g.steps.length - 1);
+  const st = g.steps[i];
+  const done = S.done[g.id] || (S.done[g.id] = new Set());
+  const app = $("#app");
+  const pct = Math.round(done.size / g.steps.length * 100);
+  const durs = g.steps.map(x => toSec(x.e) - toSec(x.s));
+  app.innerHTML = `
+    <a class="back" href="#/">${ic("back")} All guides</a>
+    <div class="g-head">
+      <div><div class="meta" style="margin-bottom:8px"><span class="av" style="background:${g.color}">${esc(g.creator.split(" ").map(w => w[0]).join(""))}</span>Made from ${esc(g.creator)}'s video<span class="dot"></span>${g.steps.length} steps<span class="dot"></span>${g.mins} min</div>
+      <h1>${esc(g.title)}</h1></div>
+    </div>
+    <div class="g-layout">
+      <nav class="steps" aria-label="Steps">
+        <div class="prog"><b>${done.size} of ${g.steps.length} done</b><div class="bar"><i style="width:${pct}%"></i></div></div>
+        ${g.steps.map((x, k) => `<button class="step-btn ${done.has(k) ? "done" : ""}" data-k="${k}" ${k === i ? 'aria-current="step"' : ""}>
+          <span class="num">${done.has(k) ? ic("check") : k + 1}</span><span>${esc(x.t)}<small>${x.s}–${x.e}</small></span></button>`).join("")}
+      </nav>
+      <section aria-labelledby="st-title">
+        <div class="player">
+          <div class="stage ${S.playing ? "" : "paused"} ${S.showPart ? "" : "hide-sam"}" id="stage">
+            ${g.video ? `<video id="vid" src="${g.video}" muted playsinline></video><svg class="scene" viewBox="0 0 ${W} ${H}" style="position:absolute;inset:0" aria-hidden="true"><ellipse class="sam" cx="320" cy="200" rx="90" ry="70"/>${tag(240,280,"Dummy outline · SAM not called")}</svg>` : svg(sceneFor(g, st))}
+            <span class="pill stage-label">${ic("film")} Clip ${st.s}–${st.e} of ${esc(g.creator)}'s video</span>
+            <div class="stage-ui">
+              <button class="pill round" id="play" aria-label="${S.playing ? "Pause clip" : "Play clip"}">${ic(S.playing ? "pause" : "play")}</button>
+              <button class="pill ${S.showPart ? "on" : ""}" id="partBtn" aria-pressed="${S.showPart}">${ic("frame")} Show part</button>
+            </div>
+          </div>
+          <div class="timeline" aria-label="Full video">
+            <span class="lbl">${ic("film")} Full video</span>
+            ${g.steps.map((x, k) => `<button class="seg" style="--w:${durs[k]}" data-k="${k}" aria-label="Step ${k + 1}, ${x.s}" ${k === i ? 'aria-current="true"' : ""}>${k + 1}</button>`).join("")}
+          </div>
+          <div class="instr">
+            <span class="k">Step ${i + 1} of ${g.steps.length}</span>
+            <h2 id="st-title">${esc(st.t)}</h2>
+            <p>${esc(st.text)}</p>
+            <span class="part"><i></i>${esc(st.part)}</span>
+            ${st.tip ? `<div class="tip"><span class="mic">${ic("mic")}</span><div><q>${esc(st.tip)}</q><small>${esc(g.creator)}, said at ${st.s} · transcribed from the video</small></div></div>` : ""}
+            <div class="actions">
+              <a class="btn btn-ghost" href="#/guide/${g.id}/${i}" ${i === 0 ? 'aria-disabled="true" tabindex="-1" style="visibility:hidden"' : ""}>${ic("left")} Back</a>
+              <span class="sp"></span>
+              <button class="btn btn-primary" id="next">${i === g.steps.length - 1 ? "Finish" : "Done, next step"} ${ic("right")}</button>
+            </div>
+          </div>
+        </div>
+        <div class="stuck-cta">
+          <div><b>Stuck on this step?</b><span>Snap your work. It's compared with ${esc(g.creator)}'s step ${i + 1}.</span></div>
+          <div class="btns">
+            <button class="btn btn-ghost" id="where">${ic("locate")} Where am I?</button>
+            <button class="btn btn-signal" id="stuck">${ic("camera")} I'm stuck</button>
+          </div>
+        </div>
+      </section>
+    </div>`;
+  const go = k => location.hash = `#/guide/${g.id}/${k + 1}`;
+  app.querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", () => go(+b.dataset.k)));
+  $("#play").addEventListener("click", () => { S.playing = !S.playing; viewGuide(g, i); });
+  $("#partBtn").addEventListener("click", () => { S.showPart = !S.showPart; viewGuide(g, i); });
+  $("#next").addEventListener("click", () => {
+    done.add(i);
+    if (i < g.steps.length - 1) go(i + 1); else { toast("Guide finished. Nice work."); viewGuide(g, i); }
+  });
+  $("#stuck").addEventListener("click", () => openCheck(g, i, "stuck"));
+  $("#where").addEventListener("click", () => openCheck(g, i, "where"));
+  app.querySelector('.step-btn[aria-current="step"]')?.scrollIntoView({ block:"nearest", inline:"center" });
+  clearInterval(segTimer);
+  const v = $("#vid");
+  if (v) { // real uploaded video: loop only this step's segment
+    const a = toSec(st.s), b = toSec(st.e);
+    v.addEventListener("loadedmetadata", () => { v.currentTime = a; if (S.playing) v.play().catch(() => {}); }, { once:true });
+    segTimer = setInterval(() => { if (v.currentTime >= b || v.currentTime < a) v.currentTime = a; }, 150);
+  }
+}
+const toSec = t => { const [m, s] = t.split(":").map(Number); return m * 60 + s; };
+const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+/* ---------- "I'm stuck" / "Where am I?" check ---------- */
+const dlg = $("#dlg");
+const C = {};
+function openCheck(g, i, mode) {
+  Object.assign(C, { g, i, mode, photoURL:null, fileName:null, fileSize:null, sample:false, q:"" });
+  drawChoose(); dlg.showModal();
+}
+dlg.addEventListener("close", () => { if (C.photoURL && !C.sample) URL.revokeObjectURL(C.photoURL); });
+function head(title) {
+  return `<div class="d-head"><h2 id="dlg-title">${title}</h2><button class="icon-btn" data-close aria-label="Close">${ic("x")}</button></div>`;
+}
+function bindClose() { dlg.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => dlg.close())); }
+const stepLabel = () => C.mode === "where" ? "the whole guide" : `step ${C.i + 1} · ${C.g.steps[C.i].t}`;
+function drawChoose() {
+  dlg.innerHTML = `${head(C.mode === "where" ? "Where am I?" : `Stuck on step ${C.i + 1}?`)}
+    <div class="d-body">
+      <p style="margin:0;color:var(--ink-2)">${C.mode === "where" ? "Point your camera at your work. It's compared with every step to find where you are." : `Take one photo of your work right now. It's compared with ${esc(C.g.creator)}'s frame for this step.`}</p>
+      <div class="choose">
+        <label class="opt"><span class="ic">${ic("camera")}</span><b>Take or upload a photo</b><span>Opens your camera on a phone</span><input type="file" accept="image/*" capture="environment" id="pf"></label>
+        <button class="opt" id="sampleP" type="button"><span class="ic">${ic("eye")}</span><b>Use a sample photo</b><span>See what a real check looks like</span></button>
+      </div>
+      ${C.mode === "stuck" ? `<label class="fl">What's confusing? <span style="font-weight:400;color:var(--ink-3)">(optional)</span><textarea id="qq" placeholder="e.g. Which way do the holes go?"></textarea></label>` : ""}
+    </div>`;
+  bindClose();
+  $("#pf").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    Object.assign(C, { photoURL:URL.createObjectURL(f), fileName:f.name, fileSize:f.size, sample:false, q:$("#qq")?.value || "" });
+    drawReview();
+  });
+  $("#sampleP").addEventListener("click", () => {
+    Object.assign(C, { sample:true, fileName:"sample-photo.jpg", fileSize:1240000, q:$("#qq")?.value || "" }); drawReview();
+  });
+}
+function samplePack() {
+  const g = C.g;
+  if (C.mode === "where") return g.where || null;
+  return g.steps[C.i].stuck || null;
+}
+function photoHTML(withOverlay) {
+  const p = samplePack();
+  if (C.sample) {
+    if (p) return svg(PHOTOS[p.photo]() + (withOverlay ? PHOTOS[p.overlay]() : ""));
+    return svg(sceneFor(C.g, C.g.steps[C.i]).replace(/class="sam"/g, withOverlay ? 'class="sam"' : 'class="sam" style="display:none"'));
+  }
+  return `<img src="${C.photoURL}" alt="Your photo">${withOverlay ? `<svg class="ov" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><ellipse class="sam" cx="320" cy="200" rx="110" ry="80"/>${tag(222,292,"Dummy outline")}</svg>` : ""}`;
+}
+function drawReview() {
+  const st = C.g.steps[C.i];
+  dlg.innerHTML = `${head("Check before sending")}
+    <div class="d-body">
+      <p style="margin:0">Nothing has been sent yet. Here's exactly what will go out, and to whom.</p>
+      <div class="review">
+        <div class="rv"><div class="im">${photoHTML(false)}</div><p><b>Your photo</b> · ${esc(C.fileName)} · ${(C.fileSize / 1e6).toFixed(1)} MB</p></div>
+        <div class="rv"><div class="im">${C.g.video ? `<video src="${C.g.video}" muted></video>` : svg(sceneFor(C.g, st))}</div><p><b>Reference</b> · ${C.mode === "where" ? "all step frames" : `${esc(C.g.creator)}'s frame at ${st.s}`}</p></div>
+      </div>
+      ${C.q ? `<div class="note">${ic("mic")}<span><b>Your question:</b> ${esc(C.q)}</span></div>` : ""}
+      <ul class="recip">
+        <li>${ic("server")}<span><b>Showhow server</b>: passes it on, keeps nothing</span><span class="tag">receives</span></li>
+        <li>${ic("eye")}<span><b>Meta Muse Spark</b>: compares your photo with ${esc(stepLabel())}</span><span class="tag">processes</span></li>
+        <li>${ic("frame")}<span><b>Meta SAM 3.1</b>: outlines the part that differs</span><span class="tag">processes</span></li>
+      </ul>
+      <div class="note">${ic("shield")}<span>For adults (18+). Used only for this check and deleted afterwards. A new photo needs a new OK.</span></div>
+    </div>
+    <div class="d-foot"><button class="btn btn-ghost" id="back">Change photo</button><button class="btn btn-primary" id="send">${ic("check")} Send for check</button></div>`;
+  bindClose();
+  $("#back").addEventListener("click", drawChoose);
+  $("#send").addEventListener("click", runCheck);
+}
+async function runCheck() {
+  const stages = [
+    ["Muse Spark", C.mode === "where" ? "Comparing your photo with every step" : `Comparing with ${C.g.creator}'s step ${C.i + 1}`],
+    ["SAM 3.1", "Outlining the part on your photo"],
+    ["Checking the result", "Only saying what the photo shows"],
+  ];
+  dlg.innerHTML = `${head("Checking your work…")}<div class="d-body"><ul class="stages" aria-live="polite">${stages.map(([a, b]) => `<li><span class="st"></span><div><b>${a}</b><small>${esc(b)}</small></div></li>`).join("")}</ul>
+    <p class="src" style="margin:0">Prototype: these stages are simulated. No request is made.</p></div>`;
+  bindClose();
+  const lis = dlg.querySelectorAll(".stages li");
+  for (const li of lis) { li.className = "run"; await wait(900); li.className = "done"; li.querySelector(".st").innerHTML = ic("check"); }
+  await wait(250);
+  if (dlg.open) drawResult();
+}
+function drawResult() {
+  const p = samplePack(), g = C.g;
+  let card;
+  if (C.mode === "where") {
+    const k = C.sample && p ? p.step : C.i;
+    card = `<div class="v-card ok"><h3>${ic("locate")} You're on step ${k + 1}</h3><p><b>${esc(g.steps[k].t)}</b></p><p>${esc(C.sample && p ? p.msg : "Sample answer: in the real app Muse Spark matches your photo against each step's frame.")}</p>
+      <button class="btn btn-primary" id="goStep">Go to step ${k + 1} ${ic("right")}</button></div>`;
+    C.goto = k;
+  } else if (C.sample && p) {
+    card = `<div class="v-card ${p.level}"><h3>${ic(p.level === "warn" ? "alert" : "check")} ${esc(p.head)}</h3><p>${esc(p.msg)}</p>
+      <ul class="checks">${p.checks.map(([y, t]) => `<li class="${y}">${ic(y === "y" ? "check" : "alert")}<span>${esc(t)}</span></li>`).join("")}</ul></div>`;
+  } else {
+    card = `<div class="v-card ok"><h3>${ic("check")} Looks like the creator's step</h3><p>Sample answer: your work matches ${esc(g.creator)}'s step ${C.i + 1}. In the real app, anything different is outlined on your photo.</p></div>`;
+  }
+  dlg.innerHTML = `${head(C.mode === "where" ? "Found your place" : "Here's what we see")}
+    <div class="d-body"><div class="verdict"><div class="v-photo">${photoHTML(true)}</div><div style="display:grid;gap:10px">${card}
+      <p class="src">Compared with ${esc(g.creator)}'s ${C.mode === "where" ? "step frames" : `frame at ${g.steps[C.i].s}`}. Sample result: no AI was called in this prototype. The real check only reports what's visible.</p></div></div></div>
+    <div class="d-foot"><button class="btn btn-ghost" id="again">${ic("camera")} New photo</button><button class="btn btn-primary" data-close>Back to the step</button></div>`;
+  bindClose();
+  $("#again").addEventListener("click", drawChoose);
+  $("#goStep")?.addEventListener("click", () => { dlg.close(); location.hash = `#/guide/${g.id}/${C.goto + 1}`; });
+}
+
+/* ---------- create ---------- */
+const SAMPLE_TRANSCRIPT = [
+  ["00:02","Right, this is the Dyson-style one. Filter goes every six months.",0],
+  ["00:06","First, press this grey latch on top and the bin just drops into your hand.",1],
+  ["00:15","Empty it over the bin bag. Do it outside if you can.",0],
+  ["00:21","Now the filter. Turn it anticlockwise, like a jar lid, and lift it out.",1],
+  ["00:33","Look how grey that is. That's six months of dust.",0],
+  ["00:41","New one goes in. Drop it in and turn clockwise until you hear the click.",1],
+  ["00:55","If it doesn't click, it's not seated, and the suction will be weak.",0],
+  ["01:02","Bin back on, latch clicks, done.",1],
+];
+const SAMPLE_STEPS = [
+  { t:"Unlock and empty the bin", s:"00:06", e:"00:21", hot:[320,120], part:"Grey latch", text:"Press the grey latch on top. The bin drops into your hand. Empty it, outside if you can." },
+  { t:"Twist out the old filter", s:"00:21", e:"00:41", hot:[320,205], part:"HEPA filter", text:"Turn the filter anticlockwise, like a jar lid, and lift it out." },
+  { t:"Seat the new filter", s:"00:41", e:"01:02", hot:[320,205], part:"HEPA filter", text:"Drop it in and turn clockwise until it clicks. No click means weak suction." },
+  { t:"Refit the bin", s:"01:02", e:"01:10", hot:[320,150], part:"Bin latch", text:"Push the bin back on until the latch clicks." },
+];
+const D = { phase:"upload", video:null, dur:0, name:"", title:"", cat:"Home", steps:[] };
+function viewCreate() {
+  const app = $("#app");
+  const phases = ["upload", "process", "review", "share"], labels = ["Upload video", "AI builds steps", "Review", "Share"];
+  const idx = phases.indexOf(D.phase);
+  app.innerHTML = `<div class="c-wrap">
+    <a class="back" href="#/">${ic("back")} Gallery</a>
+    <h1 style="font-size:clamp(28px,3.6vw,42px);font-weight:800">Turn your video into a guide</h1>
+    <p style="color:var(--ink-2);margin:8px 0 0;font-size:18px">Film yourself doing it once, talking as you go. Showhow cuts it into steps, outlines the key part in each, and lets anyone check their work against yours.</p>
+    <ol class="c-steps" style="padding:0">${labels.map((l, k) => `<li class="${k < idx ? "done" : ""}" ${k === idx ? 'aria-current="step"' : ""}>${k < idx ? ic("check") : `<span>${k + 1}</span>`} ${l}</li>`).join("")}</ol>
+    <div class="panel" id="cp"></div></div>`;
+  ({ upload:cUpload, process:cProcess, review:cReview, share:cShare })[D.phase]();
+}
+function cUpload() {
+  $("#cp").innerHTML = `
+    <div class="drop" id="drop"><span class="ic">${ic("upload")}</span><b style="font-size:18px">Drop a video here or click to choose</b><span style="color:var(--ink-2)">MP4 or MOV, up to 3 minutes. Talk while you work; your words become the instructions.</span><input type="file" accept="video/*" id="vf" aria-label="Choose a video"></div>
+    <div class="or">or try it with a sample</div>
+    <div class="sample"><div class="th">${svg(genericScene("vacuum"))}</div><div><b>Swap a vacuum filter</b><div style="color:var(--ink-2);font-size:14.5px">Sample · 1:10 · narrated</div></div><button class="btn btn-ghost" id="useSample">Use sample video</button></div>
+    <div class="form">
+      <label class="fl">Guide title<input class="txt" id="ti" placeholder="e.g. Swap a vacuum's HEPA filter" value="${esc(D.title)}"></label>
+      <label class="fl">Category<select id="ca">${CATS.slice(1).map(c => `<option ${c === D.cat ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+    </div>
+    <div class="note" style="margin-top:16px">${ic("shield")}<span>Your video goes to Showhow and to Meta's models (Voice Transcribe, Muse Spark, SAM 3.1) to build the guide. You'll review every step before anything is published.</span></div>
+    <div class="actions" style="margin-top:16px"><span class="sp"></span><button class="btn btn-primary" id="build" disabled>Build my guide ${ic("right")}</button></div>`;
+  const drop = $("#drop"), vf = $("#vf"), build = $("#build"), ti = $("#ti");
+  const ready = () => { build.disabled = !(D.video || D.sampleUsed); };
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove("over")));
+  vf.addEventListener("change", () => {
+    const f = vf.files[0]; if (!f) return;
+    if (D.video) URL.revokeObjectURL(D.video);
+    Object.assign(D, { video:URL.createObjectURL(f), name:f.name, sampleUsed:false });
+    if (!ti.value) ti.value = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    drop.querySelector("b").textContent = `Selected: ${f.name}`;
+    ready();
+  });
+  $("#useSample").addEventListener("click", () => {
+    Object.assign(D, { sampleUsed:true, video:null, name:"vacuum-filter.mp4" });
+    if (!ti.value) ti.value = "Swap a vacuum's HEPA filter";
+    $("#useSample").textContent = "Sample selected"; ready();
+  });
+  build.addEventListener("click", () => { D.title = ti.value.trim() || "Untitled guide"; D.cat = $("#ca").value; D.phase = "process"; viewCreate(); });
+}
+async function cProcess() {
+  const stages = [
+    ["Preparing video", "Converting to MP4 (H.264) for the models"],
+    ["Muse Voice Transcribe", "Turning your narration into text"],
+    ["Muse Spark", "Finding where each step starts and ends"],
+    ["SAM 3.1", "Outlining the key part in every step"],
+    ["Writing step cards", "Instructions use your own words"],
+  ];
+  $("#cp").innerHTML = `<div class="proc">
+    <div><h2 style="font-size:20px;margin-bottom:14px">Building your guide</h2><ul class="stages" aria-live="polite">${stages.map(([a, b]) => `<li><span class="st"></span><div><b>${a}</b><small>${b}</small></div></li>`).join("")}</ul>
+    <p class="src">Prototype: stages are simulated, nothing is uploaded.</p></div>
+    <div><h2 style="font-size:20px;margin-bottom:14px">Transcript ${D.video ? "(dummy)" : ""}</h2><div class="trans" id="tr"><span style="color:var(--ink-3)">Waiting for audio…</span></div></div></div>`;
+  let dur = 70;
+  if (D.video) dur = await new Promise(r => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => r(isFinite(v.duration) ? v.duration : 60); v.onerror = () => r(60); v.src = D.video; });
+  D.dur = dur;
+  const lis = $("#cp").querySelectorAll(".stages li"), tr = $("#tr");
+  for (let k = 0; k < lis.length; k++) {
+    if (!$("#tr")) return; // navigated away
+    lis[k].className = "run";
+    if (k === 1) {
+      tr.innerHTML = "";
+      const lines = D.video ? SAMPLE_TRANSCRIPT.map(([, txt, cut], n) => [fmt(dur * n / SAMPLE_TRANSCRIPT.length), txt, cut]) : SAMPLE_TRANSCRIPT;
+      for (const [ts, txt] of lines) { tr.insertAdjacentHTML("beforeend", `<div class="ln"><span class="ts">${ts}</span><span>${esc(txt)}</span></div>`); tr.scrollTop = tr.scrollHeight; await wait(260); }
+    } else if (k === 2) {
+      tr.querySelectorAll(".ln").forEach((el, n) => { if (SAMPLE_TRANSCRIPT[n][2]) el.classList.add("cut"); });
+      await wait(900);
+    } else await wait(900);
+    lis[k].className = "done"; lis[k].querySelector(".st").innerHTML = ic("check");
+  }
+  D.steps = D.video
+    ? SAMPLE_STEPS.map((s, n) => ({ ...s, t:`Step ${n + 1} (edit me)`, text:"Dummy text: in the real app this is written from your narration for this part of the video.", s:fmt(dur * n / 4), e:fmt(dur * (n + 1) / 4), part:"Key part" }))
+    : SAMPLE_STEPS.map(s => ({ ...s }));
+  await wait(400);
+  if (D.phase === "process") { D.phase = "review"; viewCreate(); }
+}
+function cReview() {
+  $("#cp").innerHTML = `<h2 style="font-size:20px">Review your ${D.steps.length} steps</h2>
+    <p style="color:var(--ink-2);margin:6px 0 16px">Edit anything that's not quite right. Learners see exactly this.</p>
+    <div class="gen">${D.steps.map((s, n) => `<div class="gen-row">
+      <div class="th">${D.video ? `<video src="${D.video}#t=${toSec(s.s)}" muted preload="metadata"></video>` : svg(genericScene("vacuum", s.hot, s.part))}</div>
+      <div><label class="sr" for="st${n}">Step ${n + 1} title</label><input class="txt" id="st${n}" data-n="${n}" data-f="t" value="${esc(s.t)}">
+        <label class="sr" for="sx${n}">Step ${n + 1} instruction</label><textarea id="sx${n}" data-n="${n}" data-f="text">${esc(s.text)}</textarea>
+        <div class="ts"><span>${ic("film")} ${s.s}–${s.e}</span><span style="color:var(--signal)">${ic("frame")} ${esc(s.part)}</span></div></div></div>`).join("")}</div>
+    <div class="actions" style="margin-top:18px"><button class="btn btn-ghost" id="restart">Start over</button><span class="sp"></span><button class="btn btn-primary" id="pub">${ic("check")} Publish guide</button></div>`;
+  $("#cp").querySelectorAll("[data-f]").forEach(el => el.addEventListener("input", () => { D.steps[el.dataset.n][el.dataset.f] = el.value; }));
+  $("#restart").addEventListener("click", () => { Object.assign(D, { phase:"upload", sampleUsed:false }); viewCreate(); });
+  $("#pub").addEventListener("click", () => {
+    const id = "my-" + Date.now().toString(36);
+    GUIDES.unshift({ id, title:D.title, cat:D.cat, creator:"You", color:"#EE5A17", mins:Math.max(1, Math.round(D.dur / 60 * 4)), checks:"0", kind:"vacuum", video:D.video, isNew:true, steps:D.steps.map(s => ({ ...s })) });
+    D.created = id; D.phase = "share"; viewCreate();
+  });
+}
+function cShare() {
+  const url = `https://showhow.app/g/${D.created}`;
+  $("#cp").innerHTML = `<div class="share"><span class="ok-ic">${ic("check")}</span><h2 style="font-size:26px">Your guide is live in the gallery</h2>
+    <p style="margin:0;color:var(--ink-2)">Anyone with the link can follow it, no account needed, and check their work against yours.</p>
+    <div class="linkbox"><code>${url}</code><button class="btn btn-primary" id="copy">${ic("link")} Copy</button></div>
+    <div class="actions"><a class="btn btn-ghost" href="#/guide/${D.created}/1">${ic("eye")} Open as a learner</a><button class="btn btn-ghost" id="another">Make another</button></div>
+    <p class="src">Prototype link: it doesn't open anywhere yet.</p></div>`;
+  $("#copy").addEventListener("click", () => { (navigator.clipboard?.writeText(url) || Promise.reject()).then(() => toast("Link copied"), () => toast(url)); });
+  $("#another").addEventListener("click", () => { Object.assign(D, { phase:"upload", video:null, sampleUsed:false, title:"" }); viewCreate(); });
+}
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2200); }
+route();
+</script>
+</body>
+</html>
