@@ -16,7 +16,7 @@ flowchart LR
   end
   subgraph Supabase["Supabase (free)"]
     PG[(Postgres: guides, steps, usage)]
-    ST[(Storage: videos/, frames/)]
+    ST[(Storage: media/)]
   end
   META[Meta Model API: Voice Transcribe · Muse Spark · SAM 3.1]
   UI --> API
@@ -43,7 +43,7 @@ usage(day date, kind text, count int, primary key(day, kind))   -- spend/rate ca
 
 - `outline` = `{frame_w, frame_h, box:[x,y,w,h], score, mask_raw?}` in source-frame pixels, or `null`. SAM returns a box plus a base85 mask that is smaller than the frame and whose mapping is undocumented, so the UI draws the **box** until that mapping is verified. Nothing is ever fabricated.
 - RLS: anonymous users can `select` published guides and their steps only. All writes use the service role inside `/api`.
-- Storage: `videos/{guide-uuid}/video.mp4`, `videos/{guide-uuid}/audio.wav` (WAV deleted after transcription), `frames/{guide-uuid}/{idx}.jpg`. Buckets are public-read so Spark can fetch `video_url` and the viewer can stream. Draft paths are unguessable UUIDs, and failed or abandoned drafts are deleted. Learner photos never touch Storage.
+- Storage: one public bucket `media` (50 MB/file; mp4, wav, jpeg, mpeg only): `{guide-uuid}/video.mp4`, `audio.wav` (deleted after transcription), `{idx}.jpg` keyframes, `{idx}.mp3` read-aloud. Public read so Spark can fetch `video_url` and the viewer can stream. There is no upload policy: uploads only via signed URLs from `/api`. Draft paths are unguessable UUIDs; failed or abandoned drafts are deleted. Learner photos never touch Storage.
 - Free-tier budget: 1 GB storage and 5 GB egress a month. At ~23 MB a guide that is ~40 guides stored and ~200 full plays, so creation is capped per day.
 
 ## 3. API routes
