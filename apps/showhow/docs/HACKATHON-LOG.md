@@ -252,3 +252,8 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 
 - `similar_guides` RPC (pg_trgm, applied) + `api/_lib/duplicates.ts` (`findDuplicate`: candidates → Muse Spark 0–100 + "adds" → ≥90 only; same-creator flag; any error or invented id → null) + 5 tests; wired into `/api/steps` and `/api/voice-guides`; a review banner in both flows. 150/150.
 - Live: the dishwasher test audio in Kitchen → flagged Talha's published "Dishwasher Dishes Steps" at 90% with a link; test guide removed.
+
+## 2026-11-01 — Feedback round 1, part 3: real progress + per-step images (F9, F10)
+
+- `ndjson()` in `api/_lib/http.ts`; `/api/steps` + `/api/voice-guides` stream `transcribed → topic_rules → reviewed → steps → done/error`; the dev bridge pipes streamed bodies. `voice-images` split into base mode + per-step mode; `enhance` per step. Client: `apiStream`, `StageTicks`, voice review opens immediately with shimmering cards that fill in, video review grid with per-step enhance. Tests rewritten (stage order asserted via a `settle()` helper; base-anchored step edits; caps on every image call). 151/151.
+- **Live (dev bridge):** dishwasher test audio → events at 18.1 s (transcribed, topic rules), 26.1 s (reviewed), 62.6 s (7 steps), done 63.1 s. Base image 19.1 s; 7 step images in parallel, each arriving individually between 25.3 s and 45.4 s. Test guide removed.

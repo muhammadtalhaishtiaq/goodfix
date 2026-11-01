@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { fakeDb } from './fake-db'
+import { fakeDb, settle } from './fake-db'
 
 const ID = '8d0c1c3e-6a5f-4f7e-9b0a-2f6d1f5b7a11'
 let db = fakeDb()
@@ -22,9 +22,9 @@ const seed = (g: Record<string, unknown> = {}) => fakeDb({
   guides: [{ id: ID, status: 'draft', attempts: 0, kind: 'video', duration_s: 20, turns: null, title: 'Mine', category: 'Home', auto_title: false, auto_category: false, ...g }],
   files: { [`${ID}/audio.wav`]: new Blob(['wav'], { type: 'audio/wav' }) },
 })
-const call = () => POST(new Request('http://x/api/steps', {
+const call = async () => settle(await POST(new Request('http://x/api/steps', {
   method: 'POST', headers: { 'content-type': 'application/json', 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID }),
-}))
+})))
 const guide = () => db.tables.guides[0]
 
 describe('POST /api/steps', () => {
@@ -38,6 +38,7 @@ describe('POST /api/steps', () => {
   test('builds validated steps with times from the transcript, saves them, returns keyframe upload URLs', async () => {
     const res = await call()
     expect(res.status).toBe(200)
+    expect(res.headers.get('x-stages')).toBe('transcribed,topic_rules,reviewed,steps,done') // real progress (F9)
     const out = (await res.json()) as { keyframeUploads: { idx: number; atS: number; path: string }[] }
     expect(db.tables.steps.map(s => [s.title, s.start_s, s.end_s, s.tip_quote])).toEqual([['Release the tank', 4, 9, null], ['Fill the tank', 10, 16, 'not above']])
     expect(out.keyframeUploads).toEqual([

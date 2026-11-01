@@ -47,3 +47,13 @@ export function fakeDb(seed: { guides?: Row[]; steps?: Row[]; files?: Record<str
     },
   }
 }
+
+// Test helper: collapse an NDJSON progress stream into a plain Response (final status + result/error),
+// with the stage sequence in the `x-stages` header.
+export async function settle(res: Response): Promise<Response> {
+  if (!res.headers.get('content-type')?.includes('ndjson')) return res
+  const events = (await res.text()).trim().split('\n').filter(Boolean).map(l => JSON.parse(l) as { stage: string; status?: number; error?: string; result?: unknown })
+  const last = events[events.length - 1]
+  const ok = last.stage === 'done'
+  return new Response(JSON.stringify(ok ? last.result : { error: last.error }), { status: ok ? 200 : last.status ?? 500, headers: { 'x-stages': events.map(e => e.stage).join(',') } })
+}

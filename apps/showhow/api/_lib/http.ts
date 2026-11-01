@@ -65,10 +65,35 @@ export function route<S extends z.ZodType>(opts: Options<S>, fn: (ctx: Ctx<S>) =
       const body = opts.body.safeParse(parsed)
       if (!body.success) return done(json(400, { error: 'Request didn’t match what this endpoint expects.' }))
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
-      return done(json(200, await fn({ body: body.data, req, ip, raw: file })))
+      const out = await fn({ body: body.data, req, ip, raw: file })
+      return done(out instanceof Response ? out : json(200, out))
     } catch (e) {
       if (e instanceof HttpError) return done(json(e.status, { error: e.message }))
       return done(json(500, { error: 'Something went wrong on our side. Nothing was saved. Please try again.' }), 'unhandled')
     }
   }
+}
+
+// Progress streaming (F9): newline-delimited JSON events while slow model work runs, so the creator sees
+// real stages, not a spinner. Cheap checks (auth, caps, status gate) run BEFORE this and return normal
+// HTTP errors; anything thrown inside becomes a final {stage:'error'} event with the same plain message.
+export type Emit = (stage: string, extra?: Record<string, unknown>) => void
+export function ndjson(work: (emit: Emit) => Promise<unknown>): Response {
+  const enc = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(c) {
+      const send = (o: unknown) => c.enqueue(enc.encode(`${JSON.stringify(o)}\n`))
+      try {
+        const result = await work((stage, extra) => send({ stage, ...extra }))
+        send({ stage: 'done', result })
+      } catch (e) {
+        send(e instanceof HttpError
+          ? { stage: 'error', status: e.status, error: e.message }
+          : { stage: 'error', status: 500, error: 'Something went wrong on our side. Nothing was saved. Please try again.' })
+      } finally {
+        c.close()
+      }
+    },
+  })
+  return new Response(stream, { headers: { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store' } })
 }

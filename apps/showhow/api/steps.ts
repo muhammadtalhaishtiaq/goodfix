@@ -1,13 +1,14 @@
 // POST /api/steps {guideId}: narration → steps (T9). See ARCHITECTURE §7.1.
 // Transcribe once (turns are saved so a retry skips it), then Muse Spark splits the steps by turn
 // index, then our own validation decides. Returns signed upload URLs for each step's keyframe.
+// Streams progress events (F9): transcribed → topic_rules → reviewed → steps → done/error.
 import { z } from 'zod'
 import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { serverDb } from './_lib/db.js'
 import { findDuplicate } from './_lib/duplicates.js'
 import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
-import { HttpError, route } from './_lib/http.js'
+import { HttpError, ndjson, route } from './_lib/http.js'
 import { sparkJson, transcribe } from './_lib/meta.js'
 
 const Body = z.object({ guideId: z.uuid() })
@@ -18,7 +19,7 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
   const guide = await claimGuide(db, id, ['draft', 'failed'])
   const media = db.storage.from('media')
   const wavPath = `${id}/audio.wav`
-  try {
+  return ndjson(async emit => { try {
     let turns = guide.turns as Turn[] | null
     if (!turns) {
       const { data: wav } = await media.download(wavPath)
@@ -27,14 +28,17 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
       await db.from('guides').update({ turns }).eq('id', id)
       await media.remove([wavPath]) // narration is now text; the audio copy has no further use
     }
+    emit('transcribed', { turns: turns.length })
     if (turns.length < 2) throw new HttpError(422, 'We couldn’t hear enough narration to build steps. Talk through each step as you do it.')
     const said = turns.map(t => t.transcript).join(' ')
     const topic = blockedTopic(said) // layer 1: same hard rules as voice guides
     if (topic) throw new HttpError(422, `This topic isn’t allowed here (${topic}).`)
+    emit('topic_rules')
     let review: unknown = null // layer 2: same Muse Spark review as voice guides (F4); errors block
     try { review = await sparkJson([{ type: 'input_text', text: reviewPrompt(said) }], 'review', reviewJsonSchema, 45_000) } catch { /* fail closed */ }
     const gate = gateReview(review)
     if (!gate.pass) throw new HttpError(422, gate.reason)
+    emit('reviewed')
 
     const videoUrl = media.getPublicUrl(`${id}/video.mp4`).data.publicUrl
     const raw = await sparkJson([
@@ -43,6 +47,7 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
     ], 'steps', stepsJsonSchema)
     const result = validateSteps(raw, turns)
     if (!result.ok) throw new HttpError(422, 'We couldn’t split this video into clear steps. Try narrating each step as you do it.')
+    emit('steps', { count: result.steps.length })
 
     await db.from('steps').delete().eq('guide_id', id) // retry-safe
     const { error } = await db.from('steps').insert(result.steps.map(s => ({
@@ -66,5 +71,5 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
     await failGuide(db, id, e)
     if (guide.attempts >= 3) await media.remove([wavPath]) // out of retries: don't keep the audio
     throw e
-  }
+  } })
 })

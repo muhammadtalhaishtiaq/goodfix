@@ -32,7 +32,9 @@ function devApi(): Plugin {
           const response: Response = await handler(request)
           res.statusCode = response.status
           response.headers.forEach((v, k) => res.setHeader(k, v))
-          res.end(Buffer.from(await response.arrayBuffer()))
+          if (!response.body) return res.end()
+          for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) res.write(chunk) // streams progress (F9)
+          res.end()
         } catch (e) {
           server.config.logger.error(`dev-api /api/${match[1]}: ${(e as Error).message}`)
           res.statusCode = 404

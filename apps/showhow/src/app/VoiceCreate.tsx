@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
-import { api, apiRaw } from '../lib/api'
+import { StageTicks } from '../components/StageTicks'
+import { api, apiStream } from '../lib/api'
 import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import type { DraftStep } from '../lib/steps'
@@ -8,14 +9,13 @@ import { STYLE_IDS, STYLES, type StyleId } from '../lib/styles'
 import { mediaUrl } from '../lib/supabase'
 import { Published } from './CreateView'
 
-type Img = { idx: number; ok: boolean }
-type ReviewStep = DraftStep & { ok: boolean; keep: boolean }
+type ImgState = 'waiting' | 'drawing' | 'ok' | 'failed'
+type ReviewStep = DraftStep & { img: ImgState; keep: boolean; v: number }
 type Phase =
   | { name: 'form' }
-  | { name: 'checking' }
+  | { name: 'checking'; stages: string[] }
   | { name: 'blocked'; message: string }
-  | { name: 'illustrating'; guideId: string; steps: DraftStep[]; meta: ReviewMeta }
-  | { name: 'review'; guideId: string; steps: ReviewStep[]; v: number; meta: ReviewMeta }
+  | { name: 'review'; guideId: string; steps: ReviewStep[]; meta: ReviewMeta; base: 'drawing' | 'ok' | 'failed' }
   | { name: 'publishing' }
   | { name: 'published'; path: string; title: string }
   | { name: 'error'; message: string; retry?: () => void }
@@ -40,41 +40,56 @@ export function VoiceCreate() {
   async function start() {
     if (!audio) return
     try { sessionStorage.setItem(CODE_KEY, key()) } catch { /* private mode: fine */ }
-    setPhase({ name: 'checking' })
+    setPhase({ name: 'checking', stages: [] })
     try {
       const { toWav16k } = await import('../lib/shrink')
       const { wav } = await toWav16k(audio)
-      const out = await apiRaw<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category; duplicate: Duplicate | null }>('voice-guides', wav, { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult }, key())
-      await illustrate(out.id, out.steps, { title: out.title, category: out.category, missing: out.missing, duplicate: out.duplicate })
+      const out = await apiStream<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category; duplicate: Duplicate | null }>(
+        'voice-guides', { file: wav, meta: { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult } }, key(),
+        e => setPhase(p => (p.name === 'checking' ? { ...p, stages: [...p.stages, e.stage] } : p)),
+      )
+      // Steps exist now: show them straight away and draw the pictures in the background (F9).
+      setPhase({ name: 'review', guideId: out.id, base: 'drawing', meta: { title: out.title, category: out.category, missing: out.missing, duplicate: out.duplicate }, steps: out.steps.map(s => ({ ...s, img: 'waiting', keep: true, v: 0 })) })
+      void drawAll(out.id, out.steps.map(s => s.idx))
     } catch (e) {
       const m = message(e)
       setPhase(m.includes('Nothing was saved') ? { name: 'blocked', message: m } : { name: 'error', message: m })
     }
   }
 
-  async function illustrate(guideId: string, steps: DraftStep[], meta: ReviewMeta) {
-    setPhase({ name: 'illustrating', guideId, steps, meta })
+  const setStep = (idx: number, patch: Partial<ReviewStep>) =>
+    setPhase(p => (p.name === 'review' ? { ...p, steps: p.steps.map(s => (s.idx === idx ? { ...s, ...patch } : s)) } : p))
+
+  // Base picture once, then every step in parallel; each card fills in as its image arrives.
+  async function drawAll(guideId: string, idxs: number[]) {
+    setPhase(p => (p.name === 'review' ? { ...p, base: 'drawing', steps: p.steps.map(s => ({ ...s, img: 'waiting' })) } : p))
     try {
-      const { images } = await api<{ images: Img[] }>('voice-images', { guideId }, key())
-      const ok = new Map(images.map(i => [i.idx, i.ok]))
-      setPhase({ name: 'review', guideId, meta, v: Date.now(), steps: steps.map(s => ({ ...s, ok: !!ok.get(s.idx), keep: !!ok.get(s.idx) })) })
-    } catch (e) {
-      setPhase({ name: 'error', message: message(e), retry: () => illustrate(guideId, steps, meta) })
+      await api('voice-images', { guideId }, key())
+    } catch {
+      setPhase(p => (p.name === 'review' ? { ...p, base: 'failed', steps: p.steps.map(s => ({ ...s, img: 'failed', keep: false })) } : p))
+      return
     }
+    setPhase(p => (p.name === 'review' ? { ...p, base: 'ok' } : p))
+    await Promise.all(idxs.map(async idx => {
+      setStep(idx, { img: 'drawing' })
+      try {
+        const r = await api<{ ok: boolean }>('voice-images', { guideId, idx }, key())
+        setStep(idx, { img: r.ok ? 'ok' : 'failed', keep: r.ok, v: Date.now() })
+      } catch {
+        setStep(idx, { img: 'failed', keep: false })
+      }
+    }))
   }
 
   async function publish(p: Extract<Phase, { name: 'review' }>) {
     setPhase({ name: 'publishing' })
     try {
-      const out = await api<{ path: string }>('publish', { guideId: p.guideId, title: p.meta.title.trim(), category: p.meta.category, edits: p.steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: s.ok && !s.keep })) }, key())
+      const out = await api<{ path: string }>('publish', { guideId: p.guideId, title: p.meta.title.trim(), category: p.meta.category, edits: p.steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: s.img === 'ok' && !s.keep })) }, key())
       setPhase({ name: 'published', path: out.path, title: p.meta.title.trim() })
     } catch (e) {
       setPhase({ name: 'error', message: message(e), retry: () => publish(p) })
     }
   }
-
-  const edit = (idx: number, patch: Partial<ReviewStep>) =>
-    setPhase(p => (p.name === 'review' ? { ...p, steps: p.steps.map(s => (s.idx === idx ? { ...s, ...patch } : s)) } : p))
 
   return (
     <div className="c-wrap">
@@ -119,9 +134,9 @@ export function VoiceCreate() {
       )}
 
       {phase.name === 'checking' && (
-        <div className="panel" aria-live="polite">
-          <p className="working"><span className="spin" aria-hidden="true" /> Checking your recording…</p>
-          <ul className="muted stage-list"><li>Meta Voice Transcribe: your words → text</li><li>Safety rules + Meta Muse Spark: is it a clear, complete, safe how-to?</li><li>Muse Spark: steps in your own words</li></ul>
+        <div className="panel">
+          <h2 className="panel-title">Checking your recording</h2>
+          <StageTicks done={phase.stages} />
           <p className="muted">Nothing is saved unless every check passes.</p>
         </div>
       )}
@@ -133,34 +148,36 @@ export function VoiceCreate() {
         </div>
       )}
 
-      {phase.name === 'illustrating' && (
-        <div className="panel" aria-live="polite">
-          <p className="working"><span className="spin" aria-hidden="true" /> Meta Muse Image is illustrating {phase.steps.length} steps in “{STYLES[style].label}”…</p>
-          <p className="muted">One base picture, then each step drawn from it so the object stays the same. About a minute.</p>
-        </div>
-      )}
-
       {phase.name === 'review' && (
         <div className="panel">
-          <p className="note"><Icon name="check" /><span>Passed our topic check and reads as a clear how-to. AI can be wrong: review each step, then publish.</span></p>
+          <p className="note"><Icon name="check" /><span>Passed our topic check and reads as a clear how-to. AI can be wrong: review each step while the pictures are drawn, then publish.</span></p>
           <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
-          <ol className="built-steps">
+          <p className="muted" aria-live="polite">
+            {phase.base === 'drawing' ? `Meta Muse Image is drawing the base picture in “${STYLES[style].label}”…`
+              : phase.base === 'failed' ? 'The illustrations couldn’t be drawn right now. You can publish text-only steps or redraw.'
+              : `${phase.steps.filter(s => s.img === 'ok').length} of ${phase.steps.length} illustrations ready`}
+          </p>
+          <ol className="review-grid">
             {phase.steps.map(s => (
-              <li key={s.idx}>
-                <div className="frame">
-                  {s.ok && s.keep ? <img src={`${mediaUrl(`${phase.guideId}/${s.idx}-ai-focus.jpg`)}?v=${phase.v}`} alt={`Illustration of step ${s.idx + 1}`} /> : <span className="ph">No illustration</span>}
-                  <span className="frame-tag">Illustration by AI</span>
+              <li key={s.idx} className="rcard">
+                <div className="media">
+                  {s.img === 'ok' && s.keep
+                    ? <img src={`${mediaUrl(`${phase.guideId}/${s.idx}-ai-focus.jpg`)}?v=${s.v}`} alt={`Illustration of step ${s.idx + 1}`} />
+                    : s.img === 'waiting' || s.img === 'drawing'
+                      ? <span className="shimmer">{s.img === 'drawing' ? 'Drawing…' : 'Waiting for the base picture…'}</span>
+                      : <span className="ph">No illustration</span>}
+                  <span className="frame-tag">Step {s.idx + 1} · Illustration by AI</span>
                 </div>
-                <div className="edit">
-                  <label className="fl">Step {s.idx + 1} title<input className="txt" value={s.title} maxLength={60} onChange={e => edit(s.idx, { title: e.target.value })} /></label>
-                  <label className="fl">Instruction<textarea value={s.instruction} maxLength={300} onChange={e => edit(s.idx, { instruction: e.target.value })} /></label>
-                  {s.ok && <label className="check"><input type="checkbox" checked={s.keep} onChange={e => edit(s.idx, { keep: e.target.checked })} /> Keep this illustration (untick if it shows something wrong)</label>}
+                <div className="body">
+                  <label className="fl"><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => setStep(s.idx, { title: e.target.value })} /></label>
+                  <label className="fl"><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => setStep(s.idx, { instruction: e.target.value })} /></label>
+                  {s.img === 'ok' && <label className="check"><input type="checkbox" checked={s.keep} onChange={e => setStep(s.idx, { keep: e.target.checked })} /> Keep this illustration</label>}
                 </div>
               </li>
             ))}
           </ol>
           <div className="actions">
-            <button className="btn btn-ghost" onClick={() => illustrate(phase.guideId, phase.steps, phase.meta)}>Redraw all illustrations</button>
+            <button className="btn btn-ghost" disabled={phase.base === 'drawing' || phase.steps.some(s => s.img === 'drawing')} onClick={() => drawAll(phase.guideId, phase.steps.map(s => s.idx))}>Redraw all illustrations</button>
             <span className="sp" />
             <button className="btn btn-primary" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase)}><Icon name="check" /> Publish guide</button>
           </div>

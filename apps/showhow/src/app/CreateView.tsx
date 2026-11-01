@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
-import { api } from '../lib/api'
+import { StageTicks } from '../components/StageTicks'
+import { api, apiStream } from '../lib/api'
 import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import { captureFrame } from '../lib/image'
@@ -16,15 +17,15 @@ type Created = { id: string; uploads: { video: Upload; audio: Upload } }
 type KeyframeUpload = Upload & { idx: number; atS: number }
 type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[]; title: string; category: Category; missing: string[]; duplicate: Duplicate | null }
 type OutlineResult = { idx: number; keyframe: boolean; outline: Outline | null }
-type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null; enhanced?: boolean; keepEnhanced?: boolean }
+type Enh = 'off' | 'drawing' | 'ok' | 'failed'
+type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null; enh: Enh; keepEnhanced: boolean }
 type Ctx = { guideId: string; mp4Url: string }
 type Phase =
   | { name: 'form' }
   | { name: 'preparing'; progress: number }
   | { name: 'uploading' }
-  | ({ name: 'building' } & Ctx)
+  | ({ name: 'building'; stages: string[] } & Ctx)
   | ({ name: 'framing'; done: number; total: number } & Ctx)
-  | ({ name: 'enhancing' } & Ctx)
   | ({ name: 'review'; steps: ReviewStep[]; buildMs: number; meta: ReviewMeta } & Ctx)
   | ({ name: 'publishing' } & Ctx)
   | { name: 'published'; path: string; title: string }
@@ -74,11 +75,12 @@ export function CreateView() {
 
   // Each stage can be retried; the server's status gate allows up to 3 consecutive attempts.
   async function buildSteps(ctx: Ctx) {
-    setPhase({ name: 'building', ...ctx })
+    setPhase({ name: 'building', ...ctx, stages: [] })
     const t0 = performance.now()
     let built: Built
     try {
-      built = await api<Built>('steps', { guideId: ctx.guideId }, key())
+      built = await apiStream<Built>('steps', { json: { guideId: ctx.guideId } }, key(),
+        e => setPhase(p => (p.name === 'building' ? { ...p, stages: [...p.stages, e.stage] } : p)))
     } catch (e) {
       return setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => buildSteps(ctx) })
     }
@@ -98,30 +100,27 @@ export function CreateView() {
       setPhase({ name: 'framing', ...ctx, done: total, total })
       const { outlines } = await api<{ outlines: OutlineResult[] }>('outlines', { guideId: ctx.guideId }, key())
       const byIdx = new Map(outlines.map(o => [o.idx, o.outline]))
-      let steps: ReviewStep[] = built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null }))
-      if (enhance) steps = await enhanceSteps(ctx, steps)
+      const steps: ReviewStep[] = built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null, enh: enhance ? 'drawing' : 'off', keepEnhanced: false }))
       setPhase({ name: 'review', ...ctx, buildMs, steps, meta: { title: built.title, category: built.category, missing: built.missing ?? [], duplicate: built.duplicate } })
+      if (enhance) void enhanceSteps(ctx, steps.map(s => s.idx)) // stills fill in per step while the creator reviews (F9)
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => outlineSteps(ctx, built, buildMs) })
     }
   }
 
-  // Optional (T18). A failure here never blocks the guide: it simply has no enhanced images.
-  async function enhanceSteps(ctx: Ctx, steps: ReviewStep[]): Promise<ReviewStep[]> {
-    setPhase({ name: 'enhancing', ...ctx })
-    try {
-      const { images } = await api<{ images: { idx: number; ok: boolean }[] }>('enhance', { guideId: ctx.guideId }, key())
-      const ok = new Map(images.map(i => [i.idx, i.ok]))
-      return steps.map(s => ({ ...s, enhanced: !!ok.get(s.idx), keepEnhanced: !!ok.get(s.idx) }))
-    } catch {
-      return steps
-    }
+  // Optional (T18), one call per step in parallel. A failure never blocks the guide: that step keeps its real frame.
+  async function enhanceSteps(ctx: Ctx, idxs: number[]) {
+    await Promise.all(idxs.map(async idx => {
+      let ok = false
+      try { ok = (await api<{ ok: boolean }>('enhance', { guideId: ctx.guideId, idx }, key())).ok } catch { ok = false }
+      editStep(idx, { enh: ok ? 'ok' : 'failed', keepEnhanced: ok })
+    }))
   }
 
   async function publish(ctx: Ctx, steps: ReviewStep[], meta: ReviewMeta) {
     setPhase({ name: 'publishing', ...ctx })
     try {
-      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, title: meta.title.trim(), category: meta.category, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: !!s.enhanced && !s.keepEnhanced })) }, key())
+      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, title: meta.title.trim(), category: meta.category, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: s.enh === 'ok' && !s.keepEnhanced })) }, key())
       setPhase({ name: 'published', path: out.path, title: meta.title.trim() })
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => publish(ctx, steps, meta) })
@@ -179,9 +178,9 @@ export function CreateView() {
       {phase.name === 'uploading' && <Working text="Uploading the prepared video…" />}
 
       {phase.name === 'building' && (
-        <div className="panel" aria-live="polite">
-          <p className="working"><span className="spin" aria-hidden="true" /> Building steps from your narration…</p>
-          <ul className="muted stage-list"><li>Meta Voice Transcribe: your words → text with timings</li><li>Meta Muse Spark: watches the video and splits it into steps</li><li>Showhow: checks every step and tip against what you actually said</li></ul>
+        <div className="panel">
+          <h2 className="panel-title">Building steps from your narration</h2>
+          <StageTicks done={phase.stages} />
           <p className="muted">Usually under a minute.</p>
         </div>
       )}
@@ -190,28 +189,26 @@ export function CreateView() {
         <Working text={phase.done < phase.total ? `Taking a still of each step… ${phase.done + 1} of ${phase.total}` : 'Meta SAM 3.1 is outlining the key part in each step…'} />
       )}
 
-      {phase.name === 'enhancing' && <Working text="Meta Muse Image is making a cleaner still of each step (same scene, nothing added)…" />}
-
       {phase.name === 'review' && (
         <div className="panel">
           <p className="note"><Icon name="check" /><span>{phase.steps.length} steps in your own words. Check them, fix anything, then publish.</span></p>
           <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
-          <ol className="built-steps">
+          <ol className="review-grid">
             {phase.steps.map(s => (
-              <li key={s.idx}>
-                <div className="frame">
-                  {s.frameUrl ? <img src={s.frameUrl} alt={`Step ${s.idx + 1}`} /> : <span className="ph">No still</span>}
+              <li key={s.idx} className="rcard">
+                <div className="media video-media">
+                  {s.frameUrl ? <img src={s.frameUrl} alt={`Step ${s.idx + 1}, your real frame`} /> : <span className="ph">No still</span>}
                   {s.outline && <OutlineOverlay outline={s.outline} label={s.keyPart} />}
-                  <span className="frame-tag">{s.outline ? `Outlined: ${s.keyPart}` : 'No confident outline'}</span>
+                  <span className="frame-tag">Step {s.idx + 1} · {s.outline ? `outlined: ${s.keyPart}` : 'no confident outline'}</span>
                 </div>
-                <div className="edit">
-                  <label className="fl">Step {s.idx + 1} title<input className="txt" value={s.title} maxLength={60} onChange={e => editStep(s.idx, { title: e.target.value })} /></label>
-                  <label className="fl">Instruction<textarea value={s.instruction} maxLength={300} onChange={e => editStep(s.idx, { instruction: e.target.value })} /></label>
-                  <span className="muted">{s.startS.toFixed(0)}–{s.endS.toFixed(0)} s{s.tipQuote ? ` · tip, in your words: “${s.tipQuote}”` : ''}</span>
-                  {s.enhanced && (
+                <div className="body">
+                  <label className="fl"><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => editStep(s.idx, { title: e.target.value })} /></label>
+                  <label className="fl"><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => editStep(s.idx, { instruction: e.target.value })} /></label>
+                  <span className="muted">{s.startS.toFixed(0)}–{s.endS.toFixed(0)} s{s.tipQuote ? ` · tip: “${s.tipQuote}”` : ''}</span>
+                  {s.enh !== 'off' && (
                     <div className="enh">
-                      <img src={mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)} alt={`Enhanced still of step ${s.idx + 1}`} />
-                      <label className="check"><input type="checkbox" checked={!!s.keepEnhanced} onChange={e => editStep(s.idx, { keepEnhanced: e.target.checked })} /> Keep this “Enhanced by AI” still (untick if anything looks different from your real frame)</label>
+                      <div className="enh-media">{s.enh === 'ok' ? <img src={mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)} alt={`Enhanced still of step ${s.idx + 1}`} /> : s.enh === 'drawing' ? <span className="shimmer">Enhancing…</span> : <span className="ph">Not enhanced</span>}</div>
+                      {s.enh === 'ok' && <label className="check"><input type="checkbox" checked={s.keepEnhanced} onChange={e => editStep(s.idx, { keepEnhanced: e.target.checked })} /> Keep “Enhanced by AI”</label>}
                     </div>
                   )}
                 </div>

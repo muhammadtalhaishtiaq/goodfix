@@ -1,5 +1,6 @@
 // POST /api/voice-guides: spoken how-to → guide (T17). Raw audio/wav body; details in the x-meta header.
 // NOTHING is stored until both safety layers pass. Every failure (including model errors) blocks.
+// Streams progress events (F9): transcribed → topic_rules → reviewed → steps → done/error.
 import { z } from 'zod'
 import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
@@ -8,7 +9,7 @@ import { enforceCaps } from './_lib/caps.js'
 import { findDuplicate } from './_lib/duplicates.js'
 import { CategoryField, TitleField } from './_lib/fields.js'
 import { serverDb } from './_lib/db.js'
-import { HttpError, ipKey, route } from './_lib/http.js'
+import { HttpError, ipKey, ndjson, route } from './_lib/http.js'
 import { sparkJson, transcribe } from './_lib/meta.js'
 
 const Meta = z.object({
@@ -24,24 +25,28 @@ const nothingSaved = (msg: string) => new HttpError(422, `${msg} Nothing was sav
 export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, raw: 'audio/wav', maxBytes: 4_200_000 }, async ({ body, raw, ip }) => {
   const db = serverDb()
   await enforceCaps((fn, args) => db.rpc(fn, args), 'build', ipKey(ip))
-
+  return ndjson(async emit => {
   let turns: Turn[]
   try { turns = await transcribe(raw!) } catch { throw new HttpError(504, 'We couldn’t transcribe the recording. Nothing was saved. Please try again.') }
   const text = turns.map(t => t.transcript).join(' ')
   if (turns.length < 2 || text.length < 40) throw nothingSaved('We couldn’t hear enough to build a guide.')
+  emit('transcribed', { turns: turns.length })
 
   const topic = blockedTopic(text) // layer 1: hard rules
   if (topic) throw nothingSaved(`This topic isn’t allowed here (${topic}).`)
+  emit('topic_rules')
 
   let review: unknown = null // layer 2: model review; an error leaves null, which gateReview blocks
   try { review = await sparkJson([{ type: 'input_text', text: reviewPrompt(text) }], 'review', reviewJsonSchema, 45_000) } catch { /* fail closed */ }
   const gate = gateReview(review)
   if (!gate.pass) throw nothingSaved(gate.reason)
+  emit('reviewed')
 
   let rawSteps: unknown
   try { rawSteps = await sparkJson([{ type: 'input_text', text: stepsPrompt(turns, 'voice') }], 'steps', stepsJsonSchema, 120_000) } catch { throw new HttpError(504, 'The step builder didn’t answer. Nothing was saved. Please try again.') }
   const result = validateSteps(rawSteps, turns)
   if (!result.ok) throw nothingSaved('We couldn’t turn this into clear steps. Try saying each step in order.')
+  emit('steps', { count: result.steps.length })
 
   // Both gates passed: only now does anything get written.
   const { data: g, error } = await db.from('guides').insert({
@@ -59,4 +64,5 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
   const category = body.category === 'auto' ? gate.category : body.category
   const duplicate = await findDuplicate(db, { id: g.id, title, category, creatorName: body.creatorName, stepTitles: result.steps.map(s => s.title) })
   return { id: g.id, steps: result.steps, missing: gate.missing, title, category, duplicate }
+  })
 })

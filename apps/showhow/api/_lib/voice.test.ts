@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { fakeDb } from './fake-db'
+import { fakeDb, settle } from './fake-db'
 
 let db = fakeDb()
 let capOk = true
@@ -30,11 +30,11 @@ const steps = { steps: [
   { title: 'Refill the tank', first_turn: 1, last_turn: 1, instruction: 'Fill to MAX.', tip_quote: '', key_part: 'Water tank', sam_noun: 'tank' },
 ] }
 const metaHeader = (m: Record<string, unknown> = {}) => encodeURIComponent(JSON.stringify({ title: 'Purifier water', category: 'Home', creatorName: 'Talha', style: 'flat', consent: true, adult: true, ...m }))
-const send = (opts: { type?: string; size?: number; meta?: string; code?: string } = {}) => voiceGuides(new Request('http://x/api/voice-guides', {
+const send = async (opts: { type?: string; size?: number; meta?: string; code?: string } = {}) => settle(await voiceGuides(new Request('http://x/api/voice-guides', {
   method: 'POST',
   headers: { 'content-type': opts.type ?? 'audio/wav', 'x-meta': opts.meta ?? metaHeader(), 'x-access-code': opts.code ?? 'good' },
   body: new Uint8Array(opts.size ?? 1000),
-}))
+})))
 const nothingSaved = () => { expect(db.tables.guides).toEqual([]); expect(db.tables.steps).toEqual([]) }
 
 describe('POST /api/voice-guides', () => {
@@ -47,6 +47,7 @@ describe('POST /api/voice-guides', () => {
   test('a clear, safe how-to becomes a voice guide only after both gates pass', async () => {
     const res = await send()
     expect(res.status).toBe(200)
+    expect(res.headers.get('x-stages')).toBe('transcribed,topic_rules,reviewed,steps,done')
     expect(db.tables.guides[0]).toMatchObject({ kind: 'voice', status: 'ready', image_style: 'flat', subject: review.subject, duration_s: 12 })
     expect(db.tables.steps.map(s => s.title)).toEqual(['Release the tank', 'Refill the tank'])
     expect(meta.sparkJson.mock.calls.map(c => c[1])).toEqual(['review', 'steps'])
@@ -105,42 +106,52 @@ describe('POST /api/voice-guides', () => {
   })
 })
 
-describe('POST /api/voice-images', () => {
+describe('POST /api/voice-images (base, then one call per step)', () => {
   const ID = '8d0c1c3e-6a5f-4f7e-9b0a-2f6d1f5b7a11'
-  const seed = (kind = 'voice') => fakeDb({
+  const seed = (kind = 'voice', withBase = false) => fakeDb({
     guides: [{ id: ID, status: 'ready', attempts: 0, kind, subject: 'white air purifier', image_style: 'clay' }],
     steps: [0, 1].map(idx => ({ guide_id: ID, idx, instruction: `do ${idx}`, key_part: ['Latch', 'Tank'][idx], image_path: null })),
+    files: withBase ? { [`${ID}/base.jpg`]: new Blob(['base']) } : {},
   })
-  const call = () => voiceImages(new Request('http://x', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID }) }))
+  const call = (idx?: number) => voiceImages(new Request('http://x', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID, ...(idx === undefined ? {} : { idx }) }) }))
   beforeEach(() => {
     vi.stubEnv('CREATE_ACCESS_CODES', 'good'); db = seed(); capOk = true
     meta.generateImage.mockReset().mockResolvedValue(Buffer.from('base'))
-    meta.editImage.mockReset().mockImplementation(async (_ref: Buffer, prompt: string) => Buffer.from(prompt.includes('circle') ? 'focus' : 'step'))
+    meta.editImage.mockReset().mockImplementation(async (ref: Buffer, prompt: string) => Buffer.from(prompt.includes('circle') ? `focus(${ref})` : `step(${ref})`))
   })
 
-  test('base image in the chosen style, every step edited FROM THE BASE, then a highlight edit', async () => {
-    const res = await call()
-    expect(await res.json()).toEqual({ images: [{ idx: 0, ok: true }, { idx: 1, ok: true }] })
+  test('base mode draws one base image in the chosen style and lists the steps', async () => {
+    expect(await (await call()).json()).toEqual({ base: true, steps: [0, 1] })
     expect(meta.generateImage.mock.calls[0][0]).toMatch(/white air purifier.*3D clay render/)
-    const stepEdits = meta.editImage.mock.calls.filter(c => !String(c[1]).includes('circle'))
-    expect(stepEdits.every(c => String(c[0]) === 'base')).toBe(true) // anchored to the base, not chained
-    expect(Object.keys(db.files).sort()).toEqual([`${ID}/0-ai-focus.jpg`, `${ID}/0-ai.jpg`, `${ID}/1-ai-focus.jpg`, `${ID}/1-ai.jpg`])
-    expect(db.tables.steps.map(s => s.image_path)).toEqual([`${ID}/0-ai.jpg`, `${ID}/1-ai.jpg`])
+    expect(await db.files[`${ID}/base.jpg`].text()).toBe('base')
     expect(db.tables.guides[0]).toMatchObject({ status: 'ready', attempts: 0 })
   })
-  test('one failed step keeps the others; that step simply has no illustration', async () => {
-    meta.editImage.mockImplementation(async (_r: Buffer, p: string) => { if (p.includes('do 1')) throw new Error('content_policy_violation'); return Buffer.from('x') })
-    expect(await (await call()).json()).toEqual({ images: [{ idx: 0, ok: true }, { idx: 1, ok: false }] })
-    expect(db.tables.steps.map(s => s.image_path)).toEqual([`${ID}/0-ai.jpg`, null])
+  test('each step is an edit OF THE BASE (not chained), then a highlight edit', async () => {
+    db = seed('voice', true)
+    expect(await (await call(1)).json()).toEqual({ idx: 1, ok: true })
+    expect(String(meta.editImage.mock.calls[0][0])).toBe('base')
+    expect(await db.files[`${ID}/1-ai.jpg`].text()).toBe('step(base)')
+    expect(await db.files[`${ID}/1-ai-focus.jpg`].text()).toBe('focus(step(base))')
+    expect(db.tables.steps.map(s => s.image_path)).toEqual([null, `${ID}/1-ai.jpg`])
   })
-  test('base failure → 502, guide back to ready for a retry', async () => {
+  test('a failed step just has no illustration', async () => {
+    db = seed('voice', true)
+    meta.editImage.mockRejectedValue(new Error('content_policy_violation'))
+    expect(await (await call(0)).json()).toEqual({ idx: 0, ok: false })
+    expect(db.tables.steps[0].image_path).toBeNull()
+  })
+  test('a step before the base exists → 409; base failure → 502 and the guide stays ready', async () => {
+    expect((await call(0)).status).toBe(409)
     meta.generateImage.mockRejectedValue(new Error('Meta 503'))
     expect((await call()).status).toBe(502)
     expect(db.tables.guides[0]).toMatchObject({ status: 'ready', attempts: 1 })
   })
-  test('video guides never get illustrations', async () => {
-    db = seed('video')
+  test('video guides never get illustrations; the image cap applies to every call', async () => {
+    db = seed('video', true)
     expect((await call()).status).toBe(409)
+    expect((await call(0)).status).toBe(409)
+    db = seed('voice', true); capOk = false
+    expect((await call(0)).status).toBe(429)
     expect(meta.generateImage).not.toHaveBeenCalled()
   })
 })
