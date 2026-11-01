@@ -171,3 +171,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Fixed in docs: raw-WAV voice upload (base64 exceeded 4.5 MB), keyframe signed URLs from `/api/steps`, status gate + attempts credit guard, WAV deleted in `finally`, 24 h draft cleanup (T14), one Spark endpoint, `-ai`/`-ai-focus` image paths, success-criteria order, T7 Verify, public-exposure decision inside T13, a superseding DECISIONS entry.
 - Plan changes: deploy moved to Day 2 after T11; T5 built test-first without waiting for photos; T17 starts after T6 passes live; T18/T16 flagged as candidate cuts (Talha to decide).
 - Still unproven (not in the demo until logged): Spark reading a Supabase public `video_url`, Vercel 300 s with real latencies, real-photo check accuracy.
+
+## 2026-11-01 — T8 creator upload done
+
+- `api/guides.ts` (access code, `build` cap via `ipKey`, zod: title/category/name/duration ≤181 s/consent/adult → draft `kind=video` → signed upload URLs for `video.mp4` + `audio.wav`). Tests `api/_lib/guides.test.ts` (5): 200 with URLs + exact insert; 401 wrong code, nothing created; 400 without consent/adult; 400 for >3 min or unknown category; 429 on cap, nothing created. 48/48 total.
+- Browser: `src/lib/supabase.ts` (anon client, `uploadSigned`), `src/lib/api.ts`, `CreateView` (form, access code kept in sessionStorage, consent screen naming the device / Supabase / Meta, 18+, runtime `canShrinkHere`, lazy-loaded Mediabunny shrink with progress, direct signed uploads, error + retry). The Mediabunny chunk (149 KB gzip) loads only on the Create page.
+- Live check through the dev bridge against the real Supabase: draft created (200); anon `uploadToSignedUrl` stored `video.mp4` 4.2 MB + `audio.wav` 1.0 MB; public video URL → 200 `video/mp4`; forged token rejected; test files and row removed.
+- Pending (T0b): Mediabunny shrink timing on a real phone file in the browser.
