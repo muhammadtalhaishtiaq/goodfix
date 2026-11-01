@@ -80,6 +80,11 @@ flowchart LR
 
 - [ ] **T15 Demo + submission** *(each public step needs Talha's go-ahead)*. Final 3-minute video: problem → video guide from a phone clip → "I'm stuck" catches a mistake → voice guide with illustrations → vision (Ray-Ban Meta live help). README listing work done 2026-10-27 → 11-04. Git history scan, repo public, submit, post on X. **Verify:** every demo claim matches the live build; submission confirmed.
 
+## After Talha's testing
+
+- [ ] **T19 UI restyle** (feedback F1). Apply [`UI-AUDIT.md`](UI-AUDIT.md): the "Workshop manual" tokens and component rules, plus its 10-item change list (~half a day). Fix the accessibility defects it found first: `--ink-3` contrast, white-on-orange 3.44:1, touch targets under 44 px, `<select>` font, base link colour. **Verify:** screenshots at 1366/500 px of every screen incl. a published video guide and the stuck dialog; contrast pairs ≥4.5:1; red-team look at the before/after.
+- [ ] Fixes from `FEEDBACK.md` items as they arrive (each updates the linked docs).
+
 ## Stretch (only if everything above is green)
 
 - [ ] **T7 Where am I?** Learner photo + step keyframes → `{step, reason}` → jump to step. **Verify:** unit test for the parser; on one seed guide a mid-task photo returns the right step (logged).
