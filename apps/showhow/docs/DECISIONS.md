@@ -76,3 +76,12 @@ Independent red-team audit of the spec, architecture, plan, schema and code (log
 - **Credit guard:** every model-stage route is status-gated, with `guides.attempts` < 3.
 - **Data shapes:** voice audio is sent as a raw `audio/wav` body (base64 would exceed 4.5 MB); the check photo is a base64 data URL in JSON; keyframe upload URLs come from `/api/steps`; the WAV is deleted in `finally`; drafts unpublished after 24 h are cleaned up (T14).
 - **API:** one Spark endpoint (`/v1/responses`) everywhere. `IP_SALT` is required in production. Routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, tts, health.
+
+## 2026-11-01 — Full scope kept; build everything locally, then push and deploy via CI/CD
+
+Talha's decision (2026-11-01). This supersedes the "candidate cut" and "deploy early" points in the entry above.
+
+- **T16 (read aloud), T17 (voice guides) and T18 (AI-enhanced images) are committed scope**, not cut candidates. If the schedule slips, we add working time rather than cut. Only T7, gallery filters, review editing and a third seed guide remain cuttable.
+- **Deploy last:** every flow is completed and verified locally (dev bridge against the real Supabase + Meta) first. Then push to GitHub; CI runs; a deploy workflow ships to Vercel via the Vercel CLI (manual `vercel deploy --prod` from local as fallback). This is T13 on Day 4.
+- Accepted risk: Vercel-specific issues (function duration, the `video_url` fetch) surface later. Mitigations: a local production rehearsal in T13, and a Day 4 buffer before the ~15:00 ET target on Day 5.
+- Footage: Talha films the videos; if any are missing, voice guides (audio only) fill the gallery.

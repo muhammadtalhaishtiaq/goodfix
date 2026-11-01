@@ -9,7 +9,7 @@ Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) �
 
 | Done ✅ | In progress 🔨 | Next ⏭ | Waiting on Talha 📥 |
 |---|---|---|---|
-| T1 foundation · T2 UI (fixtures) · T3 database + RLS · T4 API + CI · T17a image-consistency spike · live checks of all Meta APIs + Wit.ai · end-to-end doc consistency review | T8 upload | T9 → T10 → T11 → T5 → T13 deploy (today) | Videos (air purifier first) · staged photos · Vercel account (Day 4) |
+| T1 foundation · T2 UI (fixtures) · T3 database + RLS · T4 API + CI · T17a image-consistency spike · live checks of all Meta APIs + Wit.ai · end-to-end doc consistency review | T8 upload | T9 → T10 → T11 → T5 (all local) | Videos (air purifier first) · staged photos · Vercel account (Day 4) |
 
 ## Talha's inputs
 
@@ -21,19 +21,19 @@ Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) �
 - [ ] Dishwasher + coffee machine videos (by Day 3)
 - [ ] Optional: Discord #office-hours hosting question
 - [ ] Vercel account (Day 4, for T13)
+- [ ] Videos: all three if possible; otherwise voice guides (audio only) cover the gaps
 
 ## Dependency graph
 
 ```mermaid
 flowchart LR
-  T4[T4 ✅] --> T8[T8 upload] --> T9[T9 steps] --> T10[T10 outlines] --> T11[T11 publish] --> T13[T13 deploy early]
+  T4[T4 ✅] --> T8[T8 upload] --> T9[T9 steps] --> T10[T10 outlines] --> T11[T11 publish]
   T4 --> T5[T5 /api/check] --> T6[T6 dialog live]
-  T13 --> T6
   T0[T0 accuracy 📥] -.->|measures| T6
   T11 --> T12[T12 seed guides 📥]
-  T6 --> T17[T17 voice guides] --> T18[T18 enhanced ✂?] --> T16[T16 read aloud ✂?]
+  T6 --> T17[T17 voice guides] --> T18[T18 enhanced] --> T16[T16 read aloud] --> T13[T13 push + CI/CD deploy]
   T12 --> T14[T14 hardening + draft demo]
-  T16 --> T14 --> T15[T15 submit]
+  T13 --> T14 --> T15[T15 submit]
 ```
 
 ## Done (2026-10-30 → 10-31)
@@ -44,33 +44,37 @@ flowchart LR
 - [x] **T4 API skeleton + CI.** `route()` wrapper, caps (fail closed), dev `/api` bridge, bundle + history secret scans, CI workflow (first GitHub run on next push).
 - [x] **T17(a) image-consistency spike** and the 6 style samples in `public/styles/` (logged 2026-10-31).
 
-## Day 2: Sun 2026-11-01. Core loop, then deploy early
+## Day 2: Sun 2026-11-01. Core loop, all local
 
 - [ ] **T8 Creator upload.** `/api/guides` (access code, `build` cap, consent + 18+, draft, signed URLs) → Create flow: form + consent → `canShrinkHere` → shrink with progress → direct uploads. **Verify:** `api/guides.test.ts` (401 without code, 400 without consent/adult, 429 on cap, signed URLs returned); a real phone file lands in Storage at ≤48 MB.
 - [ ] **T9 Steps.** `/api/steps`: status gate (`draft`/`failed`, `attempts < 3`) → download WAV → Transcribe → Spark (public `video_url` + turns) → `validateSteps` → save → `ready` → return signed upload URLs for `{idx}.jpg`; WAV deleted in `finally`. Create flow shows the steps. **Verify:** route test with mocked Meta/DB (valid; invalid output → `failed`; <2 turns; gate refuses a 4th run; WAV deleted on failure); one real video gives sensible steps; **Spark fetching the Supabase public URL confirmed and logged** (fallback: data URL ≤ ~20 MB or Files API).
 - [ ] **T10 Outlines.** Browser captures midpoint keyframes → uploads via T9's URLs → `/api/outlines` → SAM (`sam_noun`) → `bestOutline` → save. **Verify:** boxes on the right parts for the first real guide; no-match steps show none.
 - [ ] **T11 Publish.** Review (rename steps/instructions) → `/api/publish` → share link; gallery + viewer read published guides from Supabase (fixtures only when no DB is configured). **Verify:** end-to-end creator run on desktop Chrome, timed and logged.
 - [ ] **T5 `/api/check`** (built test-first now; not blocked on photos). Real keyframe vs learner photo (base64 data URL) → Spark verdict (`/v1/responses`) → SAM if `differs` → gate; `check` caps. **Verify:** unit tests (match, differs + box, ambiguous, unclear, malformed, timeout, cap hit).
-- [ ] **T13 Deploy, early** *(needs Talha's OK + Vercel account)*. Vercel project (root `apps/showhow`), env vars incl. `IP_SALT`, `vercel.json` `maxDuration`, access codes. Write the dated public-exposure decision (DECISIONS) before sharing the URL. **Verify:** T11 run works on the live URL; Vercel limits and the `video_url` fetch hold in production; bundle scan clean; CI green on GitHub.
-
 ## Day 3: Mon 2026-11-02. Real footage + learner check + voice guides
 
 - [ ] **T6 Stuck dialog live.** Photo resize ≤1600 px, real preview, `/api/check`, box on the learner's photo, error states, 18+ on first check. **Verify:** staged right/wrong/blurry photos on phone and desktop give the expected verdicts.
 - [ ] **T0 Check accuracy** *(needs staged photos)*. `scripts/spike-check.ts`. **Verify:** right → match, wrong → differs with the box on the right part, blurry → unclear; accuracy + latency logged; only passing tasks appear in the demo.
 - [ ] **T0b Real-video pipeline** *(needs the air purifier video)*. Browser shrink time on the real file + step quality. **Verify:** logged; PRD §11 updated.
 - [ ] **T12 Seed guides** *(needs the 3 videos)*. Air purifier, dishwasher, coffee machine through the real pipeline. **Verify:** each checked by hand; outline accuracy (≥70% of steps) measured and logged.
-- [ ] **T17 Voice guides** (starts only once T6 passes on the live URL).
+- [ ] **T17 Voice guides** (starts once T6 passes locally).
   - [ ] (b) `src/lib/safety.ts` blocked-topics list + Spark review schema, test-first (harmful, gibberish, incomplete, valid, invalid JSON → blocked).
   - [ ] (c) `/api/voice-guides` (raw `audio/wav` body ≤2 min, gates, steps, draft only after passing) and `/api/voice-images` (base → per-step edit → highlight edit), both status-gated.
   - [ ] (d) Create flow: "Talk it through", record/upload, consent, style picker (samples ready), blocked-reason screen, review + regenerate, publish.
   - [ ] (e) Viewer: illustration + "Illustration by AI", "Show part" switches plain/highlighted, no "I'm stuck".
   - **Verify:** one real voice guide published end to end; a staged harmful and a gibberish recording are blocked with nothing in the DB or Storage.
 
-## Day 4: Tue 2026-11-03. Extras (candidates to cut) + hardening + draft demo
+## Day 4: Tue 2026-11-03. Extras + hardening, everything complete locally, then push + deploy
 
-- [ ] **T18 AI-enhanced step images** *(candidate cut, Talha decides)*. `/api/enhance` (status-gated): keyframe → Muse Image edit → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the creator approves each at publish (rejected → `image_path` null). Viewer: "Enhanced by AI" + "View original frame". **Verify:** on a dim/blurry seed clip the enhanced image shows the same parts (by eye, logged); unit test that `/api/check` only reads `keyframe_path`.
-- [ ] **T16 Read aloud (Wit.ai)** *(candidate cut)*. `/api/tts` at publish → MP3 per step → "Read aloud" with pause/stop. **Verify:** plays on every step of a seed guide; no MP3 hides the button.
-- [ ] **T14 Hardening + draft demo.** Every failure state in ARCHITECTURE §12, `scripts/cleanup-drafts.ts` (unpublished > 24 h), privacy note, accessibility pass (keyboard, focus, labels, contrast), phone check. Record a draft demo. **Verify:** failure drill logged; red-team review of the live build and draft video.
+- [ ] **T18 AI-enhanced step images** *(committed scope, 2026-11-01)*. `/api/enhance` (status-gated): keyframe → Muse Image edit → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the creator approves each at publish (rejected → `image_path` null). Viewer: "Enhanced by AI" + "View original frame". **Verify:** on a dim/blurry seed clip the enhanced image shows the same parts (by eye, logged); unit test that `/api/check` only reads `keyframe_path`.
+- [ ] **T16 Read aloud (Wit.ai)** *(committed scope)*. `/api/tts` at publish → MP3 per step → "Read aloud" with pause/stop. **Verify:** plays on every step of a seed guide; no MP3 hides the button.
+- [ ] **T13 Push + CI/CD deploy** *(after everything works locally; needs Talha's OK + Vercel account)*.
+  - Local production rehearsal first: `npm run build` + scans, and every flow run once against the real DB/Meta through the dev bridge.
+  - `.github/workflows/deploy.yml`: after CI passes on `main`, deploy to Vercel with the Vercel CLI (pinned version; `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` as GitHub secrets, used only in this job; no secrets in PR runs). A manual `vercel deploy --prod` from local is the fallback.
+  - Vercel env vars (server-only secrets incl. `IP_SALT`), `vercel.json` with `maxDuration` for long routes, access codes; Supabase keep-alive through 2026-11-09.
+  - Write the dated public-exposure decision before sharing the URL.
+  - **Verify:** CI green on GitHub; the deploy job succeeds; every flow (video guide, check, voice guide, enhanced, read aloud) works on the live URL; bundle scan clean.
+- [ ] **T14 Hardening + draft demo** (on the live URL). Every failure state in ARCHITECTURE §12, `scripts/cleanup-drafts.ts` (unpublished > 24 h), privacy note, accessibility pass (keyboard, focus, labels, contrast), phone check. Record a draft demo. **Verify:** failure drill logged; red-team review of the live build and draft video.
 
 ## Day 5: Wed 2026-11-04 (submit by ~15:00 ET; hard deadline 21:00 ET)
 
