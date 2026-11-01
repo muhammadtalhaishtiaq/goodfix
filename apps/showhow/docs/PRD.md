@@ -73,6 +73,8 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 **End-to-end diagrams, data model, storage layout, env vars and failure states:** see [`ARCHITECTURE.md`](ARCHITECTURE.md) §4–§12.
 
+**Both creation paths (2026-11-01, F2/F4/F5/F6):** video narration gets the same two-layer check as voice recordings, and video keyframes get a frame review before publishing. Title and category are optional: a blank title or "Let AI choose" is filled from the review (17 categories), and the creator can edit both in review.
+
 **Grounding rule:** instructions and tips come from the creator's transcript. Spark may summarise and order them; it must not add steps or advice the creator didn't give. The creator reviews everything before publishing.
 
 ## 4. Tech stack

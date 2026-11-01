@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { api } from '../lib/api'
-import { CATEGORIES, type Category } from '../lib/categories'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type ReviewMeta } from '../components/CreateFields'
+import type { Category } from '../lib/categories'
 import { captureFrame } from '../lib/image'
 import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
 import type { DraftStep } from '../lib/steps'
@@ -13,7 +14,7 @@ import { CreateTabs } from './VoiceCreate'
 type Upload = { path: string; token: string }
 type Created = { id: string; uploads: { video: Upload; audio: Upload } }
 type KeyframeUpload = Upload & { idx: number; atS: number }
-type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[] }
+type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[]; title: string; category: Category; missing: string[] }
 type OutlineResult = { idx: number; keyframe: boolean; outline: Outline | null }
 type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null; enhanced?: boolean; keepEnhanced?: boolean }
 type Ctx = { guideId: string; mp4Url: string }
@@ -24,7 +25,7 @@ type Phase =
   | ({ name: 'building' } & Ctx)
   | ({ name: 'framing'; done: number; total: number } & Ctx)
   | ({ name: 'enhancing' } & Ctx)
-  | ({ name: 'review'; steps: ReviewStep[]; buildMs: number } & Ctx)
+  | ({ name: 'review'; steps: ReviewStep[]; buildMs: number; meta: ReviewMeta } & Ctx)
   | ({ name: 'publishing' } & Ctx)
   | { name: 'published'; path: string; title: string }
   | ({ name: 'stageFailed'; message: string; retry: () => void } & Partial<Ctx>)
@@ -39,7 +40,7 @@ export function CreateView() {
   const [phase, setPhase] = useState<Phase>({ name: 'form' })
   const [canShrink, setCanShrink] = useState<boolean | null>(null)
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState<Category>('Home')
+  const [category, setCategory] = useState<CategoryChoice>('auto')
   const [creatorName, setCreatorName] = useState('')
   const [code, setCode] = useState(readCode)
   const [file, setFile] = useState<File | null>(null)
@@ -51,7 +52,7 @@ export function CreateView() {
   useEffect(() => { import('../lib/shrink').then(m => m.canShrinkHere()).then(setCanShrink, () => setCanShrink(false)) }, [])
 
   const tooBig = !!file && file.size > MAX_INPUT_BYTES
-  const ready = !!file && !tooBig && title.trim() && creatorName.trim() && code.trim() && consent && adult && canShrink
+  const ready = !!file && !tooBig && creatorName.trim() && code.trim() && consent && adult && canShrink
   const key = () => code.trim()
 
   async function start() {
@@ -99,7 +100,7 @@ export function CreateView() {
       const byIdx = new Map(outlines.map(o => [o.idx, o.outline]))
       let steps: ReviewStep[] = built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null }))
       if (enhance) steps = await enhanceSteps(ctx, steps)
-      setPhase({ name: 'review', ...ctx, buildMs, steps })
+      setPhase({ name: 'review', ...ctx, buildMs, steps, meta: { title: built.title, category: built.category, missing: built.missing ?? [] } })
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => outlineSteps(ctx, built, buildMs) })
     }
@@ -117,13 +118,13 @@ export function CreateView() {
     }
   }
 
-  async function publish(ctx: Ctx, steps: ReviewStep[]) {
+  async function publish(ctx: Ctx, steps: ReviewStep[], meta: ReviewMeta) {
     setPhase({ name: 'publishing', ...ctx })
     try {
-      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: !!s.enhanced && !s.keepEnhanced })) }, key())
-      setPhase({ name: 'published', path: out.path, title: title.trim() })
+      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, title: meta.title.trim(), category: meta.category, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: !!s.enhanced && !s.keepEnhanced })) }, key())
+      setPhase({ name: 'published', path: out.path, title: meta.title.trim() })
     } catch (e) {
-      setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => publish(ctx, steps) })
+      setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => publish(ctx, steps, meta) })
     }
   }
 
@@ -139,13 +140,9 @@ export function CreateView() {
 
       {phase.name === 'form' && (
         <div className="panel form-grid">
+          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} code={code} setCode={setCode} source="video" />
           {canShrink === false && <p className="note warn-note span2"><Icon name="alert" /><span>This browser can’t prepare video on your device. Please use desktop Chrome or Edge.</span></p>}
-          <label className="fl">Guide title<input className="txt" value={title} maxLength={120} onChange={e => setTitle(e.target.value)} placeholder="e.g. Change the air purifier’s water" /></label>
-          <label className="fl">Category
-            <select className="txt" value={category} onChange={e => setCategory(e.target.value as Category)}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
-          </label>
           <label className="fl">Your name (shown on the guide)<input className="txt" value={creatorName} maxLength={60} onChange={e => setCreatorName(e.target.value)} /></label>
-          <label className="fl">Access code<input className="txt" type="password" autoComplete="off" value={code} onChange={e => setCode(e.target.value)} /></label>
 
           <label className="drop span2">
             <span className="ic"><Icon name="upload" /></span>
@@ -154,6 +151,7 @@ export function CreateView() {
             <input type="file" accept="video/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
           </label>
 
+          <HowWeCheck source="video" />
           <div className="span2 consent">
             <p><b>Before anything leaves your device</b></p>
             <ul className="recip">
@@ -197,6 +195,7 @@ export function CreateView() {
       {phase.name === 'review' && (
         <div className="panel">
           <p className="note"><Icon name="check" /><span>{phase.steps.length} steps in your own words. Check them, fix anything, then publish.</span></p>
+          <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
           <ol className="built-steps">
             {phase.steps.map(s => (
               <li key={s.idx}>
@@ -220,7 +219,7 @@ export function CreateView() {
             ))}
           </ol>
           <div className="actions"><span className="sp" />
-            <button className="btn btn-primary" disabled={phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase, phase.steps)}><Icon name="check" /> Publish guide</button>
+            <button className="btn btn-primary" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase, phase.steps, phase.meta)}><Icon name="check" /> Publish guide</button>
           </div>
         </div>
       )}

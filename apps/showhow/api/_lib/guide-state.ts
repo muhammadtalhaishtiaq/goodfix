@@ -6,14 +6,14 @@ import type { serverDb } from './db.js'
 import { HttpError } from './http.js'
 
 type Db = ReturnType<typeof serverDb>
-export type GuideRow = { id: string; status: string; attempts: number; kind: string; duration_s: number | null; turns: unknown; claimed_at?: string | null }
+export type GuideRow = { id: string; status: string; attempts: number; kind: string; duration_s: number | null; turns: unknown; claimed_at?: string | null; title?: string; category?: string; auto_title?: boolean; auto_category?: boolean }
 export const MAX_ATTEMPTS = 3
 // Longer than any route can run (Vercel Hobby kills functions at 300 s), so an older claim is a dead run.
 export const STALE_CLAIM_MS = 330_000
 const isStale = (claimedAt?: string | null) => !claimedAt || Date.now() - Date.parse(claimedAt) > STALE_CLAIM_MS
 
 export async function claimGuide(db: Db, id: string, from: string[]): Promise<GuideRow> {
-  const { data: g } = await db.from('guides').select('id, status, attempts, kind, duration_s, turns, claimed_at').eq('id', id).maybeSingle()
+  const { data: g } = await db.from('guides').select('id, status, attempts, kind, duration_s, turns, claimed_at, title, category, auto_title, auto_category').eq('id', id).maybeSingle()
   if (!g) throw new HttpError(404, 'That guide doesn’t exist.')
   // A run killed mid-flight (timeout) leaves 'processing' behind; after 330 s it may be retried.
   const takeover = g.status === 'processing' && isStale(g.claimed_at)

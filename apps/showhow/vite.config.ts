@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, watch } from 'node:fs'
+import { parseEnv } from 'node:util'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
@@ -10,7 +11,10 @@ function devApi(): Plugin {
     name: 'dev-api',
     apply: 'serve',
     configureServer(server) {
-      if (existsSync('.env.local')) process.loadEnvFile('.env.local') // server-only vars stay out of the client
+      // Server-only vars stay out of the client. Re-read on change so new access codes work without a restart (F8).
+      const loadEnv = () => { if (existsSync('.env.local')) Object.assign(process.env, parseEnv(readFileSync('.env.local', 'utf8'))) }
+      loadEnv()
+      if (existsSync('.env.local') && !process.env.VITEST) watch('.env.local', () => { loadEnv(); server.config.logger.info('dev-api: reloaded .env.local') }).unref()
       server.middlewares.use(async (req, res, next) => {
         const match = req.url?.match(/^\/api\/([a-z0-9-]+)(?:[/?]|$)/)
         if (!match) return next()

@@ -17,6 +17,12 @@ describe('blockedTopic (layer 1, hard rules)', () => {
     ['replace the brake pads on your car', 'vehicle'],
     ['how to hack into your neighbour’s wifi', 'hacking'],
     ['how to pick a lock that isn’t yours', 'illegal'],
+    ['this is a guide to filming porn at home', 'adult content'],
+    ['take off your clothes and pose naked', 'adult content'],
+    ['how to harass someone online until they quit', 'hate or harassment'],
+    ['call me on 0300 1234567 for help', 'personal details'],
+    ['email me at jane.doe@example.com', 'personal details'],
+    ['my card number is 4111 1111 1111 1111', 'personal details'],
   ])('blocks %s', (text, topic) => {
     expect(blockedTopic(text)).toBe(topic)
   })
@@ -28,16 +34,20 @@ describe('blockedTopic (layer 1, hard rules)', () => {
     'Shoot a quick photo of the label',
     'Unplug the coffee machine and let it cool down',
     'Change the battery in the smoke alarm',
+    'How to stop bullying at school with your kids',
+    'Set a timer for 25 minutes and read',
+    'Cook it for 12 minutes at 200 degrees',
+    'Fill it to the 1600 ml line',
   ])('allows everyday wording: %s', text => {
     expect(blockedTopic(text)).toBeNull()
   })
 })
 
 describe('gateReview (layer 2, fail closed)', () => {
-  const ok = { is_howto: true, complete: true, safety: 'ok', category: 'Home', subject: 'white air purifier with a side water tank', missing: [], reason: 'clear' }
+  const ok = { is_howto: true, complete: true, safety: 'ok', category: 'Home', subject: 'white air purifier with a side water tank', title: 'Refill the purifier tank', missing: [], reason: 'clear' }
 
   test('passes a clear, complete, safe how-to', () => {
-    expect(gateReview(ok)).toEqual({ pass: true, subject: ok.subject, missing: [] })
+    expect(gateReview(ok)).toEqual({ pass: true, subject: ok.subject, missing: [], title: ok.title, category: 'Home' })
   })
   test('blocks unsafe content with the model’s reason', () => {
     expect(gateReview({ ...ok, safety: 'blocked', reason: 'involves mains wiring' })).toEqual({ pass: false, reason: 'This topic isn’t allowed: involves mains wiring', missing: [] })
@@ -46,7 +56,7 @@ describe('gateReview (layer 2, fail closed)', () => {
     expect(gateReview({ ...ok, is_howto: false, reason: 'random words' })).toMatchObject({ pass: false, reason: expect.stringMatching(/doesn’t sound like a how-to/) })
   })
   test('a possibly-missing step is a warning for the creator, not a block', () => {
-    expect(gateReview({ ...ok, complete: false, missing: ['how to put the tank back'] })).toEqual({ pass: true, subject: ok.subject, missing: ['how to put the tank back'] })
+    expect(gateReview({ ...ok, complete: false, missing: ['how to put the tank back'] })).toEqual({ pass: true, subject: ok.subject, missing: ['how to put the tank back'], title: ok.title, category: 'Home' })
   })
   test('unsafe still blocks even if the model also lists missing steps', () => {
     expect(gateReview({ ...ok, safety: 'blocked', complete: false, missing: ['x'] }).pass).toBe(false)

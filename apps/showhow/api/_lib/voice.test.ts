@@ -24,7 +24,7 @@ const turns = [
   { startMs: 0, endMs: 5000, transcript: 'First press the latch on the side and the water tank pops out.' },
   { startMs: 6000, endMs: 12000, transcript: 'Then fill it with cold water up to the max line and slide it back in.' },
 ]
-const review = { is_howto: true, complete: true, safety: 'ok', category: 'Home', subject: 'white air purifier with a side water tank', missing: [], reason: 'clear' }
+const review = { is_howto: true, complete: true, safety: 'ok', category: 'Home', subject: 'white air purifier with a side water tank', title: 'Refill the purifier tank', missing: [], reason: 'clear' }
 const steps = { steps: [
   { title: 'Release the tank', first_turn: 0, last_turn: 0, instruction: 'Press the latch.', tip_quote: '', key_part: 'Latch', sam_noun: 'latch' },
   { title: 'Refill the tank', first_turn: 1, last_turn: 1, instruction: 'Fill to MAX.', tip_quote: '', key_part: 'Water tank', sam_noun: 'tank' },
@@ -50,6 +50,12 @@ describe('POST /api/voice-guides', () => {
     expect(db.tables.guides[0]).toMatchObject({ kind: 'voice', status: 'ready', image_style: 'flat', subject: review.subject, duration_s: 12 })
     expect(db.tables.steps.map(s => s.title)).toEqual(['Release the tank', 'Refill the tank'])
     expect(meta.sparkJson.mock.calls.map(c => c[1])).toEqual(['review', 'steps'])
+  })
+  test('blank title and "auto" category are filled from the review', async () => {
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? { ...review, category: 'Cleaning' } : steps))
+    const res = await send({ meta: metaHeader({ title: '', category: 'auto' }) })
+    expect(res.status).toBe(200)
+    expect(db.tables.guides[0]).toMatchObject({ title: 'Refill the purifier tank', category: 'Cleaning', auto_title: true, auto_category: true })
   })
   test('a possibly-missing step is returned as advice; the guide is still built', async () => {
     meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? { ...review, complete: false, missing: ['pour out the old water'] } : steps))

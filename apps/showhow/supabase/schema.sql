@@ -10,6 +10,9 @@ create table if not exists public.guides (
   kind text not null default 'video' check (kind in ('video', 'voice')),
   image_style text,
   subject text,       -- voice guides: visual description of the object, from the safety review (base illustration)
+  auto_title boolean not null default false,    -- creator left the title blank: the review's title replaces it (F6)
+  auto_category boolean not null default false, -- creator chose "Let AI choose" (F5)
+  frames_ok boolean not null default false,     -- video guides: keyframes passed the content review (F4); publish requires it
   attempts int not null default 0, -- model-stage runs; routes refuse after 3 (credit guard)
   claimed_at timestamptz, -- when the current stage started; a 'processing' claim older than 330 s can be taken over
   turns jsonb,        -- Voice Transcribe turns, kept so a retry skips re-transcribing (narration becomes step text anyway)
@@ -45,6 +48,9 @@ alter table public.guides add column if not exists attempts int not null default
 alter table public.guides add column if not exists turns jsonb;
 alter table public.guides add column if not exists subject text;
 alter table public.guides add column if not exists claimed_at timestamptz;
+alter table public.guides add column if not exists auto_title boolean not null default false;
+alter table public.guides add column if not exists auto_category boolean not null default false;
+alter table public.guides add column if not exists frames_ok boolean not null default false;
 alter table public.steps add column if not exists image_path text;
 
 -- Daily counters for spend/abuse caps. No policies: invisible to the public.

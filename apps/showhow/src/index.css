@@ -262,3 +262,9 @@ textarea:focus { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px
 .prose h2 { font-size: 22px; margin-top: 12px }
 .prose ul { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 17px }
 .prose code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: 14px }
+.hint { font-weight: 400; font-size: 13.5px; color: var(--ink-2) }
+.how-check { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; background: var(--paper) }
+.how-check summary { cursor: pointer; font-weight: 700; display: flex; gap: 8px; align-items: center }
+.how-check ol { margin: 10px 0 4px; padding-left: 22px; display: grid; gap: 6px; font-size: 15px }
+.review-meta { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin: 8px 0 }
+@media (max-width: 600px) { .review-meta { grid-template-columns: 1fr } }

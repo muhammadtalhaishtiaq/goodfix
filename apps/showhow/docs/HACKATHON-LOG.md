@@ -242,3 +242,8 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 - **#4 Wit length:** a live 334-character step → 200, 176 KB MP3; no chunking needed.
 - **#11** (CSP during the Create flow) and the real-photo accuracy run remain open; both need a preview deploy or Talha's footage.
 - 127/127 tests. Feedback log started (`docs/FEEDBACK.md`); UI audit delegated to a separate agent (`docs/UI-AUDIT.md`, pending).
+
+## 2026-11-01 — Feedback round 1, part 1 (safety + AI metadata)
+
+- F2/F4/F5/F6/F3/F8 implemented (see FEEDBACK.md). Schema: `auto_title`, `auto_category`, `frames_ok` (applied). 145/145 tests (new: 6 blocked phrasings + 4 everyday ones allowed, layer-2 review on video incl. fail closed, AI title/category on both paths, frame review blocks/fails closed, publish requires `frames_ok`, final title/category saved).
+- **Live:** a synthetic recording that reads out a phone number → 422 in 10.6 s from the layer-2 review ("includes a personal phone number"); nothing saved. Talha's dishwasher test audio with blank title + auto category → 200 in 54 s: title "Load a dishwasher so everything comes out clean", category Kitchen, 7 steps. Test guide removed.

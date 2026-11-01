@@ -1,18 +1,18 @@
 // POST /api/voice-guides: spoken how-to → guide (T17). Raw audio/wav body; details in the x-meta header.
 // NOTHING is stored until both safety layers pass. Every failure (including model errors) blocks.
 import { z } from 'zod'
-import { CATEGORIES } from '../src/lib/categories.js'
 import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { STYLE_IDS } from '../src/lib/styles.js'
 import { enforceCaps } from './_lib/caps.js'
+import { CategoryField, TitleField } from './_lib/fields.js'
 import { serverDb } from './_lib/db.js'
 import { HttpError, ipKey, route } from './_lib/http.js'
 import { sparkJson, transcribe } from './_lib/meta.js'
 
 const Meta = z.object({
-  title: z.string().trim().min(1).max(120),
-  category: z.enum(CATEGORIES),
+  title: TitleField,
+  category: CategoryField,
   creatorName: z.string().trim().min(1).max(60),
   style: z.enum(STYLE_IDS),
   consent: z.literal(true),
@@ -44,7 +44,8 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
 
   // Both gates passed: only now does anything get written.
   const { data: g, error } = await db.from('guides').insert({
-    title: body.title, category: body.category, creator_name: body.creatorName, kind: 'voice', status: 'ready',
+    title: body.title || gate.title, category: body.category === 'auto' ? gate.category : body.category,
+    auto_title: !body.title, auto_category: body.category === 'auto', creator_name: body.creatorName, kind: 'voice', status: 'ready',
     image_style: body.style, subject: gate.subject, turns, duration_s: turns[turns.length - 1].endMs / 1000,
   }).select('id').single()
   if (error || !g) throw new Error('guide insert failed')
@@ -53,5 +54,5 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
     start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun,
   })))
   if (e2) { await db.from('guides').delete().eq('id', g.id); throw new Error('steps insert failed') }
-  return { id: g.id, steps: result.steps, missing: gate.missing } // advice shown to the creator in review
+  return { id: g.id, steps: result.steps, missing: gate.missing, title: body.title || gate.title, category: body.category === 'auto' ? gate.category : body.category }
 })

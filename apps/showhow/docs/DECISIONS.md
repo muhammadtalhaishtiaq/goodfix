@@ -106,3 +106,9 @@ A separate `/api/tts` run before publishing would speak text the creator could s
 - **Safety:** hard topic rules now also apply to video narration, creator edits at publish, and the check's own answer (a hit becomes `unclear`). The learner's question is passed as delimited data.
 - **Credits:** a new `image` cap (60/day, 20 per IP) on `voice-images` and `enhance`.
 - **Honest copy:** "Sent with Meta's response storage turned off; Meta's terms apply" replaces "Not kept by Meta"; "Passed our topic check" replaces "within safety rules".
+
+## 2026-11-01 — Feedback round 1 (Talha's testing): safety parity + AI-filled metadata
+
+- **Safety (F2, F4):** both creation paths use the same two layers. Layer 1 adds adult content, hate/harassment and personal details (phone/email/card numbers). Video keyframes get a Muse Spark frame review, and a video can't be published without `frames_ok`. Errors fail closed everywhere.
+- **Metadata (F5, F6):** title is optional and category defaults to "Let AI choose" (17 categories). The review's title and category fill the blanks (`auto_title`, `auto_category`), and the creator edits both in review.
+- **Duplicates (F7):** warn, don't block (Talha: "fix all" = the recommended option).

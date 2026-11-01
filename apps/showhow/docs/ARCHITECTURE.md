@@ -271,6 +271,7 @@ All Meta calls send `store: false` (Meta stores by default). Prompts are fixed i
 
 | Rule | Enforced in |
 |---|---|
+| Two-layer content check on BOTH creation paths: hard topic rules (incl. adult, hate/harassment, personal details) + Muse Spark review, fail closed; video keyframes get a frame review and publish requires `frames_ok` | `safety.ts`, `/api/steps`, `/api/voice-guides`, `/api/outlines`, `/api/publish` (tested) |
 | Hard topic rules apply to video narration, voice recordings, creator edits at publish, and the check's own answer | `blockedTopic` in `/api/steps`, `/api/voice-guides`, `/api/publish`, `/api/check` (tested) |
 | The learner's question is passed as delimited data, never as instructions | `verdictPrompt` (tested) |
 | Instructions come from the creator's words; tips must be verbatim quotes | `stepsPrompt` + `validateSteps` (tested) |

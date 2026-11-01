@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { api, apiRaw } from '../lib/api'
-import { CATEGORIES, type Category } from '../lib/categories'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type ReviewMeta } from '../components/CreateFields'
+import type { Category } from '../lib/categories'
 import type { DraftStep } from '../lib/steps'
 import { STYLE_IDS, STYLES, type StyleId } from '../lib/styles'
 import { mediaUrl } from '../lib/supabase'
@@ -13,8 +14,8 @@ type Phase =
   | { name: 'form' }
   | { name: 'checking' }
   | { name: 'blocked'; message: string }
-  | { name: 'illustrating'; guideId: string; steps: DraftStep[]; missing: string[] }
-  | { name: 'review'; guideId: string; steps: ReviewStep[]; v: number; missing: string[] }
+  | { name: 'illustrating'; guideId: string; steps: DraftStep[]; meta: ReviewMeta }
+  | { name: 'review'; guideId: string; steps: ReviewStep[]; v: number; meta: ReviewMeta }
   | { name: 'publishing' }
   | { name: 'published'; path: string; title: string }
   | { name: 'error'; message: string; retry?: () => void }
@@ -26,7 +27,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : 'Something wen
 export function VoiceCreate() {
   const [phase, setPhase] = useState<Phase>({ name: 'form' })
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState<Category>('Home')
+  const [category, setCategory] = useState<CategoryChoice>('auto')
   const [creatorName, setCreatorName] = useState('')
   const [code, setCode] = useState(readCode)
   const [style, setStyle] = useState<StyleId>('flat')
@@ -34,7 +35,7 @@ export function VoiceCreate() {
   const [consent, setConsent] = useState(false)
   const [adult, setAdult] = useState(false)
   const key = () => code.trim()
-  const ready = audio && title.trim() && creatorName.trim() && key() && consent && adult
+  const ready = audio && creatorName.trim() && key() && consent && adult
 
   async function start() {
     if (!audio) return
@@ -43,30 +44,30 @@ export function VoiceCreate() {
     try {
       const { toWav16k } = await import('../lib/shrink')
       const { wav } = await toWav16k(audio)
-      const out = await apiRaw<{ id: string; steps: DraftStep[]; missing: string[] }>('voice-guides', wav, { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult }, key())
-      await illustrate(out.id, out.steps, out.missing)
+      const out = await apiRaw<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category }>('voice-guides', wav, { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult }, key())
+      await illustrate(out.id, out.steps, { title: out.title, category: out.category, missing: out.missing })
     } catch (e) {
       const m = message(e)
       setPhase(m.includes('Nothing was saved') ? { name: 'blocked', message: m } : { name: 'error', message: m })
     }
   }
 
-  async function illustrate(guideId: string, steps: DraftStep[], missing: string[]) {
-    setPhase({ name: 'illustrating', guideId, steps, missing })
+  async function illustrate(guideId: string, steps: DraftStep[], meta: ReviewMeta) {
+    setPhase({ name: 'illustrating', guideId, steps, meta })
     try {
       const { images } = await api<{ images: Img[] }>('voice-images', { guideId }, key())
       const ok = new Map(images.map(i => [i.idx, i.ok]))
-      setPhase({ name: 'review', guideId, missing, v: Date.now(), steps: steps.map(s => ({ ...s, ok: !!ok.get(s.idx), keep: !!ok.get(s.idx) })) })
+      setPhase({ name: 'review', guideId, meta, v: Date.now(), steps: steps.map(s => ({ ...s, ok: !!ok.get(s.idx), keep: !!ok.get(s.idx) })) })
     } catch (e) {
-      setPhase({ name: 'error', message: message(e), retry: () => illustrate(guideId, steps, missing) })
+      setPhase({ name: 'error', message: message(e), retry: () => illustrate(guideId, steps, meta) })
     }
   }
 
   async function publish(p: Extract<Phase, { name: 'review' }>) {
     setPhase({ name: 'publishing' })
     try {
-      const out = await api<{ path: string }>('publish', { guideId: p.guideId, edits: p.steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: s.ok && !s.keep })) }, key())
-      setPhase({ name: 'published', path: out.path, title: title.trim() })
+      const out = await api<{ path: string }>('publish', { guideId: p.guideId, title: p.meta.title.trim(), category: p.meta.category, edits: p.steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: s.ok && !s.keep })) }, key())
+      setPhase({ name: 'published', path: out.path, title: p.meta.title.trim() })
     } catch (e) {
       setPhase({ name: 'error', message: message(e), retry: () => publish(p) })
     }
@@ -84,12 +85,8 @@ export function VoiceCreate() {
 
       {phase.name === 'form' && (
         <div className="panel form-grid">
-          <label className="fl">Guide title<input className="txt" value={title} maxLength={120} onChange={e => setTitle(e.target.value)} placeholder="e.g. Change the air purifier’s water" /></label>
-          <label className="fl">Category
-            <select className="txt" value={category} onChange={e => setCategory(e.target.value as Category)}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
-          </label>
+          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} code={code} setCode={setCode} source="voice" />
           <label className="fl">Your name (shown on the guide)<input className="txt" value={creatorName} maxLength={60} onChange={e => setCreatorName(e.target.value)} /></label>
-          <label className="fl">Access code<input className="txt" type="password" autoComplete="off" value={code} onChange={e => setCode(e.target.value)} /></label>
 
           <div className="span2"><Recorder onAudio={setAudio} /></div>
 
@@ -106,6 +103,7 @@ export function VoiceCreate() {
             </div>
           </fieldset>
 
+          <HowWeCheck source="voice" />
           <div className="span2 consent">
             <p><b>Before anything leaves your device</b></p>
             <ul className="recip">
@@ -145,7 +143,7 @@ export function VoiceCreate() {
       {phase.name === 'review' && (
         <div className="panel">
           <p className="note"><Icon name="check" /><span>Passed our topic check and reads as a clear how-to. AI can be wrong: review each step, then publish.</span></p>
-          {phase.missing.length > 0 && <p className="note warn-note"><Icon name="alert" /><span>The AI thinks you may have skipped: {phase.missing.join('; ')}. Add it to an instruction below, or record again.</span></p>}
+          <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
           <ol className="built-steps">
             {phase.steps.map(s => (
               <li key={s.idx}>
@@ -162,9 +160,9 @@ export function VoiceCreate() {
             ))}
           </ol>
           <div className="actions">
-            <button className="btn btn-ghost" onClick={() => illustrate(phase.guideId, phase.steps, phase.missing)}>Redraw all illustrations</button>
+            <button className="btn btn-ghost" onClick={() => illustrate(phase.guideId, phase.steps, phase.meta)}>Redraw all illustrations</button>
             <span className="sp" />
-            <button className="btn btn-primary" disabled={phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase)}><Icon name="check" /> Publish guide</button>
+            <button className="btn btn-primary" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase)}><Icon name="check" /> Publish guide</button>
           </div>
         </div>
       )}

@@ -17,8 +17,9 @@ const goodSteps = { steps: [
   { title: 'Release the tank', first_turn: 1, last_turn: 1, instruction: 'Press the latch.', tip_quote: '', key_part: 'Latch', sam_noun: 'latch' },
   { title: 'Fill the tank', first_turn: 2, last_turn: 2, instruction: 'Fill to MAX.', tip_quote: 'not above', key_part: 'Tank', sam_noun: 'tank' },
 ] }
+const review = { is_howto: true, complete: true, safety: 'ok', category: 'Home', subject: 'air purifier', title: 'Refill the purifier', missing: [], reason: 'ok' }
 const seed = (g: Record<string, unknown> = {}) => fakeDb({
-  guides: [{ id: ID, status: 'draft', attempts: 0, kind: 'video', duration_s: 20, turns: null, ...g }],
+  guides: [{ id: ID, status: 'draft', attempts: 0, kind: 'video', duration_s: 20, turns: null, title: 'Mine', category: 'Home', auto_title: false, auto_category: false, ...g }],
   files: { [`${ID}/audio.wav`]: new Blob(['wav'], { type: 'audio/wav' }) },
 })
 const call = () => POST(new Request('http://x/api/steps', {
@@ -31,7 +32,7 @@ describe('POST /api/steps', () => {
     vi.stubEnv('CREATE_ACCESS_CODES', 'good')
     db = seed()
     meta.transcribe.mockReset().mockResolvedValue(turns)
-    meta.sparkJson.mockReset().mockResolvedValue(goodSteps)
+    meta.sparkJson.mockReset().mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? review : goodSteps))
   })
 
   test('builds validated steps with times from the transcript, saves them, returns keyframe upload URLs', async () => {
@@ -45,11 +46,13 @@ describe('POST /api/steps', () => {
     ])
     expect(guide()).toMatchObject({ status: 'ready', attempts: 0, video_path: `${ID}/video.mp4` }) // counter resets on success
     expect(db.files[`${ID}/audio.wav`]).toBeUndefined() // audio deleted once transcribed
-    expect(meta.sparkJson.mock.calls[0][0][1]).toEqual({ type: 'input_video', video_url: `https://storage.test/media/${ID}/video.mp4` })
+    const stepsCall = meta.sparkJson.mock.calls.find(c => c[1] === 'steps')!
+    expect(stepsCall[0][1]).toEqual({ type: 'input_video', video_url: `https://storage.test/media/${ID}/video.mp4` })
+    expect(guide()).toMatchObject({ title: 'Mine', category: 'Home' }) // creator's own title kept
   })
 
   test('invalid model output marks the guide failed with a plain reason and saves no steps', async () => {
-    meta.sparkJson.mockResolvedValue({ steps: [{ title: 'x' }] })
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? review : { steps: [{ title: 'x' }] }))
     const res = await call()
     expect(res.status).toBe(422)
     expect(guide()).toMatchObject({ status: 'failed' })
@@ -58,7 +61,7 @@ describe('POST /api/steps', () => {
   })
 
   test('a retry reuses the saved transcript instead of transcribing again', async () => {
-    meta.sparkJson.mockRejectedValueOnce(new Error('Meta /responses 503'))
+    meta.sparkJson.mockImplementationOnce(async () => review).mockRejectedValueOnce(new Error('Meta /responses 503'))
     expect((await call()).status).toBe(500)
     expect(guide()).toMatchObject({ status: 'failed', error: expect.stringMatching(/try again/) })
     expect((await call()).status).toBe(200)
@@ -70,6 +73,24 @@ describe('POST /api/steps', () => {
     expect((await call()).status).toBe(422)
     expect(String(guide().error)).toMatch(/mains electrical/)
     expect(meta.sparkJson).not.toHaveBeenCalled()
+  })
+
+  test('layer 2: the Muse Spark review blocks unsuitable video narration (fail closed on errors too)', async () => {
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? { ...review, safety: 'blocked', reason: 'adult content' } : goodSteps))
+    expect((await call()).status).toBe(422)
+    expect(String(guide().error)).toMatch(/isn’t allowed: adult content/)
+    expect(db.tables.steps).toEqual([])
+    db = seed()
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => { if (name === 'review') throw new Error('Meta 503'); return goodSteps })
+    expect((await call()).status).toBe(422)
+    expect(db.tables.steps).toEqual([])
+  })
+  test('blank title / auto category come from the review; missing-step advice is returned', async () => {
+    db = seed({ auto_title: true, auto_category: true, title: 'Untitled guide', category: 'Other' })
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? { ...review, category: 'Cleaning', complete: false, missing: ['empty the old water'] } : goodSteps))
+    const out = (await (await call()).json()) as { title: string; category: string; missing: string[] }
+    expect(out).toMatchObject({ title: 'Refill the purifier', category: 'Cleaning', missing: ['empty the old water'] })
+    expect(guide()).toMatchObject({ title: 'Refill the purifier', category: 'Cleaning' })
   })
 
   test('too little narration fails with a helpful reason', async () => {

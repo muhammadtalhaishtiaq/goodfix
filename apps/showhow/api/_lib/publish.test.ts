@@ -9,7 +9,7 @@ vi.mock('./wit', () => ({ speak: (...a: unknown[]) => speak(...a) }))
 const { POST } = await import('../publish')
 
 const seed = (status = 'ready') => fakeDb({
-  guides: [{ id: ID, status }],
+  guides: [{ id: ID, status, kind: 'video', frames_ok: true }],
   steps: [0, 1].map(idx => ({ guide_id: ID, idx, title: `T${idx}`, instruction: `I${idx}`, start_s: idx, end_s: idx + 1, image_path: `${ID}/${idx}-ai.jpg` })),
 })
 const call = (edits: unknown[]) => POST(new Request('http://x/api/publish', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID, edits }) }))
@@ -35,6 +35,15 @@ describe('POST /api/publish', () => {
     expect(res.status).toBe(200)
     expect(db.tables.guides[0].status).toBe('published')
     expect(db.tables.steps.map(s => s.audio_path)).toEqual([undefined, undefined])
+  })
+  test('the creator’s final title and category are saved', async () => {
+    await POST(new Request('http://x/api/publish', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID, title: 'My dishwasher method', category: 'Cleaning', edits: [] }) }))
+    expect(db.tables.guides[0]).toMatchObject({ title: 'My dishwasher method', category: 'Cleaning', status: 'published' })
+  })
+  test('a video guide whose frames were not checked cannot be published', async () => {
+    db.tables.guides[0].frames_ok = false
+    expect((await call([])).status).toBe(409)
+    expect(db.tables.guides[0].status).toBe('ready')
   })
   test('only ready guides can be published, once', async () => {
     db = seed('draft'); expect((await call([])).status).toBe(409)

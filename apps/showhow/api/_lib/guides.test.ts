@@ -31,7 +31,11 @@ describe('POST /api/guides', () => {
       id: 'g-123',
       uploads: { video: { path: 'g-123/video.mp4', token: 'tok-g-123/video.mp4' }, audio: { path: 'g-123/audio.wav', token: 'tok-g-123/audio.wav' } },
     })
-    expect(db.inserted).toEqual([{ title: valid.title, category: 'Home', creator_name: 'Talha', duration_s: 95, kind: 'video', status: 'draft' }])
+    expect(db.inserted).toEqual([{ title: valid.title, category: 'Home', auto_title: false, auto_category: false, creator_name: 'Talha', duration_s: 95, kind: 'video', status: 'draft' }])
+  })
+  test('title and category may be left to the AI', async () => {
+    expect((await call({ ...valid, title: '', category: 'auto' })).status).toBe(200)
+    expect(db.inserted[0]).toMatchObject({ title: 'Untitled guide', category: 'Other', auto_title: true, auto_category: true })
   })
   test('401 with a wrong access code, and nothing is created', async () => {
     expect((await call(valid, 'bad')).status).toBe(401)
