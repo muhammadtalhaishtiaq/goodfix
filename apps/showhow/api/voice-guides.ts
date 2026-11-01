@@ -1,14 +1,14 @@
 // POST /api/voice-guides: spoken how-to → guide (T17). Raw audio/wav body; details in the x-meta header.
 // NOTHING is stored until both safety layers pass. Every failure (including model errors) blocks.
 import { z } from 'zod'
-import { CATEGORIES } from '../src/lib/categories'
-import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety'
-import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps'
-import { STYLE_IDS } from '../src/lib/styles'
-import { enforceCaps } from './_lib/caps'
-import { serverDb } from './_lib/db'
-import { HttpError, ipKey, route } from './_lib/http'
-import { sparkJson, transcribe } from './_lib/meta'
+import { CATEGORIES } from '../src/lib/categories.js'
+import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
+import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
+import { STYLE_IDS } from '../src/lib/styles.js'
+import { enforceCaps } from './_lib/caps.js'
+import { serverDb } from './_lib/db.js'
+import { HttpError, ipKey, route } from './_lib/http.js'
+import { sparkJson, transcribe } from './_lib/meta.js'
 
 const Meta = z.object({
   title: z.string().trim().min(1).max(120),
@@ -33,12 +33,12 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
   if (topic) throw nothingSaved(`This topic isn’t allowed here (${topic}).`)
 
   let review: unknown = null // layer 2: model review; an error leaves null, which gateReview blocks
-  try { review = await sparkJson([{ type: 'input_text', text: reviewPrompt(text) }], 'review', reviewJsonSchema, 60_000) } catch { /* fail closed */ }
+  try { review = await sparkJson([{ type: 'input_text', text: reviewPrompt(text) }], 'review', reviewJsonSchema, 45_000) } catch { /* fail closed */ }
   const gate = gateReview(review)
   if (!gate.pass) throw nothingSaved(gate.reason)
 
   let rawSteps: unknown
-  try { rawSteps = await sparkJson([{ type: 'input_text', text: stepsPrompt(turns, 'voice') }], 'steps', stepsJsonSchema) } catch { throw new HttpError(504, 'The step builder didn’t answer. Nothing was saved. Please try again.') }
+  try { rawSteps = await sparkJson([{ type: 'input_text', text: stepsPrompt(turns, 'voice') }], 'steps', stepsJsonSchema, 120_000) } catch { throw new HttpError(504, 'The step builder didn’t answer. Nothing was saved. Please try again.') }
   const result = validateSteps(rawSteps, turns)
   if (!result.ok) throw nothingSaved('We couldn’t turn this into clear steps. Try saying each step in order.')
 

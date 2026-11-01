@@ -1,11 +1,11 @@
 // POST /api/outlines {guideId}: SAM 3.1 boxes the key part on each step's real keyframe (T10).
 // Only a confident, unambiguous box is saved; otherwise the step simply has no outline.
 import { z } from 'zod'
-import { bestOutline, parseSamBoxes } from '../src/lib/sam'
-import { serverDb } from './_lib/db'
-import { claimGuide, failGuide, finishGuide } from './_lib/guide-state'
-import { HttpError, route } from './_lib/http'
-import { samText } from './_lib/meta'
+import { bestOutline, parseSamBoxes } from '../src/lib/sam.js'
+import { serverDb } from './_lib/db.js'
+import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
+import { HttpError, route } from './_lib/http.js'
+import { samText } from './_lib/meta.js'
 
 const Body = z.object({ guideId: z.uuid() })
 

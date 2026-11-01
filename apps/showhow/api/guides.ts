@@ -1,11 +1,11 @@
 // POST /api/guides: create a draft video guide and hand back one-time upload URLs.
 // The browser uploads the shrunk MP4 + WAV straight to Storage; media never passes through here.
 import { z } from 'zod'
-import { CATEGORIES } from '../src/lib/categories'
-import { MAX_SECONDS } from '../src/lib/shrink-limits'
-import { enforceCaps } from './_lib/caps'
-import { serverDb } from './_lib/db'
-import { ipKey, route } from './_lib/http'
+import { CATEGORIES } from '../src/lib/categories.js'
+import { MAX_SECONDS } from '../src/lib/shrink-limits.js'
+import { enforceCaps } from './_lib/caps.js'
+import { serverDb } from './_lib/db.js'
+import { ipKey, route } from './_lib/http.js'
 
 export const Body = z.object({
   title: z.string().trim().min(1).max(120),

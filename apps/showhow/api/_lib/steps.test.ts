@@ -40,8 +40,8 @@ describe('POST /api/steps', () => {
     const out = (await res.json()) as { keyframeUploads: { idx: number; atS: number; path: string }[] }
     expect(db.tables.steps.map(s => [s.title, s.start_s, s.end_s, s.tip_quote])).toEqual([['Release the tank', 4, 9, null], ['Fill the tank', 10, 16, 'not above']])
     expect(out.keyframeUploads).toEqual([
-      { idx: 0, atS: 6.5, path: `${ID}/0.jpg`, token: `tok-${ID}/0.jpg` },
-      { idx: 1, atS: 13, path: `${ID}/1.jpg`, token: `tok-${ID}/1.jpg` },
+      { idx: 0, atS: 8.6, path: `${ID}/0.jpg`, token: `tok-${ID}/0.jpg` }, // near the end of each step
+      { idx: 1, atS: 15.6, path: `${ID}/1.jpg`, token: `tok-${ID}/1.jpg` },
     ])
     expect(guide()).toMatchObject({ status: 'ready', attempts: 0, video_path: `${ID}/video.mp4` }) // counter resets on success
     expect(db.files[`${ID}/audio.wav`]).toBeUndefined() // audio deleted once transcribed
@@ -65,6 +65,13 @@ describe('POST /api/steps', () => {
     expect(meta.transcribe).toHaveBeenCalledTimes(1)
   })
 
+  test('video narration goes through the same hard topic rules', async () => {
+    meta.transcribe.mockResolvedValue([turns[0], { startMs: 4000, endMs: 9000, transcript: 'open the fuse box and pull the live wire' }])
+    expect((await call()).status).toBe(422)
+    expect(String(guide().error)).toMatch(/mains electrical/)
+    expect(meta.sparkJson).not.toHaveBeenCalled()
+  })
+
   test('too little narration fails with a helpful reason', async () => {
     meta.transcribe.mockResolvedValue(turns.slice(0, 1))
     expect((await call()).status).toBe(422)
@@ -74,11 +81,17 @@ describe('POST /api/steps', () => {
   test('credit guard: refuses a 4th run, and refuses while already processing or already done', async () => {
     db = seed({ attempts: 3, status: 'failed' })
     expect((await call()).status).toBe(429)
-    db = seed({ status: 'processing' })
-    expect((await call()).status).toBe(409)
+    db = seed({ status: 'processing', claimed_at: new Date().toISOString() })
+    expect((await call()).status).toBe(409) // a live run is never interrupted
     db = seed({ status: 'ready' })
     expect((await call()).status).toBe(409)
     expect(meta.transcribe).not.toHaveBeenCalled()
+  })
+
+  test('a run killed by a timeout (stale processing claim) can be retried', async () => {
+    db = seed({ status: 'processing', attempts: 1, claimed_at: new Date(Date.now() - 400_000).toISOString() })
+    expect((await call()).status).toBe(200)
+    expect(db.tables.guides[0]).toMatchObject({ status: 'ready', attempts: 0 })
   })
 
   test('the last failed attempt deletes the audio copy', async () => {

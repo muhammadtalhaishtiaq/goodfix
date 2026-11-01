@@ -102,6 +102,8 @@ guides(id uuid pk, title text, category text, creator_name text,
        image_style text,            -- voice guides: realistic|lineart|flat|blueprint|watercolor|clay
        attempts int default 0,      -- model-stage runs; routes refuse after 3 (credit guard)
        turns jsonb,                 -- Transcribe turns; a retry reuses them instead of re-transcribing
+       claimed_at timestamptz,      -- stage start; a 'processing' claim older than 330 s (a run Vercel killed) can be taken over
+       subject text,                -- voice guides: object description from the safety review
        video_path text, duration_s real, error text, created_at timestamptz)
 steps(id uuid pk, guide_id uuid fk on delete cascade, idx int, unique(guide_id, idx),
       title text, instruction text, tip_quote text,
@@ -254,10 +256,10 @@ Voice guides hide "I'm stuck": they have no real reference frame.
 
 | Call | Endpoint · model | Input → output | Timeout | Verified |
 |---|---|---|---|---|
-| Transcribe | `POST /v1/asr/transcribe` · `muse-voice-transcribe-1.0`, `mode: ENDPOINTING` | multipart WAV (16 kHz mono, ≤32 MB, ≤10 min) → `turns[{startMs,endMs,transcript}]` | 90 s | 2026-10-30, 5.5 s |
-| Steps | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | video (URL or data URL) + numbered turns → steps by turn index | 180 s | 2026-10-30, 15.6 s (data URL) |
+| Transcribe | `POST /v1/asr/transcribe` · `muse-voice-transcribe-1.0`, `mode: ENDPOINTING` | multipart WAV (16 kHz mono, ≤32 MB, ≤10 min) → `turns[{startMs,endMs,transcript}]` | 60 s | 2026-10-30, 5.5 s |
+| Steps | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | video (URL or data URL) + numbered turns → steps by turn index | 150 s (120 s for voice) | 2026-10-30, 15.6 s (data URL) |
 | Verdict | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` (one Spark endpoint everywhere; the spike used `/v1/chat/completions`) | 2 images + step text → `{status, differences[{part, sam_noun, note}], message}` | 60 s | 2026-10-30, 5–9.5 s |
-| Voice review | `POST /v1/responses` · `muse-spark-1.3` | transcript → `{is_howto, complete, safety, category, missing[], reason}` | 60 s | T17 |
+| Voice review | `POST /v1/responses` · `muse-spark-1.3` | transcript → `{is_howto, complete, safety, category, subject, missing[], reason}` | 45 s | T17 |
 | Segment | `POST /v1/responses` · `sam-3.1`, `metadata.include_confidence: "true"` | image + one simple noun → `<\|box;x1;y1;x2;y2;w;h;c\|>` tokens | 60 s | 2026-10-30, ~1 s |
 | Illustrate | `POST /v1/images/generations` · `muse-image-1.0` | prompt (+ style) → JPEG, $0.01 | 90 s | 2026-10-31, 10–21 s |
 | Edit / highlight | `POST /v1/images/edits` · `muse-image-1.0`, `images[{image_url}]` | reference + instruction → JPEG, $0.01 | 90 s | 2026-10-31, 8–18 s |
@@ -269,6 +271,8 @@ All Meta calls send `store: false` (Meta stores by default). Prompts are fixed i
 
 | Rule | Enforced in |
 |---|---|
+| Hard topic rules apply to video narration, voice recordings, creator edits at publish, and the check's own answer | `blockedTopic` in `/api/steps`, `/api/voice-guides`, `/api/publish`, `/api/check` (tested) |
+| The learner's question is passed as delimited data, never as instructions | `verdictPrompt` (tested) |
 | Instructions come from the creator's words; tips must be verbatim quotes | `stepsPrompt` + `validateSteps` (tested) |
 | Step times come from Transcribe timestamps, not the model | `validateSteps` |
 | Only SAM-returned, in-frame, confident, unambiguous boxes are drawn | `parseSamBoxes`, `bestOutline`, `isValidOutline` (tested) |
@@ -307,7 +311,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | IP address | Never raw; salted hash inside a daily `usage` counter key |
 | Logs | Route, status, ms, model, request ID only |
 
-**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
+**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `image` (voice-images, enhance): 60 total / 20 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
 
 **Meta Terms:** fixed prompts, allowlisted models, no prompt passthrough (an Integrated Product, not a gateway, §10.1(i)); Standard models only, never Contributor mode; 18+ confirmation on create and on the first check. Public exposure needs a dated decision (Discord question pending).
 

@@ -5,7 +5,7 @@ import {
   Mp4OutputFormat, Output, Quality, WavOutputFormat,
 } from 'mediabunny'
 
-import { MAX_INPUT_BYTES, MAX_SECONDS } from './shrink-limits'
+import { MAX_INPUT_BYTES, MAX_SECONDS } from './shrink-limits.js'
 
 export { MAX_INPUT_BYTES, MAX_SECONDS }
 const AUDIO_BPS = 64_000

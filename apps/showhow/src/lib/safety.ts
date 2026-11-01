@@ -1,7 +1,7 @@
 // Voice-guide safety gate (T17). Layer 1 is deterministic and can't be argued with; layer 2 is a
 // schema-constrained Muse Spark review. Both fail closed: anything unclear is blocked, nothing is saved.
 import { z } from 'zod'
-import { CATEGORIES } from './categories'
+import { CATEGORIES } from './categories.js'
 
 // Phrases, not single words, so everyday wording ("kill the power", "fire up the app") passes.
 // ponytail: a phrase list misses paraphrases by design; layer 2 (Spark review) catches the rest.

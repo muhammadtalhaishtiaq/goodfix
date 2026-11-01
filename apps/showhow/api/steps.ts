@@ -2,11 +2,12 @@
 // Transcribe once (turns are saved so a retry skips it), then Muse Spark splits the steps by turn
 // index, then our own validation decides. Returns signed upload URLs for each step's keyframe.
 import { z } from 'zod'
-import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps'
-import { serverDb } from './_lib/db'
-import { claimGuide, failGuide, finishGuide } from './_lib/guide-state'
-import { HttpError, route } from './_lib/http'
-import { sparkJson, transcribe } from './_lib/meta'
+import { blockedTopic } from '../src/lib/safety.js'
+import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
+import { serverDb } from './_lib/db.js'
+import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
+import { HttpError, route } from './_lib/http.js'
+import { sparkJson, transcribe } from './_lib/meta.js'
 
 const Body = z.object({ guideId: z.uuid() })
 
@@ -26,6 +27,8 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
       await media.remove([wavPath]) // narration is now text; the audio copy has no further use
     }
     if (turns.length < 2) throw new HttpError(422, 'We couldn’t hear enough narration to build steps. Talk through each step as you do it.')
+    const topic = blockedTopic(turns.map(t => t.transcript).join(' ')) // same hard rules as voice guides
+    if (topic) throw new HttpError(422, `This topic isn’t allowed here (${topic}).`)
 
     const videoUrl = media.getPublicUrl(`${id}/video.mp4`).data.publicUrl
     const raw = await sparkJson([
@@ -41,13 +44,13 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
       start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun,
     })))
     if (error) throw new Error('steps insert failed')
-    await finishGuide(db, id, 'ready', { video_path: `${id}/video.mp4` })
-
+    // Reference frame near the END of each step (where the result is visible), matching verdictPrompt.
     const keyframeUploads = await Promise.all(result.steps.map(async s => {
       const { data } = await media.createSignedUploadUrl(`${id}/${s.idx}.jpg`)
       if (!data) throw new Error('signed upload url failed')
-      return { idx: s.idx, atS: (s.startS + s.endS) / 2, path: data.path, token: data.token }
+      return { idx: s.idx, atS: Math.max(s.startS, s.endS - 0.4), path: data.path, token: data.token }
     }))
+    await finishGuide(db, id, 'ready', { video_path: `${id}/video.mp4` }) // only after everything above succeeded
     return { steps: result.steps, keyframeUploads }
   } catch (e) {
     await failGuide(db, id, e)

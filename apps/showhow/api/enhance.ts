@@ -2,18 +2,20 @@
 // Each real keyframe → Muse Image edit (same scene, clearer) → highlight edit. Stored separately as
 // {idx}-ai.jpg; the real keyframe is untouched and remains the only reference /api/check uses.
 import { z } from 'zod'
-import { serverDb } from './_lib/db'
-import { claimGuide, failGuide, finishGuide } from './_lib/guide-state'
-import { HttpError, route } from './_lib/http'
-import { jpegSize, sizeLike } from './_lib/jpeg'
-import { editImage } from './_lib/meta'
+import { enforceCaps } from './_lib/caps.js'
+import { serverDb } from './_lib/db.js'
+import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
+import { HttpError, ipKey, route } from './_lib/http.js'
+import { jpegSize, sizeLike } from './_lib/jpeg.js'
+import { editImage } from './_lib/meta.js'
 
 const Body = z.object({ guideId: z.uuid() })
 const ENHANCE = 'Keep exactly the same scene: the same objects, positions, hands, camera angle and framing. Only improve lighting, sharpness and colour, and remove blur and noise. Do not add, remove or change any object. No text.'
 
-export const POST = route({ name: 'enhance', body: Body, accessCode: true }, async ({ body }) => {
+export const POST = route({ name: 'enhance', body: Body, accessCode: true }, async ({ body, ip }) => {
   const db = serverDb()
   const id = body.guideId
+  await enforceCaps((fn, args) => db.rpc(fn, args), 'image', ipKey(ip))
   const guide = await claimGuide(db, id, ['ready'])
   try {
     if (guide.kind !== 'video') throw new HttpError(409, 'Only video guides have frames to enhance.')

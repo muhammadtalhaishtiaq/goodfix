@@ -107,7 +107,7 @@ describe('POST /api/voice-images', () => {
   })
   const call = () => voiceImages(new Request('http://x', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID }) }))
   beforeEach(() => {
-    vi.stubEnv('CREATE_ACCESS_CODES', 'good'); db = seed()
+    vi.stubEnv('CREATE_ACCESS_CODES', 'good'); db = seed(); capOk = true
     meta.generateImage.mockReset().mockResolvedValue(Buffer.from('base'))
     meta.editImage.mockReset().mockImplementation(async (_ref: Buffer, prompt: string) => Buffer.from(prompt.includes('circle') ? 'focus' : 'step'))
   })

@@ -232,3 +232,13 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - `apps/showhow/vercel.json` (Vite framework, `api/*.ts` maxDuration 300, security headers incl. CSP allowing only self, Supabase and Google Fonts; camera/mic self only). `.github/workflows/deploy.yml` (after CI success on main or manual; pinned `vercel@65.9.0`; secrets only in this job; skips cleanly without secrets; bundle scan on `.vercel/output/static` before `deploy --prebuilt --prod`). `.github/workflows/cleanup.yml` (daily draft cleanup; keeps Supabase awake). All YAML/JSON valid.
 - Local production rehearsal: build, then serve `dist/` with the exact `vercel.json` headers via `vite preview`; headless Chrome on `/`, `/create`, `/create/voice`, `/privacy` → no CSP violations logged.
 - **Finding:** the bundle scan flagged `sb_secret_` in `dist`. It was supabase-js's own `startsWith('sb_secret_')` check, not a key, but CI would have failed on the first push. The scanner now matches real key shapes (`sb_secret_` + 20 chars, `sbp_` + 30); the real build is clean, and planted realistic fakes are still caught (exit 1).
+
+## 2026-11-01 — Red-team review of the full build; fixes applied
+
+Independent `hackathon-red-team` review of the actual code (12 findings). All addressed:
+- **#1 Vercel ESM (critical):** `.js` extensions added in 20 files. **Verified:** compiled `api/` + `src/lib` to plain JS with tsc and imported all 9 routes in plain Node ESM; all loaded (OK check, enhance, guides, health, outlines, publish, steps, voice-guides, voice-images).
+- **#2** stale-claim takeover (`claimed_at`, applied) + shorter timeouts; test: a 400 s-old processing claim is retried successfully, a fresh one still 409. **#3** end-of-step keyframes + prompt. **#12** signed URLs before `ready`.
+- **#5** the question is delimited data + the model's answer is screened (test: a steered "rewire" answer → `unclear`, no SAM call). **#6** topic rules on video narration and on publish edits (tests). **#8** `image` cap (test: 429 before any Muse Image call). **#7/#9/#10** copy corrected.
+- **#4 Wit length:** a live 334-character step → 200, 176 KB MP3; no chunking needed.
+- **#11** (CSP during the Create flow) and the real-photo accuracy run remain open; both need a preview deploy or Talha's footage.
+- 127/127 tests. Feedback log started (`docs/FEEDBACK.md`); UI audit delegated to a separate agent (`docs/UI-AUDIT.md`, pending).

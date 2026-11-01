@@ -110,7 +110,7 @@ export function VoiceCreate() {
             <p><b>Before anything leaves your device</b></p>
             <ul className="recip">
               <li><Icon name="server" /><span><b>Showhow</b>: checks the recording in memory. <b>Nothing is stored unless it passes</b> the safety check; the recording itself is never stored.</span><span className="tag">checks</span></li>
-              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, Muse Image</b>: turn your words into checked steps and illustrations. Not kept by Meta.</span><span className="tag">processes</span></li>
+              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, Muse Image</b>: turn your words into checked steps and illustrations. Sent with Meta’s response storage turned off; Meta’s terms apply.</span><span className="tag">processes</span></li>
               <li><Icon name="link" /><span><b>Once you publish</b>: the steps and illustrations are public.</span><span className="tag">public</span></li>
             </ul>
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this.</label>
@@ -144,7 +144,7 @@ export function VoiceCreate() {
 
       {phase.name === 'review' && (
         <div className="panel">
-          <p className="note"><Icon name="check" /><span>AI-checked: a clear how-to within safety rules. Review each step, then publish.</span></p>
+          <p className="note"><Icon name="check" /><span>Passed our topic check and reads as a clear how-to. AI can be wrong: review each step, then publish.</span></p>
           {phase.missing.length > 0 && <p className="note warn-note"><Icon name="alert" /><span>The AI thinks you may have skipped: {phase.missing.join('; ')}. Add it to an instruction below, or record again.</span></p>}
           <ol className="built-steps">
             {phase.steps.map(s => (

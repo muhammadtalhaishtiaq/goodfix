@@ -40,6 +40,11 @@ describe('POST /api/publish', () => {
     db = seed('draft'); expect((await call([])).status).toBe(409)
     db = seed('published'); expect((await call([])).status).toBe(409)
   })
+  test('creator edits cannot add a blocked topic', async () => {
+    const res = await call([{ idx: 0, title: 'Rewire it', instruction: 'Open the fuse box and swap the live wire.' }])
+    expect(res.status).toBe(422)
+    expect(db.tables.guides[0].status).toBe('ready')
+  })
   test('rejects empty titles and over-long text', async () => {
     expect((await call([{ idx: 0, title: '  ', instruction: 'x' }])).status).toBe(400)
     expect((await call([{ idx: 0, title: 'x', instruction: 'y'.repeat(301) }])).status).toBe(400)

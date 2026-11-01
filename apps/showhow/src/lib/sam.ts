@@ -1,4 +1,4 @@
-import type { Outline } from './types'
+import type { Outline } from './types.js'
 
 // Box tokens look like <|box;x1=..;y1=..;x2=..;y2=..;w=..;h=..;c=..|> (xyxy, source pixels).
 // Masks are ignored until their mapping onto the frame is verified (see DECISIONS 2026-10-30).

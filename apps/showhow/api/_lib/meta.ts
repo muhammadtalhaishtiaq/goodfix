@@ -1,6 +1,6 @@
 // Meta Model API calls, in the request shapes verified live on 2026-10-30/31 (see HACKATHON-LOG).
 // Every call sends store:false (Meta stores responses by default) and has a timeout.
-import type { Turn } from '../../src/lib/steps'
+import type { Turn } from '../../src/lib/steps.js'
 
 const API = 'https://api.meta.ai/v1'
 const auth = () => {
@@ -24,7 +24,7 @@ export async function transcribe(wav: Blob): Promise<Turn[]> {
   const form = new FormData()
   form.append('request', new Blob([JSON.stringify({ model: 'muse-voice-transcribe-1.0', mode: 'ENDPOINTING', audioEncoding: 'WAV' })], { type: 'application/json' }))
   form.append('audio', wav, 'audio.wav')
-  const j = await post('/asr/transcribe', { headers: { ...auth(), Accept: 'application/json' }, body: form }, 90_000)
+  const j = await post('/asr/transcribe', { headers: { ...auth(), Accept: 'application/json' }, body: form }, 60_000)
   return (j.turns ?? []).map((t: Turn) => ({ startMs: t.startMs, endMs: t.endMs, transcript: t.transcript }))
 }
 
@@ -41,7 +41,7 @@ export async function samText(imageUrl: string, noun: string): Promise<string> {
 }
 
 // Muse Spark with schema-constrained JSON output. Returns the parsed object (still untrusted: zod-check it).
-export async function sparkJson(content: unknown[], name: string, schema: object, timeoutMs = 180_000): Promise<unknown> {
+export async function sparkJson(content: unknown[], name: string, schema: object, timeoutMs = 150_000): Promise<unknown> {
   const j = await post('/responses', {
     headers: { ...auth(), 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -57,7 +57,7 @@ export async function sparkJson(content: unknown[], name: string, schema: object
 type ImageJson = { data?: { b64_json?: string }[] }
 async function image(path: string, body: object): Promise<Buffer> {
   const res = await fetch(`${API}${path}`, {
-    method: 'POST', signal: AbortSignal.timeout(90_000),
+    method: 'POST', signal: AbortSignal.timeout(60_000),
     headers: { ...auth(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'muse-image-1.0', n: 1, size: '1536x1024', output_format: 'jpeg', ...body }),
   })

@@ -97,3 +97,12 @@ The live test showed Muse Spark flagging "pour out the old water first" as missi
 ## 2026-11-01 — Read-aloud audio is made inside publish (no `/api/tts` route)
 
 A separate `/api/tts` run before publishing would speak text the creator could still edit in review. `/api/publish` now applies the edits first, then calls `addReadAloud` (Wit.ai, one MP3 per step, best effort: a Wit failure never blocks publishing), then publishes. This replaces `tts` in the route list of the 2026-11-01 consistency entry.
+
+## 2026-11-01 — Fixes from the full-build red-team review
+
+- **Vercel ESM:** every relative import reachable from `api/` uses a `.js` extension, which Node's ESM resolver requires; TypeScript and Vite map `.js` to the `.ts` source.
+- **Dead runs:** `guides.claimed_at`; a `processing` claim older than 330 s (beyond Vercel's 300 s kill) can be taken over. Timeouts were cut so every route's worst case stays under about 270 s (Transcribe 60 s, Spark 150/120/45 s, image 60 s).
+- **Reference frames** are captured near the end of each step (`end_s − 0.4 s`), and the verdict prompt describes them that way.
+- **Safety:** hard topic rules now also apply to video narration, creator edits at publish, and the check's own answer (a hit becomes `unclear`). The learner's question is passed as delimited data.
+- **Credits:** a new `image` cap (60/day, 20 per IP) on `voice-images` and `enhance`.
+- **Honest copy:** "Sent with Meta's response storage turned off; Meta's terms apply" replaces "Not kept by Meta"; "Passed our topic check" replaces "within safety rules".

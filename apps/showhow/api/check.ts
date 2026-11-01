@@ -1,12 +1,13 @@
 // POST /api/check: "I'm stuck" (T5). The learner photo is compared with the step's REAL keyframe,
 // never an AI image. The photo exists only in this request's memory and is sent with store:false.
 import { z } from 'zod'
-import { bestOutline, parseSamBoxes } from '../src/lib/sam'
-import { gateVerdict, verdictJsonSchema, verdictPrompt, VerdictSchema } from '../src/lib/verdict'
-import { enforceCaps } from './_lib/caps'
-import { serverDb } from './_lib/db'
-import { HttpError, ipKey, route } from './_lib/http'
-import { samText, sparkJson } from './_lib/meta'
+import { bestOutline, parseSamBoxes } from '../src/lib/sam.js'
+import { blockedTopic } from '../src/lib/safety.js'
+import { gateVerdict, verdictJsonSchema, verdictPrompt, VerdictSchema } from '../src/lib/verdict.js'
+import { enforceCaps } from './_lib/caps.js'
+import { serverDb } from './_lib/db.js'
+import { HttpError, ipKey, route } from './_lib/http.js'
+import { samText, sparkJson } from './_lib/meta.js'
 
 const Body = z.object({
   guideId: z.uuid(),
@@ -39,6 +40,10 @@ export const POST = route({ name: 'check', body: Body, maxBytes: 2_200_000 }, as
   } catch { throw noAnswer() }
   const parsed = VerdictSchema.safeParse(raw)
   if (!parsed.success) throw new HttpError(502, 'The checker gave an answer we couldn’t use. Nothing was saved. Please try again.')
+  // Defence in depth against a steered answer: never show text that touches a blocked topic.
+  if (blockedTopic(`${parsed.data.message} ${parsed.data.differences.map(d => d.note).join(' ')}`)) {
+    return { mode: 'stuck', verdict: { status: 'unclear', differences: [], message: 'We can only check whether your photo matches this step.' }, outline: null, fixture: false }
+  }
 
   let outline = null
   if (parsed.data.status === 'differs') {

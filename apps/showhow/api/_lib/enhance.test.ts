@@ -44,6 +44,11 @@ describe('POST /api/enhance', () => {
     expect((await call()).status).toBe(502)
     expect(db.tables.guides[0]).toMatchObject({ status: 'ready' })
   })
+  test('image cap reached → 429 before any Muse Image call', async () => {
+    db.capOk = false
+    expect((await call()).status).toBe(429)
+    expect(editImage).not.toHaveBeenCalled()
+  })
   test('voice guides are refused', async () => {
     db = seed('voice')
     expect((await call()).status).toBe(409)

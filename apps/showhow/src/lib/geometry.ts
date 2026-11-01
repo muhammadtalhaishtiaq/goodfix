@@ -1,4 +1,4 @@
-import type { Outline } from './types'
+import type { Outline } from './types.js'
 
 const inFrame = (x: number, y: number, o: Outline) =>
   Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= o.frameW && y <= o.frameH

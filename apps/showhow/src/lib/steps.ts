@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Step } from './types'
+import type { Step } from './types.js'
 
 export type Turn = { startMs: number; endMs: number; transcript: string }
 

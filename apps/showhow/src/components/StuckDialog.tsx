@@ -98,7 +98,7 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
               <p>Nothing has been sent yet. Here’s exactly what will go out, and to whom.</p>
               <div className="review">
                 <figure className="rv"><div className="im"><img src={photo.url} alt="Your photo" /></div>
-                  <figcaption><b>Your photo</b> · {photo.file.name} · {(photo.file.size / 1e6).toFixed(1)} MB</figcaption></figure>
+                  <figcaption><b>Your photo</b> · {photo.file.name} · resized to ≤1600 px before sending</figcaption></figure>
                 <figure className="rv"><div className="im">{step.keyframeUrl ? <img src={step.keyframeUrl} alt="" /> : <span className="ph">Creator frame</span>}</div>
                   <figcaption><b>Reference</b> · {mode === 'where' ? 'all step frames' : `${guide.creatorName}’s step ${stepIdx + 1}`}</figcaption></figure>
               </div>
@@ -108,7 +108,7 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
                 <li><Icon name="eye" /><span><b>Meta Muse Spark</b>: compares your photo with {mode === 'where' ? 'each step' : `step ${stepIdx + 1}`}</span><span className="tag">processes</span></li>
                 <li><Icon name="frame" /><span><b>Meta SAM 3.1</b>: outlines the part that differs</span><span className="tag">processes</span></li>
               </ul>
-              <p className="note"><Icon name="shield" /><span>Used only for this check and not stored. A new photo needs a new OK.</span></p>
+              <p className="note"><Icon name="shield" /><span>Showhow doesn’t store or log it; it goes to Meta with response storage turned off (Meta’s terms apply). A new photo needs a new OK.</span></p>
               <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
             </div>
             <div className="d-foot">

@@ -159,7 +159,7 @@ export function CreateView() {
             <ul className="recip">
               <li><Icon name="film" /><span><b>On this device</b>: your video is shrunk to 720p. The original never leaves your computer.</span><span className="tag">local</span></li>
               <li><Icon name="server" /><span><b>Showhow (Supabase storage)</b>: the shrunk video and one still per step are stored, public once you publish. The audio copy is deleted after transcription.</span><span className="tag">stores</span></li>
-              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, SAM 3.1</b>: turn your narration into steps and outline the key parts. Not kept by Meta.</span><span className="tag">processes</span></li>
+              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, SAM 3.1</b>: turn your narration into steps and outline the key parts. Sent with Meta’s response storage turned off; Meta’s terms apply.</span><span className="tag">processes</span></li>
             </ul>
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this, and the video shows nothing private (faces, documents, addresses).</label>
             <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>

@@ -1,12 +1,12 @@
 // Guide data. Published guides come from Supabase (anon key, RLS: published only).
 // Fixtures are used only when no database is configured (offline UI work), and are labelled.
-import { FIXTURE_GUIDES } from '../fixtures/guides'
-import { api } from './api'
-import { resizePhoto } from './image'
-import { mediaUrl, supabase } from './supabase'
-import type { CheckRequest, CheckResult, Guide, Outline } from './types'
+import { FIXTURE_GUIDES } from '../fixtures/guides.js'
+import { api } from './api.js'
+import { resizePhoto } from './image.js'
+import { mediaUrl, supabase } from './supabase.js'
+import type { CheckRequest, CheckResult, Guide, Outline } from './types.js'
 
-export { CATEGORIES } from './categories'
+export { CATEGORIES } from './categories.js'
 
 type StepRow = { idx: number; title: string; instruction: string; tip_quote: string | null; start_s: number; end_s: number; key_part: string; keyframe_path: string | null; outline: Outline | null; image_path: string | null; audio_path: string | null }
 type GuideRow = { id: string; title: string; category: string; creator_name: string; kind: 'video' | 'voice'; video_path: string | null; duration_s: number | null; steps: StepRow[] }

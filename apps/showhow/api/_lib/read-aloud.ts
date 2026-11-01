@@ -1,7 +1,7 @@
 // "Read aloud" MP3s (T16), made at publish AFTER the creator's edits so the audio always matches the
 // published text. Best effort: a failure never blocks publishing; that step just has no Read aloud button.
-import type { serverDb } from './db'
-import { speak } from './wit'
+import type { serverDb } from './db.js'
+import { speak } from './wit.js'
 
 type Db = ReturnType<typeof serverDb>
 

@@ -1,12 +1,13 @@
 // Daily caps that protect the Meta credits. Counters live in Postgres (bump_usage), so they hold
 // across serverless instances. Fails closed: if counting fails, the request is refused.
-import { HttpError } from './http'
+import { HttpError } from './http.js'
 
 type Rpc = (fn: string, args: { p_kind: string; p_limit: number }) => PromiseLike<{ data: unknown; error: unknown }>
 
 // ponytail: fixed demo-sized limits; move to env vars if they need changing after deploy.
 const LIMITS = {
   check: { total: 300, perIp: 40 },   // "I'm stuck" checks
+  image: { total: 60, perIp: 20 },    // Muse Image runs: voice illustrations, enhance (each ≈ $0.01 × images)
   build: { total: 40, perIp: 12 },    // video or voice guides built (a creator filming 3–4 guides with retries fits)
 } as const
 

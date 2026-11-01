@@ -2,18 +2,20 @@
 // One base image of the object, then every step is an EDIT of that base (keeps the object identical),
 // then a highlight edit circles the key part. Labelled "Illustration by AI" everywhere; never evidence.
 import { z } from 'zod'
-import { STYLES, type StyleId } from '../src/lib/styles'
-import { serverDb } from './_lib/db'
-import { claimGuide, failGuide, finishGuide } from './_lib/guide-state'
-import { HttpError, route } from './_lib/http'
-import { editImage, generateImage } from './_lib/meta'
+import { STYLES, type StyleId } from '../src/lib/styles.js'
+import { enforceCaps } from './_lib/caps.js'
+import { serverDb } from './_lib/db.js'
+import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
+import { HttpError, ipKey, route } from './_lib/http.js'
+import { editImage, generateImage } from './_lib/meta.js'
 
 const Body = z.object({ guideId: z.uuid() })
 const KEEP = 'Keep exactly the same object, shape, colours, camera angle, framing and background as the reference image.'
 
-export const POST = route({ name: 'voice-images', body: Body, accessCode: true }, async ({ body }) => {
+export const POST = route({ name: 'voice-images', body: Body, accessCode: true }, async ({ body, ip }) => {
   const db = serverDb()
   const id = body.guideId
+  await enforceCaps((fn, args) => db.rpc(fn, args), 'image', ipKey(ip))
   const guide = await claimGuide(db, id, ['ready'])
   try {
     if (guide.kind !== 'voice') throw new HttpError(409, 'Only voice guides get illustrations.')

@@ -33,7 +33,7 @@ export type Guide = {
   isNew?: boolean
 }
 
-import type { ModelVerdict } from './verdict'
+import type { ModelVerdict } from './verdict.js'
 
 export type Verdict = ModelVerdict
 

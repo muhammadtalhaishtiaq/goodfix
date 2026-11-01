@@ -32,6 +32,8 @@ export function fakeDb(seed: { guides?: Row[]; steps?: Row[]; files?: Record<str
 
   return {
     tables, files,
+    capOk: true,
+    rpc: async function (this: { capOk: boolean }) { return { data: this.capOk, error: null } },
     from: (t: string) => query(t),
     storage: {
       from: () => ({
