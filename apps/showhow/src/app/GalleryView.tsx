@@ -20,10 +20,10 @@ export function GalleryView() {
       <section className="hero">
         <div>
           <h1>Follow along.<br /><em>Get unstuck.</em></h1>
-          <p>Step-by-step guides made from real people’s videos. Stuck on a step? Show it one photo. It checks your work against the creator’s and points at what’s off.</p>
+          <p>Step-by-step guides made from real people’s know-how, filmed or just spoken. Stuck on a step of a video guide? Show it one photo. It checks your work against the creator’s and points at what’s off.</p>
         </div>
         <ol className="how" aria-label="How it works">
-          <li><span className="n">1</span><div><b>Watch one step at a time</b><span>Each step is a short part of the creator’s video</span></div></li>
+          <li><span className="n">1</span><div><b>Watch one step at a time</b><span>A short clip of the creator’s video, or an illustration of their words</span></div></li>
           <li><span className="n">2</span><div><b>Stuck? Snap a photo</b><span>Only when you need it, only the step you’re on</span></div></li>
           <li><span className="n">3</span><div><b>See what’s different</b><span>The part is outlined on your own photo</span></div></li>
         </ol>

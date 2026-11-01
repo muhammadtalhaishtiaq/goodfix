@@ -27,7 +27,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
     <>
       <a className="back" href="#/"><Icon name="back" /> All guides</a>
       <div className="g-head">
-        <p className="meta">Made from {guide.creatorName}’s video<span className="dot" />{guide.steps.length} steps
+        <p className="meta">{guide.kind === 'voice' ? `Talked through by ${guide.creatorName} · illustrated by AI` : `Made from ${guide.creatorName}’s video`}<span className="dot" />{guide.steps.length} steps
           {guide.fixture && <span className="fixture-tag">TEST FIXTURE</span>}</p>
         <h1>{guide.title}</h1>
       </div>
@@ -38,7 +38,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
           {guide.steps.map(s => (
             <button key={s.idx} className={`step-btn ${done.has(s.idx) ? 'done' : ''}`} aria-current={s.idx === stepIdx ? 'step' : undefined} onClick={() => go(guide, s.idx)}>
               <span className="num">{done.has(s.idx) ? <Icon name="check" /> : s.idx + 1}</span>
-              <span>{s.title}<small>{mmss(s.startS)}–{mmss(s.endS)}</small></span>
+              <span>{s.title}{guide.kind === 'video' && <small>{mmss(s.startS)}–{mmss(s.endS)}</small>}</span>
             </button>
           ))}
         </nav>

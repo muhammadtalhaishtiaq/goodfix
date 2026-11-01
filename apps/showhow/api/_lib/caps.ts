@@ -7,7 +7,7 @@ type Rpc = (fn: string, args: { p_kind: string; p_limit: number }) => PromiseLik
 // ponytail: fixed demo-sized limits; move to env vars if they need changing after deploy.
 const LIMITS = {
   check: { total: 300, perIp: 40 },   // "I'm stuck" checks
-  build: { total: 20, perIp: 6 },     // video or voice guides built
+  build: { total: 40, perIp: 12 },    // video or voice guides built (a creator filming 3–4 guides with retries fits)
 } as const
 
 export async function enforceCaps(rpc: Rpc, kind: keyof typeof LIMITS, ipHash: string) {

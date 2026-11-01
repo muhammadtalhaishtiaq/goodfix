@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { CreateView } from './app/CreateView'
 import { GalleryView } from './app/GalleryView'
 import { GuideView } from './app/GuideView'
+import { PrivacyView } from './app/PrivacyView'
 import { VoiceCreate } from './app/VoiceCreate'
 import { Icon } from './components/Icon'
 import { fetchGuide } from './lib/data'
 import type { Guide } from './lib/types'
 
-// Hash routes: #/ · #/guide/:id/:step (1-based) · #/create · #/create/voice
+// Hash routes: #/ · #/guide/:id/:step (1-based) · #/create · #/create/voice · #/privacy
 function parseHash(hash: string) {
   const [, view, id, step] = hash.split('/')
   return { view: view ?? '', id: id ?? '', step: Math.max(1, Number.parseInt(step ?? '1', 10) || 1) - 1 }
@@ -40,8 +41,13 @@ export function App() {
       <main>
         {route.view === 'guide' ? <GuideLoader id={route.id} step={route.step} />
           : route.view === 'create' ? (route.id === 'voice' ? <VoiceCreate /> : <CreateView />)
+          : route.view === 'privacy' ? <PrivacyView />
           : <GalleryView />}
       </main>
+      <footer className="foot">
+        <span>Showhow · Meta Global AI Developer Hackathon prototype · built with Muse Spark, SAM 3.1, Voice Transcribe and Muse Image</span>
+        <a href="#/privacy">Privacy</a>
+      </footer>
     </>
   )
 }

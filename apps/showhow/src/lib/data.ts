@@ -34,6 +34,7 @@ export async function fetchGuides(): Promise<Guide[]> {
 
 export async function fetchGuide(id: string): Promise<Guide | undefined> {
   if (!supabase || id.startsWith('fixture-')) return FIXTURE_GUIDES.find(g => g.id === id)
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return undefined // malformed link: "doesn't exist", not a connection error
   const { data, error } = await supabase.from('guides').select(COLS).eq('id', id).eq('status', 'published').maybeSingle()
   if (error) throw new Error('Couldn’t load this guide. Check your connection.')
   return data ? toGuide(data as unknown as GuideRow) : undefined

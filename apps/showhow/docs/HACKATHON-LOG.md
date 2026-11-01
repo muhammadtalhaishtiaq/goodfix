@@ -219,3 +219,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 
 - `api/_lib/wit.ts` (`speak`, voice Rebecca), `api/_lib/read-aloud.ts` (`addReadAloud`, per-step best effort). Read-aloud is generated **inside `/api/publish` after edits** (decision above), so the audio always matches the published text. The viewer already has Read aloud with pause/stop. Publish tests +2 (final edited text spoken; Wit failure doesn't block). 121/121.
 - **Live:** voice guide → publish with an edited step 1 → 200 in 4.6 s with 3/3 MP3s; anon sees all 3 audio paths. The step-1 MP3 played locally, and Meta Voice Transcribe read it back as "Step one, remove the water tank, press the small latch on the right side, the tank pops out", matching the edited instruction. Test guide removed.
+
+## 2026-11-01 — T14 hardening (local part)
+
+- `scripts/cleanup-drafts.ts` (unpublished guides older than 24 h + their files; usage rows older than 7 days; `--dry-run`): dry run found 0. Privacy page (`#/privacy`) in plain words + footer link naming the Meta models.
+- Visual check with a real published voice guide (3D clay style) through the dev bridge: gallery card with an "Illustrated by AI" tag, voice viewer (illustration + label + highlight + Read aloud, no "I'm stuck"), both create pages, privacy, 500 px phone layout. Fixed: a voice guide said "Made from …'s video" and showed timestamps; the gallery copy now covers spoken guides; a malformed guide link said "check your connection" (now "doesn't exist").
+- **Cap finding:** a day of testing used 11 builds (one IP at 7) and hit the old 6-per-IP build cap (429, as designed). Raised to `build` 40/day total, 12 per IP so a creator can film 3–4 guides with retries; counters reset. Test guide removed.
+- Still to do in T14: the failure drill on the live URL, an accessibility pass with a keyboard and a screen reader, the red-team review, and a draft demo.

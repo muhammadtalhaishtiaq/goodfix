@@ -307,7 +307,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | IP address | Never raw; salted hash inside a daily `usage` counter key |
 | Logs | Route, status, ms, model, request ID only |
 
-**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `build`: 20 total / 6 per IP), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
+**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
 
 **Meta Terms:** fixed prompts, allowlisted models, no prompt passthrough (an Integrated Product, not a gateway, §10.1(i)); Standard models only, never Contributor mode; 18+ confirmation on create and on the first check. Public exposure needs a dated decision (Discord question pending).
 
