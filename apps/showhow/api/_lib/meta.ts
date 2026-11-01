@@ -67,5 +67,6 @@ async function image(path: string, body: object): Promise<Buffer> {
   return Buffer.from(b64, 'base64')
 }
 export const generateImage = (prompt: string) => image('/images/generations', { prompt })
-export const editImage = (reference: Buffer, prompt: string) =>
-  image('/images/edits', { prompt, images: [{ image_url: `data:image/jpeg;base64,${reference.toString('base64')}` }] })
+// `size` sets the aspect ratio (e.g. sizeLike(jpegSize(frame))) so an edit keeps the source's shape.
+export const editImage = (reference: Buffer, prompt: string, size?: string) =>
+  image('/images/edits', { prompt, images: [{ image_url: `data:image/jpeg;base64,${reference.toString('base64')}` }], ...(size ? { size } : {}) })

@@ -255,3 +255,5 @@ textarea:focus { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px
 .file-btn { position: relative; overflow: hidden }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer }
 .rec-audio { width: 100% }
+.enh { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; background: var(--surface); border-radius: 6px; padding: 6px }
+.enh img { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 4px }

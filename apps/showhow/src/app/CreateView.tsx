@@ -6,7 +6,7 @@ import { CATEGORIES, type Category } from '../lib/categories'
 import { captureFrame } from '../lib/image'
 import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
 import type { DraftStep } from '../lib/steps'
-import { uploadSigned } from '../lib/supabase'
+import { mediaUrl, uploadSigned } from '../lib/supabase'
 import type { Outline } from '../lib/types'
 import { CreateTabs } from './VoiceCreate'
 
@@ -15,7 +15,7 @@ type Created = { id: string; uploads: { video: Upload; audio: Upload } }
 type KeyframeUpload = Upload & { idx: number; atS: number }
 type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[] }
 type OutlineResult = { idx: number; keyframe: boolean; outline: Outline | null }
-type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null }
+type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null; enhanced?: boolean; keepEnhanced?: boolean }
 type Ctx = { guideId: string; mp4Url: string }
 type Phase =
   | { name: 'form' }
@@ -23,6 +23,7 @@ type Phase =
   | { name: 'uploading' }
   | ({ name: 'building' } & Ctx)
   | ({ name: 'framing'; done: number; total: number } & Ctx)
+  | ({ name: 'enhancing' } & Ctx)
   | ({ name: 'review'; steps: ReviewStep[]; buildMs: number } & Ctx)
   | ({ name: 'publishing' } & Ctx)
   | { name: 'published'; path: string; title: string }
@@ -44,6 +45,7 @@ export function CreateView() {
   const [file, setFile] = useState<File | null>(null)
   const [consent, setConsent] = useState(false)
   const [adult, setAdult] = useState(false)
+  const [enhance, setEnhance] = useState(false)
 
   // Mediabunny is loaded only on this page, so the gallery stays light.
   useEffect(() => { import('../lib/shrink').then(m => m.canShrinkHere()).then(setCanShrink, () => setCanShrink(false)) }, [])
@@ -95,16 +97,30 @@ export function CreateView() {
       setPhase({ name: 'framing', ...ctx, done: total, total })
       const { outlines } = await api<{ outlines: OutlineResult[] }>('outlines', { guideId: ctx.guideId }, key())
       const byIdx = new Map(outlines.map(o => [o.idx, o.outline]))
-      setPhase({ name: 'review', ...ctx, buildMs, steps: built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null })) })
+      let steps: ReviewStep[] = built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null }))
+      if (enhance) steps = await enhanceSteps(ctx, steps)
+      setPhase({ name: 'review', ...ctx, buildMs, steps })
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => outlineSteps(ctx, built, buildMs) })
+    }
+  }
+
+  // Optional (T18). A failure here never blocks the guide: it simply has no enhanced images.
+  async function enhanceSteps(ctx: Ctx, steps: ReviewStep[]): Promise<ReviewStep[]> {
+    setPhase({ name: 'enhancing', ...ctx })
+    try {
+      const { images } = await api<{ images: { idx: number; ok: boolean }[] }>('enhance', { guideId: ctx.guideId }, key())
+      const ok = new Map(images.map(i => [i.idx, i.ok]))
+      return steps.map(s => ({ ...s, enhanced: !!ok.get(s.idx), keepEnhanced: !!ok.get(s.idx) }))
+    } catch {
+      return steps
     }
   }
 
   async function publish(ctx: Ctx, steps: ReviewStep[]) {
     setPhase({ name: 'publishing', ...ctx })
     try {
-      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction })) }, key())
+      const out = await api<{ path: string }>('publish', { guideId: ctx.guideId, edits: steps.map(s => ({ idx: s.idx, title: s.title, instruction: s.instruction, dropAiImage: !!s.enhanced && !s.keepEnhanced })) }, key())
       setPhase({ name: 'published', path: out.path, title: title.trim() })
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => publish(ctx, steps) })
@@ -147,6 +163,7 @@ export function CreateView() {
             </ul>
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this, and the video shows nothing private (faces, documents, addresses).</label>
             <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
+            <label className="check"><input type="checkbox" checked={enhance} onChange={e => setEnhance(e.target.checked)} /> Optional: also make a cleaner “Enhanced by AI” still of each step (Meta Muse Image). Learners can always switch back to your real video, and checks always use your real frames.</label>
           </div>
 
           <div className="actions span2"><span className="sp" /><button className="btn btn-primary" disabled={!ready} onClick={start}>Prepare and upload <Icon name="right" /></button></div>
@@ -175,6 +192,8 @@ export function CreateView() {
         <Working text={phase.done < phase.total ? `Taking a still of each step… ${phase.done + 1} of ${phase.total}` : 'Meta SAM 3.1 is outlining the key part in each step…'} />
       )}
 
+      {phase.name === 'enhancing' && <Working text="Meta Muse Image is making a cleaner still of each step (same scene, nothing added)…" />}
+
       {phase.name === 'review' && (
         <div className="panel">
           <p className="note"><Icon name="check" /><span>{phase.steps.length} steps in your own words. Check them, fix anything, then publish.</span></p>
@@ -190,6 +209,12 @@ export function CreateView() {
                   <label className="fl">Step {s.idx + 1} title<input className="txt" value={s.title} maxLength={60} onChange={e => editStep(s.idx, { title: e.target.value })} /></label>
                   <label className="fl">Instruction<textarea value={s.instruction} maxLength={300} onChange={e => editStep(s.idx, { instruction: e.target.value })} /></label>
                   <span className="muted">{s.startS.toFixed(0)}–{s.endS.toFixed(0)} s{s.tipQuote ? ` · tip, in your words: “${s.tipQuote}”` : ''}</span>
+                  {s.enhanced && (
+                    <div className="enh">
+                      <img src={mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)} alt={`Enhanced still of step ${s.idx + 1}`} />
+                      <label className="check"><input type="checkbox" checked={!!s.keepEnhanced} onChange={e => editStep(s.idx, { keepEnhanced: e.target.checked })} /> Keep this “Enhanced by AI” still (untick if anything looks different from your real frame)</label>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

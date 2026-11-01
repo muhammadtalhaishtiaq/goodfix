@@ -66,7 +66,7 @@ flowchart LR
 
 ## Day 4: Tue 2026-11-03. Extras + hardening, everything complete locally, then push + deploy
 
-- [ ] **T18 AI-enhanced step images** *(committed scope, 2026-11-01)*. `/api/enhance` (status-gated): keyframe → Muse Image edit → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the creator approves each at publish (rejected → `image_path` null). Viewer: "Enhanced by AI" + "View original frame". **Verify:** on a dim/blurry seed clip the enhanced image shows the same parts (by eye, logged); unit test that `/api/check` only reads `keyframe_path`.
+- [x] **T18 AI-enhanced step images** *(Done 2026-11-01: 4 route tests + JPEG-size tests; live on deliberately dark/blurred footage, 3/3 frames enhanced at the real 16:9 shape.)* `/api/enhance` (status-gated): keyframe → Muse Image edit → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the creator approves each at publish (rejected → `image_path` null). Viewer: "Enhanced by AI" + "View original frame". **Verify:** on a dim/blurry seed clip the enhanced image shows the same parts (by eye, logged); unit test that `/api/check` only reads `keyframe_path`.
 - [ ] **T16 Read aloud (Wit.ai)** *(committed scope)*. `/api/tts` at publish → MP3 per step → "Read aloud" with pause/stop. **Verify:** plays on every step of a seed guide; no MP3 hides the button.
 - [ ] **T13 Push + CI/CD deploy** *(after everything works locally; needs Talha's OK + Vercel account)*.
   - Local production rehearsal first: `npm run build` + scans, and every flow run once against the real DB/Meta through the dev bridge.
