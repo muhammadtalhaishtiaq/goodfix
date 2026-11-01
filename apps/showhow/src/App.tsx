@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { CreateView } from './app/CreateView'
 import { GalleryView } from './app/GalleryView'
 import { GuideView } from './app/GuideView'
+import { VoiceCreate } from './app/VoiceCreate'
 import { Icon } from './components/Icon'
 import { fetchGuide } from './lib/data'
 import type { Guide } from './lib/types'
 
-// Hash routes: #/ · #/guide/:id/:step (1-based) · #/create
+// Hash routes: #/ · #/guide/:id/:step (1-based) · #/create · #/create/voice
 function parseHash(hash: string) {
   const [, view, id, step] = hash.split('/')
   return { view: view ?? '', id: id ?? '', step: Math.max(1, Number.parseInt(step ?? '1', 10) || 1) - 1 }
@@ -38,7 +39,7 @@ export function App() {
       </header>
       <main>
         {route.view === 'guide' ? <GuideLoader id={route.id} step={route.step} />
-          : route.view === 'create' ? <CreateView />
+          : route.view === 'create' ? (route.id === 'voice' ? <VoiceCreate /> : <CreateView />)
           : <GalleryView />}
       </main>
     </>

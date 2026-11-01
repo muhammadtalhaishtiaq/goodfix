@@ -120,9 +120,11 @@ bump_usage(kind, limit) → boolean   -- atomic increment; server key only
 
 ```mermaid
 stateDiagram-v2
-  [*] --> draft: POST /api/guides (video) or voice gate passed
-  draft --> processing: /api/steps or /api/voice-images starts
-  processing --> ready: steps (+ outlines/images) saved
+  [*] --> draft: POST /api/guides (video)
+  [*] --> ready: voice gate passed (voice guides are saved only now)
+  draft --> processing: /api/steps starts
+  ready --> processing: outlines / voice-images / enhance / tts start
+  processing --> ready: stage done (attempts reset) or a later stage failed (reason kept)
   processing --> failed: model error / invalid output (plain error + Retry)
   failed --> processing: Retry
   ready --> published: POST /api/publish
@@ -155,8 +157,8 @@ Every route is built with `route()` (`api/_lib/http.ts`), which provides: POST o
 | `/api/outlines` `{guideId}` | access code | status gate | From `ready`, video only. For each uploaded keyframe (`storage.list`): SAM with `sam_noun` (fallback: last word of `key_part`) → `bestOutline` → save `keyframe_path` + `outline`. Failure returns the guide to `ready` | T10 ✅ |
 | `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, then `published`. Returns the share path | T11 ✅ |
 | `/api/check` `{guideId, stepIdx, mode:'stuck', photo: base64 JPEG data URL ≤1.5 MB, question?≤300}` | — (public) | `check` | Published video guides only. Load the step's **real keyframe** (never `image_path`) → Spark verdict (`/v1/responses`, 60 s) → zod (invalid → 502) → SAM on the photo if `differs` (SAM failure → verdict without box) → gate. Model error/timeout → 504. Photo held in memory only | T5 ✅ |
-| `/api/voice-guides` raw `audio/wav` body (≤2 min ≈3.8 MB; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult in headers | access code | `build` | Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
-| `/api/voice-images` `{guideId}` | access code | status gate | Muse Image: base image in the style → per-step edit of the base → per-step highlight edit → save | T17 |
+| `/api/voice-guides` raw `audio/wav` body (≤4.2 MB ≈ 2 min; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult as URI-encoded JSON in `x-meta` | access code | `build` | ✅ T17. Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
+| `/api/voice-images` `{guideId}` | access code | status gate | ✅ T17. Base image from `subject` + style → per-step edit **of the base** → highlight edit → `{idx}-ai.jpg` + `-ai-focus.jpg` (a step that fails stays text-only; all fail → 502). Measured live: 44 s for 3 steps |
 | `/api/enhance` `{guideId}` | access code | status gate | Per keyframe: Muse Image edit (same scene, clearer) → highlight edit → save as `-ai` | T18 |
 | `/api/tts` `{guideId}` | access code | status gate | Wit.ai synthesize each instruction → MP3s | T16 |
 
@@ -209,12 +211,13 @@ sequenceDiagram
   B->>A: POST /api/voice-guides (raw audio/wav body)
   A->>M: Voice Transcribe → turns
   A->>A: Layer 1: blocked-topics list (code)
-  A->>M: Layer 2: Muse Spark review {is_howto, complete, safety, category, missing[], reason}
-  alt any layer fails / invalid output / error / timeout
-    A-->>B: blocked + reason + missing steps (nothing stored)
+  A->>M: Layer 2: Muse Spark review {is_howto, complete, safety, category, subject, missing[], reason}
+  alt unsafe / not a how-to / invalid output / error / timeout
+    A-->>B: blocked + reason (nothing stored)
   else passes
     A->>M: Muse Spark steps (validateSteps)
-    A->>S: insert guide (kind=voice) + steps
+    A->>S: insert guide (kind=voice, status ready, subject) + steps
+    A-->>B: steps + advice (possibly missing steps)
     B->>A: POST /api/voice-images
     A->>M: Muse Image base → edit per step → highlight edit per step
     A->>S: save images
@@ -335,7 +338,8 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | SAM: no / ambiguous match | No box; "Show part" disabled; check says "couldn't pinpoint it on your photo" |
 | Check `unclear` | Ask for a closer, well-lit photo |
 | Meta timeout / 429 / 5xx | "The checker didn't answer. Try again." Nothing guessed |
-| Voice guide blocked | The reason (unsafe topic / not a how-to / missing steps); nothing saved; Re-record |
+| Voice guide blocked | The reason (unsafe topic / not a how-to / unreadable check); nothing saved; Record again |
+| Voice guide possibly missing a step | Built anyway; review shows "The AI thinks you may have skipped: …" |
 | Muse Image fails or is policy-blocked | Step shows text only, "No illustration"; Regenerate |
 
 ## 13. Environments
@@ -361,7 +365,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Model accuracy | `scripts/spike-check.ts` (staged photos), `spike-pipeline.ts` (real video), logged |
 | `/api/guides`, `/api/steps`, `/api/outlines`, `/api/publish` (fake DB + mocked Meta) | `api/_lib/guides.test.ts` (5), `steps.test.ts` (7), `outlines.test.ts` (4), `publish.test.ts` (3) |
 | `/api/check` (fake DB + mocked Meta) | `api/_lib/check.test.ts` (9): real-keyframe-only (T18 rule), differs + box, ambiguous → no box, unclear → no SAM, malformed → 502, timeout → 504, cap → 429 before any model call, refusals, input limits |
-| To add | `safety.ts` (T17) |
+| Voice gate + routes | `src/lib/safety.test.ts` (25: 14 blocked phrasings, 6 everyday phrasings allowed, fail-closed review), `api/_lib/voice.test.ts` (14: nothing saved on any block, base-anchored edits, per-step failure, 415/413/400/401/429) |
 
 ## 15. Known risks and open questions
 

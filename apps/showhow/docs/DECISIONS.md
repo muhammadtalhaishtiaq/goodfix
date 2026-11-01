@@ -89,3 +89,7 @@ Talha's decision (2026-11-01). This supersedes the "candidate cut" and "deploy e
 ## 2026-11-01 — Transcript saved on the guide; audio deleted once transcribed
 
 Refines the "WAV deleted in `finally`" point above, which would have made retries impossible. `/api/steps` saves the Transcribe turns on `guides.turns` and deletes `audio.wav` as soon as transcription succeeds. A retry reuses the turns and skips Transcribe. If transcription itself fails, the WAV is kept for a retry, deleted on the last failed attempt, and otherwise removed by the 24 h draft cleanup. The narration becomes public step text anyway, so storing the turns adds no new exposure.
+
+## 2026-11-01 — Voice gate: a possibly-missing step is advice, not a block
+
+The live test showed Muse Spark flagging "pour out the old water first" as missing from a perfectly usable purifier guide. It did so even after the prompt was narrowed to "steps without which the task fails". Blocking such guides would throw away real know-how over a judgement call. So **unsafe content, not-a-how-to and any unreadable/failed review remain hard blocks (fail closed, nothing saved)**, while `complete: false` now returns the missing steps as advice in the review screen ("The AI thinks you may have skipped …"), where the creator can add them or re-record. The badge text is now "AI-checked: a clear how-to within safety rules". Reversible in one line (`gateReview`) if Talha prefers a hard block.

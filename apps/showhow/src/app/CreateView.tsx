@@ -8,6 +8,7 @@ import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
 import type { DraftStep } from '../lib/steps'
 import { uploadSigned } from '../lib/supabase'
 import type { Outline } from '../lib/types'
+import { CreateTabs } from './VoiceCreate'
 
 type Upload = { path: string; token: string }
 type Created = { id: string; uploads: { video: Upload; audio: Upload } }
@@ -118,6 +119,7 @@ export function CreateView() {
       <a className="back" href="#/"><Icon name="back" /> Gallery</a>
       <h1>Turn your video into a guide</h1>
       <p className="lead">Film yourself doing it once, talking as you go. Showhow splits it into steps in your own words and outlines the key part in each.</p>
+      <CreateTabs active="video" />
 
       {phase.name === 'form' && (
         <div className="panel form-grid">

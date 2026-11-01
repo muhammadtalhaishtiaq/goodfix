@@ -9,6 +9,7 @@ create table if not exists public.guides (
   status text not null default 'draft' check (status in ('draft', 'processing', 'ready', 'published', 'failed')),
   kind text not null default 'video' check (kind in ('video', 'voice')),
   image_style text,
+  subject text,       -- voice guides: visual description of the object, from the safety review (base illustration)
   attempts int not null default 0, -- model-stage runs; routes refuse after 3 (credit guard)
   turns jsonb,        -- Voice Transcribe turns, kept so a retry skips re-transcribing (narration becomes step text anyway)
   video_path text,
@@ -41,6 +42,7 @@ alter table public.guides add column if not exists kind text not null default 'v
 alter table public.guides add column if not exists image_style text;
 alter table public.guides add column if not exists attempts int not null default 0;
 alter table public.guides add column if not exists turns jsonb;
+alter table public.guides add column if not exists subject text;
 alter table public.steps add column if not exists image_path text;
 
 -- Daily counters for spend/abuse caps. No policies: invisible to the public.

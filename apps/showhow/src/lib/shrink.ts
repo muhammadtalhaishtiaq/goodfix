@@ -64,3 +64,18 @@ export async function shrinkVideo(file: File, onProgress: (p: number) => void): 
   if (mp4.size > 48e6) throw new Error('The prepared video is still over 48 MB. Try a shorter clip.')
   return { mp4, wav: new Blob([wavOut.target.buffer!], { type: 'audio/wav' }), durationS, ...box, ms: Math.round(performance.now() - t0) }
 }
+
+export const MAX_VOICE_SECONDS = 120
+
+// Any recording (MediaRecorder WebM/Opus, phone M4A, WAV…) → 16 kHz mono 16-bit WAV for Voice Transcribe.
+// 2 minutes ≈ 3.8 MB, which fits one request as a raw body (base64 JSON would not).
+export async function toWav16k(blob: Blob): Promise<{ wav: Blob; durationS: number }> {
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS })
+  const durationS = await input.computeDuration()
+  if (durationS > MAX_VOICE_SECONDS + 1) throw new Error('Recordings can be up to 2 minutes.')
+  const out = new Output({ format: new WavOutputFormat(), target: new BufferTarget() })
+  const c = await Conversion.init({ input, output: out, video: { discard: true }, audio: { numberOfChannels: 1, sampleRate: 16_000, codec: 'pcm-s16' } })
+  if (!c.isValid) throw new Error('This recording can’t be read in this browser.')
+  await c.execute()
+  return { wav: new Blob([out.target.buffer!], { type: 'audio/wav' }), durationS }
+}

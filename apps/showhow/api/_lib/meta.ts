@@ -52,3 +52,20 @@ export async function sparkJson(content: unknown[], name: string, schema: object
   }, timeoutMs)
   return JSON.parse(outputText(j))
 }
+
+// Muse Image 1.0 ($0.01/image). Returns JPEG bytes. A content-policy refusal surfaces as an error.
+type ImageJson = { data?: { b64_json?: string }[] }
+async function image(path: string, body: object): Promise<Buffer> {
+  const res = await fetch(`${API}${path}`, {
+    method: 'POST', signal: AbortSignal.timeout(90_000),
+    headers: { ...auth(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'muse-image-1.0', n: 1, size: '1536x1024', output_format: 'jpeg', ...body }),
+  })
+  if (!res.ok) throw new Error(`Meta ${path} ${res.status}`)
+  const b64 = ((await res.json()) as ImageJson).data?.[0]?.b64_json
+  if (!b64) throw new Error(`Meta ${path} returned no image`)
+  return Buffer.from(b64, 'base64')
+}
+export const generateImage = (prompt: string) => image('/images/generations', { prompt })
+export const editImage = (reference: Buffer, prompt: string) =>
+  image('/images/edits', { prompt, images: [{ image_url: `data:image/jpeg;base64,${reference.toString('base64')}` }] })

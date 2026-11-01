@@ -66,10 +66,10 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 1. Browser records (MediaRecorder) or takes an audio file, converts it to a 16 kHz mono WAV (≤2 min, ≈3.8 MB) and sends it as a **raw `audio/wav` body** (base64 JSON would exceed Vercel's 4.5 MB limit) and shows the consent screen (Showhow server, Voice Transcribe, Muse Spark, Muse Image; published guides are public).
 2. Server, in memory: Voice Transcribe → transcript.
 3. **Gate layer 1, hard rules (code):** a blocked-topics list (weapons, violence or harming people/animals, self-harm, drugs, gas work, mains electrical work, fire/explosives, medical procedures, vehicle brakes/steering, hacking, illegal activity) checked on the transcript. Any hit → blocked.
-4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, missing[], reason}`. Not a how-to, incomplete, blocked, invalid output, error or timeout → **blocked (fail closed)**, with a plain reason and any missing steps listed. The creator can re-record.
+4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, subject, missing[], reason}`. Unsafe, not a how-to, invalid output, error or timeout → **blocked (fail closed)** with a plain reason; the creator can re-record. A possibly-missing step is **advice, not a block** (decision 2026-11-01): it is shown in review ("The AI thinks you may have skipped …") so the creator can add it or re-record.
 5. Passed → Muse Spark steps from the transcript turns (same `validateSteps` grounding as video) → the guide and steps are saved as a draft.
 6. Muse Image: one **base image** of the object in the chosen style, then every step is an **edit of that base image** (`/v1/images/edits`, base image as reference), which keeps the object identical across steps (verified 2026-10-31). A second edit per step adds an orange dashed highlight circle around the key part. Both are stored (`{guide}/{idx}-ai.jpg`, `{idx}-ai-focus.jpg`); "Show part" switches between them.
-7. The creator reviews (regenerate one image, edit text) → publish. The badge reads "AI-checked: clear, complete and within safety rules", never "verified fix".
+7. The creator reviews (edit text, untick any wrong illustration, or redraw all) → publish. The badge reads "AI-checked: a clear how-to within safety rules", never "verified fix".
 
 **End-to-end diagrams, data model, storage layout, env vars and failure states:** see [`ARCHITECTURE.md`](ARCHITECTURE.md) §4–§12.
 

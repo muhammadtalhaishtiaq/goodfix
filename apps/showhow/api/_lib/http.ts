@@ -34,8 +34,10 @@ const log = (fields: Record<string, unknown>) => console.log(JSON.stringify(reda
 const json = (status: number, data: unknown) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } })
 
-type Options<S extends z.ZodType> = { name: string; body: S; accessCode?: boolean; maxBytes?: number }
-type Ctx<S extends z.ZodType> = { body: z.infer<S>; req: Request; ip: string }
+// raw: the request body is a binary file of this content type; the JSON metadata travels in the
+// `x-meta` header (URI-encoded) and is validated by `body` exactly like a JSON body.
+type Options<S extends z.ZodType> = { name: string; body: S; accessCode?: boolean; maxBytes?: number; raw?: string }
+type Ctx<S extends z.ZodType> = { body: z.infer<S>; req: Request; ip: string; raw?: Blob }
 
 export function route<S extends z.ZodType>(opts: Options<S>, fn: (ctx: Ctx<S>) => Promise<unknown>) {
   const maxBytes = opts.maxBytes ?? 4_000_000 // Vercel's request body limit is ~4.5 MB
@@ -48,14 +50,22 @@ export function route<S extends z.ZodType>(opts: Options<S>, fn: (ctx: Ctx<S>) =
       if (opts.accessCode && !checkAccessCode(req.headers.get('x-access-code'), process.env.CREATE_ACCESS_CODES)) {
         return done(json(401, { error: 'That access code isn’t valid.' }))
       }
-      const raw = await req.text()
-      if (Buffer.byteLength(raw) > maxBytes) return done(json(413, { error: 'That upload is too large.' }))
       let parsed: unknown
-      try { parsed = JSON.parse(raw) } catch { return done(json(400, { error: 'Request body must be JSON.' })) }
+      let file: Blob | undefined
+      if (opts.raw) {
+        if (!req.headers.get('content-type')?.startsWith(opts.raw)) return done(json(415, { error: `Send the file as ${opts.raw}.` }))
+        file = new Blob([await req.arrayBuffer()], { type: opts.raw })
+        if (file.size > maxBytes) return done(json(413, { error: 'That upload is too large.' }))
+        try { parsed = JSON.parse(decodeURIComponent(req.headers.get('x-meta') ?? '')) } catch { return done(json(400, { error: 'Missing request details.' })) }
+      } else {
+        const text = await req.text()
+        if (Buffer.byteLength(text) > maxBytes) return done(json(413, { error: 'That upload is too large.' }))
+        try { parsed = JSON.parse(text) } catch { return done(json(400, { error: 'Request body must be JSON.' })) }
+      }
       const body = opts.body.safeParse(parsed)
       if (!body.success) return done(json(400, { error: 'Request didn’t match what this endpoint expects.' }))
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
-      return done(json(200, await fn({ body: body.data, req, ip })))
+      return done(json(200, await fn({ body: body.data, req, ip, raw: file })))
     } catch (e) {
       if (e instanceof HttpError) return done(json(e.status, { error: e.message }))
       return done(json(500, { error: 'Something went wrong on our side. Nothing was saved. Please try again.' }), 'unhandled')

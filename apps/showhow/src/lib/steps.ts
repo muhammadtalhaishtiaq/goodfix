@@ -17,9 +17,11 @@ export const StepsSchema = z.object({
 
 export const stepsJsonSchema = z.toJSONSchema(StepsSchema)
 
-export function stepsPrompt(turns: Turn[]): string {
+export function stepsPrompt(turns: Turn[], source: 'video' | 'voice' = 'video'): string {
   return [
-    'This is a creator\'s narrated how-to video. Their speech is transcribed below as numbered turns.',
+    source === 'video'
+      ? 'This is a creator\'s narrated how-to video. Their speech is transcribed below as numbered turns.'
+      : 'A creator explained a how-to task out loud (no video). Their speech is transcribed below as numbered turns.',
     ...turns.map((t, i) => `[${i}] (${(t.startMs / 1000).toFixed(1)}s) ${t.transcript}`),
     '',
     'Split the task into 2-8 steps in order. Each step covers consecutive turns (first_turn..last_turn); steps must not overlap. Skip greetings and sign-offs.',
