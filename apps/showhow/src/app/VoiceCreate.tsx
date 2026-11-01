@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { api, apiRaw } from '../lib/api'
-import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type ReviewMeta } from '../components/CreateFields'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import type { DraftStep } from '../lib/steps'
 import { STYLE_IDS, STYLES, type StyleId } from '../lib/styles'
@@ -44,8 +44,8 @@ export function VoiceCreate() {
     try {
       const { toWav16k } = await import('../lib/shrink')
       const { wav } = await toWav16k(audio)
-      const out = await apiRaw<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category }>('voice-guides', wav, { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult }, key())
-      await illustrate(out.id, out.steps, { title: out.title, category: out.category, missing: out.missing })
+      const out = await apiRaw<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category; duplicate: Duplicate | null }>('voice-guides', wav, { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult }, key())
+      await illustrate(out.id, out.steps, { title: out.title, category: out.category, missing: out.missing, duplicate: out.duplicate })
     } catch (e) {
       const m = message(e)
       setPhase(m.includes('Nothing was saved') ? { name: 'blocked', message: m } : { name: 'error', message: m })

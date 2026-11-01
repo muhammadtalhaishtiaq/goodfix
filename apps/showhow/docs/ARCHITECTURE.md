@@ -115,6 +115,7 @@ steps(id uuid pk, guide_id uuid fk on delete cascade, idx int, unique(guide_id, 
       audio_path text)              -- Wit.ai MP3 (T16)
 usage(day date, kind text, count int, pk(day, kind))  -- caps; invisible to the public
 bump_usage(kind, limit) → boolean   -- atomic increment; server key only
+similar_guides(title, category, exclude) → top 3 published by pg_trgm title similarity (duplicate hints, F7); server key only
 ```
 
 **Outline JSON** (camelCase, exactly as `src/lib/types.ts`): `{ frameW, frameH, box: [x, y, w, h], score }` in source-frame pixels. Built from SAM's xyxy box by `parseSamBoxes`, chosen by `bestOutline` (score ≥ 0.5 and ≥ 0.15 ahead of the runner-up, otherwise `null`). Masks are not stored yet; their mapping onto the frame is unverified.

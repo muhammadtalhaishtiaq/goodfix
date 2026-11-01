@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { api } from '../lib/api'
-import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type ReviewMeta } from '../components/CreateFields'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import { captureFrame } from '../lib/image'
 import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
@@ -14,7 +14,7 @@ import { CreateTabs } from './VoiceCreate'
 type Upload = { path: string; token: string }
 type Created = { id: string; uploads: { video: Upload; audio: Upload } }
 type KeyframeUpload = Upload & { idx: number; atS: number }
-type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[]; title: string; category: Category; missing: string[] }
+type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[]; title: string; category: Category; missing: string[]; duplicate: Duplicate | null }
 type OutlineResult = { idx: number; keyframe: boolean; outline: Outline | null }
 type ReviewStep = DraftStep & { frameUrl?: string; outline: Outline | null; enhanced?: boolean; keepEnhanced?: boolean }
 type Ctx = { guideId: string; mp4Url: string }
@@ -100,7 +100,7 @@ export function CreateView() {
       const byIdx = new Map(outlines.map(o => [o.idx, o.outline]))
       let steps: ReviewStep[] = built.steps.map(s => ({ ...s, frameUrl: frames[s.idx], outline: byIdx.get(s.idx) ?? null }))
       if (enhance) steps = await enhanceSteps(ctx, steps)
-      setPhase({ name: 'review', ...ctx, buildMs, steps, meta: { title: built.title, category: built.category, missing: built.missing ?? [] } })
+      setPhase({ name: 'review', ...ctx, buildMs, steps, meta: { title: built.title, category: built.category, missing: built.missing ?? [], duplicate: built.duplicate } })
     } catch (e) {
       setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => outlineSteps(ctx, built, buildMs) })
     }

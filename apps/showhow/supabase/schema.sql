@@ -94,3 +94,17 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('media', 'media', true, 50 * 1024 * 1024, array['video/mp4', 'audio/wav', 'image/jpeg', 'audio/mpeg'])
 on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
+
+-- Duplicate hints (F7): published guides in the same category with a similar title. Server key only.
+create extension if not exists pg_trgm with schema extensions;
+create or replace function public.similar_guides(p_title text, p_category text, p_exclude uuid)
+returns table (id uuid, title text, creator_name text, sim real)
+language sql stable security definer set search_path = public, extensions as $$
+  select g.id, g.title, g.creator_name, similarity(g.title, p_title) as sim
+  from public.guides g
+  where g.status = 'published' and g.category = p_category and g.id <> p_exclude
+    and similarity(g.title, p_title) > 0.15
+  order by sim desc
+  limit 3
+$$;
+revoke execute on function public.similar_guides(text, text, uuid) from public, anon, authenticated;

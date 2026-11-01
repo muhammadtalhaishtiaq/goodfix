@@ -247,3 +247,8 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 
 - F2/F4/F5/F6/F3/F8 implemented (see FEEDBACK.md). Schema: `auto_title`, `auto_category`, `frames_ok` (applied). 145/145 tests (new: 6 blocked phrasings + 4 everyday ones allowed, layer-2 review on video incl. fail closed, AI title/category on both paths, frame review blocks/fails closed, publish requires `frames_ok`, final title/category saved).
 - **Live:** a synthetic recording that reads out a phone number → 422 in 10.6 s from the layer-2 review ("includes a personal phone number"); nothing saved. Talha's dishwasher test audio with blank title + auto category → 200 in 54 s: title "Load a dishwasher so everything comes out clean", category Kitchen, 7 steps. Test guide removed.
+
+## 2026-11-01 — Feedback round 1, part 2: duplicate hints (F7)
+
+- `similar_guides` RPC (pg_trgm, applied) + `api/_lib/duplicates.ts` (`findDuplicate`: candidates → Muse Spark 0–100 + "adds" → ≥90 only; same-creator flag; any error or invented id → null) + 5 tests; wired into `/api/steps` and `/api/voice-guides`; a review banner in both flows. 150/150.
+- Live: the dishwasher test audio in Kitchen → flagged Talha's published "Dishwasher Dishes Steps" at 90% with a link; test guide removed.

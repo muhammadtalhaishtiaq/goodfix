@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { serverDb } from './_lib/db.js'
+import { findDuplicate } from './_lib/duplicates.js'
 import { claimGuide, failGuide, finishGuide } from './_lib/guide-state.js'
 import { HttpError, route } from './_lib/http.js'
 import { sparkJson, transcribe } from './_lib/meta.js'
@@ -58,7 +59,9 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
     const title = guide.auto_title ? gate.title : guide.title
     const category = guide.auto_category ? gate.category : guide.category
     await finishGuide(db, id, 'ready', { video_path: `${id}/video.mp4`, title, category }) // only after everything above succeeded
-    return { steps: result.steps, keyframeUploads, missing: gate.missing, title, category }
+    const { data: me } = await db.from('guides').select('creator_name').eq('id', id).maybeSingle()
+    const duplicate = await findDuplicate(db, { id, title: title ?? '', category: category ?? '', creatorName: me?.creator_name ?? '', stepTitles: result.steps.map(s => s.title) })
+    return { steps: result.steps, keyframeUploads, missing: gate.missing, title, category, duplicate }
   } catch (e) {
     await failGuide(db, id, e)
     if (guide.attempts >= 3) await media.remove([wavPath]) // out of retries: don't keep the audio

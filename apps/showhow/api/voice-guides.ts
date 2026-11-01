@@ -5,6 +5,7 @@ import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { STYLE_IDS } from '../src/lib/styles.js'
 import { enforceCaps } from './_lib/caps.js'
+import { findDuplicate } from './_lib/duplicates.js'
 import { CategoryField, TitleField } from './_lib/fields.js'
 import { serverDb } from './_lib/db.js'
 import { HttpError, ipKey, route } from './_lib/http.js'
@@ -54,5 +55,8 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
     start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun,
   })))
   if (e2) { await db.from('guides').delete().eq('id', g.id); throw new Error('steps insert failed') }
-  return { id: g.id, steps: result.steps, missing: gate.missing, title: body.title || gate.title, category: body.category === 'auto' ? gate.category : body.category }
+  const title = body.title || gate.title
+  const category = body.category === 'auto' ? gate.category : body.category
+  const duplicate = await findDuplicate(db, { id: g.id, title, category, creatorName: body.creatorName, stepTitles: result.steps.map(s => s.title) })
+  return { id: g.id, steps: result.steps, missing: gate.missing, title, category, duplicate }
 })

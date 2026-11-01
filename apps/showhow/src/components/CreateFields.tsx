@@ -48,7 +48,8 @@ export function HowWeCheck({ source }: { source: 'video' | 'voice' }) {
   )
 }
 
-export type ReviewMeta = { title: string; category: Category; missing: string[] }
+export type Duplicate = { id: string; title: string; creatorName: string; similarity: number; adds: string; sameCreator: boolean }
+export type ReviewMeta = { title: string; category: Category; missing: string[]; duplicate?: Duplicate | null }
 
 export function ReviewMetaEditor({ meta, onChange }: { meta: ReviewMeta; onChange: (m: ReviewMeta) => void }) {
   return (
@@ -57,6 +58,13 @@ export function ReviewMetaEditor({ meta, onChange }: { meta: ReviewMeta; onChang
       <label className="fl">Category
         <select className="txt" value={meta.category} onChange={e => onChange({ ...meta, category: e.target.value as Category })}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
       </label>
+      {meta.duplicate && (
+        <p className="note dup-note span2"><Icon name="link" /><span>
+          {meta.duplicate.sameCreator ? 'You published something very similar before: ' : 'A very similar guide already exists: '}
+          <a href={`#/guide/${meta.duplicate.id}/1`} target="_blank" rel="noreferrer">“{meta.duplicate.title}”</a> by {meta.duplicate.creatorName} ({meta.duplicate.similarity}% similar).
+          {meta.duplicate.adds ? ` Yours adds: ${meta.duplicate.adds}.` : ''} {meta.duplicate.sameCreator ? 'Did you mean to update it? ' : ''}You can still publish yours: different people’s ways often help.
+        </span></p>
+      )}
       {meta.missing.length > 0 && <p className="note warn-note span2"><Icon name="alert" /><span>The AI thinks you may have skipped: {meta.missing.join('; ')}. Add it to an instruction below, or record again.</span></p>}
     </div>
   )
