@@ -53,7 +53,7 @@ flowchart LR
 - [x] **T5 `/api/check`** *(Done 2026-11-01: 9 route tests; live calls returned schema-valid verdicts in 5–8 s. Accuracy is measured on real footage in T0.)* (built test-first now; not blocked on photos). Real keyframe vs learner photo (base64 data URL) → Spark verdict (`/v1/responses`) → SAM if `differs` → gate; `check` caps. **Verify:** unit tests (match, differs + box, ambiguous, unclear, malformed, timeout, cap hit).
 ## Day 3: Mon 2026-11-02. Real footage + learner check + voice guides
 
-- [ ] **T6 Stuck dialog live.** Photo resize ≤1600 px, real preview, `/api/check`, box on the learner's photo, error states, 18+ on first check. **Verify:** staged right/wrong/blurry photos on phone and desktop give the expected verdicts.
+- [x] **T6 Stuck dialog live.** *(Built 2026-11-01: real `/api/check` via on-device resize, 18+ once per session, server messages shown; 2 new component tests. Phone/desktop run with staged photos pending T0.)* Photo resize ≤1600 px, real preview, `/api/check`, box on the learner's photo, error states, 18+ on first check. **Verify:** staged right/wrong/blurry photos on phone and desktop give the expected verdicts.
 - [ ] **T0 Check accuracy** *(needs staged photos)*. `scripts/spike-check.ts`. **Verify:** right → match, wrong → differs with the box on the right part, blurry → unclear; accuracy + latency logged; only passing tasks appear in the demo.
 - [ ] **T0b Real-video pipeline** *(needs the air purifier video)*. Browser shrink time on the real file + step quality. **Verify:** logged; PRD §11 updated.
 - [ ] **T12 Seed guides** *(needs the 3 videos)*. Air purifier, dishwasher, coffee machine through the real pipeline. **Verify:** each checked by hand; outline accuracy (≥70% of steps) measured and logged.

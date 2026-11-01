@@ -15,11 +15,16 @@ type Props = {
 type Phase = 'choose' | 'review' | 'working' | 'result' | 'error'
 type Photo = { file: File; url: string }
 
+const ADULT_KEY = 'showhow.adult'
+const wasAdult = () => { try { return sessionStorage.getItem(ADULT_KEY) === '1' } catch { return false } }
+
 export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }: Props) {
   const [phase, setPhase] = useState<Phase>('choose')
   const [photo, setPhoto] = useState<Photo | null>(null)
   const [question, setQuestion] = useState('')
   const [result, setResult] = useState<CheckResult | null>(null)
+  const [errorText, setErrorText] = useState('')
+  const [adult, setAdult] = useState(wasAdult) // Meta API Terms: 18+, asked once per session
   const headRef = useRef<HTMLHeadingElement>(null)
   const step = guide.steps[stepIdx]
 
@@ -40,12 +45,14 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
   }
 
   async function send() {
-    if (!photo) return
+    if (!photo || !adult) return
+    try { sessionStorage.setItem(ADULT_KEY, '1') } catch { /* private mode: ask again next time */ }
     setPhase('working')
     try {
       setResult(await check({ guideId: guide.id, stepIdx, mode, photo: photo.file, question: question.trim() || undefined }))
       setPhase('result')
-    } catch {
+    } catch (e) {
+      setErrorText(e instanceof Error ? e.message : '')
       setPhase('error')
     }
   }
@@ -101,11 +108,12 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
                 <li><Icon name="eye" /><span><b>Meta Muse Spark</b>: compares your photo with {mode === 'where' ? 'each step' : `step ${stepIdx + 1}`}</span><span className="tag">processes</span></li>
                 <li><Icon name="frame" /><span><b>Meta SAM 3.1</b>: outlines the part that differs</span><span className="tag">processes</span></li>
               </ul>
-              <p className="note"><Icon name="shield" /><span>For adults (18+). Used only for this check and not stored. A new photo needs a new OK.</span></p>
+              <p className="note"><Icon name="shield" /><span>Used only for this check and not stored. A new photo needs a new OK.</span></p>
+              <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
             </div>
             <div className="d-foot">
               <button className="btn btn-ghost" onClick={() => { setPhoto(null); setPhase('choose') }}>Change photo</button>
-              <button className="btn btn-primary" onClick={send}><Icon name="check" /> Send for check</button>
+              <button className="btn btn-primary" onClick={send} disabled={!adult}><Icon name="check" /> Send for check</button>
             </div>
           </>
         )}
@@ -118,7 +126,7 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
 
         {phase === 'error' && (
           <>
-            <div className="d-body"><p>Nothing came back, so we won’t guess. Your photo wasn’t stored. You can try again.</p></div>
+            <div className="d-body"><p>{errorText || 'Nothing came back, so we won’t guess.'} Your photo wasn’t stored.</p></div>
             <div className="d-foot"><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={() => setPhase('review')}>Try again</button></div>
           </>
         )}

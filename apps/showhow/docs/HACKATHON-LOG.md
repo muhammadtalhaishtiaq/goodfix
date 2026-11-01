@@ -198,3 +198,8 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - `api/check.ts` per ARCHITECTURE §7.3 + 9 tests (71/71 total). It compares only the step's real keyframe (asserted: the AI `image_path` is never sent), uses one Spark endpoint (`/v1/responses`, 60 s), validates the verdict with zod (502 on invalid), runs SAM only for `differs` (SAM errors degrade to "no box"), returns 504 with a plain message on model timeout or error, and applies the `check` caps before any model call.
 - Live through the dev bridge: a published test guide built from the synthetic vacuum narration + test-card frames; 3 learner photos (same frame, upside down, blurred) → 200 with schema-valid verdicts in 5.4–7.6 s, all `unclear`, with messages like "I can't see the filter in this photo". That is the honest answer: the step text was about a filter and the photo was a test card. **Accuracy is unmeasured until T0 (real staged photos).**
 - The run was killed before its cleanup; a later script removed the leftover published test guide and check counters (DB back to 0 guides).
+
+## 2026-11-01 — T6 stuck dialog wired to the real check
+
+- `checkStep` resizes the photo on-device (≤1600 px JPEG with EXIF orientation) and calls `/api/check`; fixtures stay offline and labelled. The dialog requires "I'm 18 or older" before the first send (remembered for the session) and shows the server's plain message on errors (e.g. the daily limit) with nothing guessed. New component tests: Send disabled until 18+; server error text shown with no verdict card. 73/73.
+- Pending: the staged right/wrong/blurry run on phone + desktop (needs Talha's photos, T0).
