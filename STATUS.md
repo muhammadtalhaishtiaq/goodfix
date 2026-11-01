@@ -1,28 +1,24 @@
 # Project Status
 
-**Updated:** 2026-10-30
+**Updated:** 2026-11-01
 
 ## Active project: Showhow
 
-- Product: video guides that check your work. Spec: [`apps/showhow/docs/PRD.md`](apps/showhow/docs/PRD.md).
-- Decisions: [`apps/showhow/docs/DECISIONS.md`](apps/showhow/docs/DECISIONS.md) (pivot from Goodfix recorded 2026-10-30).
-- Architecture: [`apps/showhow/docs/ARCHITECTURE.md`](apps/showhow/docs/ARCHITECTURE.md).
-- Plan and tasks: [`apps/showhow/docs/TASKS.md`](apps/showhow/docs/TASKS.md).
-- UI reference: [`apps/showhow/design/showhow-prototype.html`](apps/showhow/design/showhow-prototype.html) (dummy data, no AI calls).
+Video guides that check your work, plus voice guides with AI illustrations. Spec: [`apps/showhow/docs/PRD.md`](apps/showhow/docs/PRD.md) · Architecture: [`ARCHITECTURE.md`](apps/showhow/docs/ARCHITECTURE.md) · Plan: [`TASKS.md`](apps/showhow/docs/TASKS.md) · Decisions: [`DECISIONS.md`](apps/showhow/docs/DECISIONS.md) · Evidence: [`HACKATHON-LOG.md`](apps/showhow/docs/HACKATHON-LOG.md).
 
-## Current state
+## Built and verified locally (live Meta + Supabase, synthetic media)
 
-Spec, architecture, and a day-by-day plan exist; the clickable HTML prototype is done. The React app is still the old minimal shell; dependencies are not installed, there is no backend, and no Meta calls have been made. Agent workflow runs on Claude Code (`CLAUDE.md`, `.claude/`, agent-skills plugin at project scope).
+- Video guides: on-device shrink → upload → Transcribe → Spark steps → keyframes → SAM boxes → review/edit → publish (T8–T11).
+- "I'm stuck" check against the real keyframe, 18+ and a preview before every photo (T5–T6).
+- Voice guides: two-layer safety gate (fail closed) → steps → base-anchored Muse Image illustrations (T17).
+- AI-enhanced stills with the real frame's aspect ratio (T18). Read aloud via Wit.ai at publish (T16).
+- Privacy page, draft cleanup, caps, secret scans, CI, deploy + cleanup workflows prepared (T4, T13 prep, T14 local).
+- 121 automated tests; nothing pushed or deployed yet.
 
 ## Waiting on Talha
 
-- Meta API key with $150 credits claimed and a spend limit (needed for T0 on 2026-10-31).
-- Hosting question posted in Discord #office-hours.
-- Free Supabase + Vercel accounts (2026-11-01).
-- 3–4 seed videos filmed (2026-11-02).
+- Real footage: air purifier, dishwasher and coffee machine videos + staged right/wrong/blurry photos (T0, T0b, T12).
+- OK to push and deploy, plus a Vercel account and GitHub secrets (T13).
+- Then: failure drill on the live URL, draft demo (T14); final demo, repo public, submit (T15).
 
-## Next milestone
-
-Day 1 (2026-10-31): T0 API spikes, T0b in-browser shrink spike, T1 foundation, T2 UI port with fixtures.
-
-**Hackathon submission deadline:** 2026-11-04 21:00 ET.
+**Hackathon submission deadline:** 2026-11-04 21:00 ET (target ~15:00 ET).

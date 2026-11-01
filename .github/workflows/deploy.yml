@@ -1,0 +1,58 @@
+name: Deploy
+
+# Ships main to Vercel after CI passes (or on a manual run). Secrets are used only in this job,
+# which never runs for pull requests. Skips cleanly until the Vercel secrets are configured.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/showhow
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Vercel secrets present?
+        id: gate
+        working-directory: .
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Vercel secrets not configured; skipping deploy." && echo "ok=false" >> "$GITHUB_OUTPUT"
+          else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.gate.outputs.ok == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - if: steps.gate.outputs.ok == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - if: steps.gate.outputs.ok == 'true'
+        run: npm install --global vercel@65.9.0
+      - if: steps.gate.outputs.ok == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - if: steps.gate.outputs.ok == 'true'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - if: steps.gate.outputs.ok == 'true'
+        name: No secrets in the deployed bundle
+        run: node scripts/scan-bundle.ts .vercel/output/static
+      - if: steps.gate.outputs.ok == 'true'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
