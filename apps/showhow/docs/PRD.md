@@ -99,7 +99,7 @@ npm test               # vitest run
 
 ```
 apps/showhow/
-  api/                 flat routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, tts, health
+  api/                 flat routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, health (read-aloud runs inside publish)
     _lib/              route wrapper, caps, server DB client, Meta calls (not deployed as routes)
   src/
     app/               routing + top-level views (Gallery, Guide, Create)

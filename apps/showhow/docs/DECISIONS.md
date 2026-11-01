@@ -93,3 +93,7 @@ Refines the "WAV deleted in `finally`" point above, which would have made retrie
 ## 2026-11-01 — Voice gate: a possibly-missing step is advice, not a block
 
 The live test showed Muse Spark flagging "pour out the old water first" as missing from a perfectly usable purifier guide. It did so even after the prompt was narrowed to "steps without which the task fails". Blocking such guides would throw away real know-how over a judgement call. So **unsafe content, not-a-how-to and any unreadable/failed review remain hard blocks (fail closed, nothing saved)**, while `complete: false` now returns the missing steps as advice in the review screen ("The AI thinks you may have skipped …"), where the creator can add them or re-record. The badge text is now "AI-checked: a clear how-to within safety rules". Reversible in one line (`gateReview`) if Talha prefers a hard block.
+
+## 2026-11-01 — Read-aloud audio is made inside publish (no `/api/tts` route)
+
+A separate `/api/tts` run before publishing would speak text the creator could still edit in review. `/api/publish` now applies the edits first, then calls `addReadAloud` (Wit.ai, one MP3 per step, best effort: a Wit failure never blocks publishing), then publishes. This replaces `tts` in the route list of the 2026-11-01 consistency entry.

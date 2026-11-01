@@ -1,8 +1,10 @@
 // POST /api/publish {guideId, edits}: apply the creator's text edits and make the guide public (T11).
-// No model calls. Edits only touch title/instruction (and dropping an AI image), never times or geometry.
+// Edits only touch title/instruction (and dropping an AI image), never times or geometry. Then the
+// read-aloud audio is made from the FINAL text (Wit.ai, best effort).
 import { z } from 'zod'
 import { serverDb } from './_lib/db'
 import { HttpError, route } from './_lib/http'
+import { addReadAloud } from './_lib/read-aloud'
 
 const Body = z.object({
   guideId: z.uuid(),
@@ -24,7 +26,8 @@ export const POST = route({ name: 'publish', body: Body, accessCode: true }, asy
     await db.from('steps').update({ title: e.title, instruction: e.instruction, ...(e.dropAiImage ? { image_path: null } : {}) })
       .eq('guide_id', id).eq('idx', e.idx)
   }
+  const readAloud = await addReadAloud(db, id)
   const { data: won } = await db.from('guides').update({ status: 'published' }).eq('id', id).eq('status', 'ready').select('id')
   if (!won?.length) throw new HttpError(409, 'This guide changed while publishing. Please try again.')
-  return { id, path: `#/guide/${id}/1` }
+  return { id, path: `#/guide/${id}/1`, readAloud }
 })

@@ -73,7 +73,8 @@ flowchart LR
 ```
 apps/showhow/
   api/                    one file per route (flat): guides, steps, outlines, publish, check,
-    _lib/                 voice-guides, voice-images, enhance, tts, health. "_lib" is not deployed as routes.
+    _lib/                 voice-guides, voice-images, enhance, health. "_lib" is not deployed as routes.
+      read-aloud.ts       Wit.ai MP3 per step, called by publish (T16); wit.ts: the Wit call; jpeg.ts: frame size
       http.ts             route() wrapper, HttpError, access code, hashIp, redact
       caps.ts             daily caps via bump_usage (fail closed)
       db.ts               server-only Supabase client (service role)
@@ -155,14 +156,13 @@ Every route is built with `route()` (`api/_lib/http.ts`), which provides: POST o
 | `/api/guides` | access code | `build` | Validate title/category/name/duration/consent/18+ → insert draft → signed upload URLs for `video.mp4`, `audio.wav` | T8 |
 | `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3` (`claimGuide`). Transcribe once (save `turns`, delete WAV) → Spark (public `video_url` + numbered turns) → `validateSteps` → replace steps → `ready` → signed upload URLs for each `{idx}.jpg` + capture time. Measured live: 28.6 s | T9 ✅ |
 | `/api/outlines` `{guideId}` | access code | status gate | From `ready`, video only. For each uploaded keyframe (`storage.list`): SAM with `sam_noun` (fallback: last word of `key_part`) → `bestOutline` → save `keyframe_path` + `outline`. Failure returns the guide to `ready` | T10 ✅ |
-| `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, then `published`. Returns the share path | T11 ✅ |
+| `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, makes read-aloud MP3s from the **final** text (Wit.ai, best effort, T16), then `published`. Returns the share path + read-aloud results | T11 ✅ T16 ✅ |
 | `/api/check` `{guideId, stepIdx, mode:'stuck', photo: base64 JPEG data URL ≤1.5 MB, question?≤300}` | — (public) | `check` | Published video guides only. Load the step's **real keyframe** (never `image_path`) → Spark verdict (`/v1/responses`, 60 s) → zod (invalid → 502) → SAM on the photo if `differs` (SAM failure → verdict without box) → gate. Model error/timeout → 504. Photo held in memory only | T5 ✅ |
 | `/api/voice-guides` raw `audio/wav` body (≤4.2 MB ≈ 2 min; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult as URI-encoded JSON in `x-meta` | access code | `build` | ✅ T17. Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
 | `/api/voice-images` `{guideId}` | access code | status gate | ✅ T17. Base image from `subject` + style → per-step edit **of the base** → highlight edit → `{idx}-ai.jpg` + `-ai-focus.jpg` (a step that fails stays text-only; all fail → 502). Measured live: 44 s for 3 steps |
 | `/api/enhance` `{guideId}` | access code | status gate | ✅ T18. Video only. Per real keyframe: Muse Image edit with `size = sizeLike(jpegSize(frame))` so the shape matches (no reframing) → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the real keyframe is never touched. Per-step failure tolerated; all fail → 502 (guide stays `ready`). Live: 27–32 s for 3 steps |
-| `/api/tts` `{guideId}` | access code | status gate | Wit.ai synthesize each instruction → MP3s | T16 |
 
-**Status gate (credit guard):** every model-stage route claims the guide atomically (`claimGuide`: right status, `attempts < 3`) and increments `attempts`; a successful stage resets it to 0 (`finishGuide`), so it counts consecutive failures of one stage. A failed later stage (outlines, enhance, tts, voice-images) returns the guide to `ready` (its steps exist); only `/api/steps` sets `failed`. Retry from `failed` = calling the same route again. The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
+**Status gate (credit guard):** every model-stage route claims the guide atomically (`claimGuide`: right status, `attempts < 3`) and increments `attempts`; a successful stage resets it to 0 (`finishGuide`), so it counts consecutive failures of one stage. A failed later stage (outlines, enhance, voice-images) returns the guide to `ready` (its steps exist); only `/api/steps` sets `failed`. Retry from `failed` = calling the same route again. The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
 
 ## 7. End-to-end flows
 
