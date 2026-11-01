@@ -162,7 +162,7 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 ## 11. Open questions (resolved on day 1 unless noted)
 
 1. Still unknown after the docs review (2026-10-30): Muse Spark video duration/size limits and frame sampling; how SAM's mask maps onto the frame; whether Meta offers a spend-limit control (until confirmed, the app's own caps are the only guaranteed limit).
-2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit (stream Spark responses).
+2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit: `/api/steps` measured 28.6 s locally (2026-11-01); confirm in production (T13).
 3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
 4. **Seed guides (decided 2026-10-31):** change an air purifier's water, run a dishwasher, clean a coffee machine (appliance cleaning only; no food or drink-safety claims). Talha films these, plus staged right/wrong/blurry photos for 1–2 steps each.
 5. Final product name.

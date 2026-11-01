@@ -85,3 +85,7 @@ Talha's decision (2026-11-01). This supersedes the "candidate cut" and "deploy e
 - **Deploy last:** every flow is completed and verified locally (dev bridge against the real Supabase + Meta) first. Then push to GitHub; CI runs; a deploy workflow ships to Vercel via the Vercel CLI (manual `vercel deploy --prod` from local as fallback). This is T13 on Day 4.
 - Accepted risk: Vercel-specific issues (function duration, the `video_url` fetch) surface later. Mitigations: a local production rehearsal in T13, and a Day 4 buffer before the ~15:00 ET target on Day 5.
 - Footage: Talha films the videos; if any are missing, voice guides (audio only) fill the gallery.
+
+## 2026-11-01 — Transcript saved on the guide; audio deleted once transcribed
+
+Refines the "WAV deleted in `finally`" point above, which would have made retries impossible. `/api/steps` saves the Transcribe turns on `guides.turns` and deletes `audio.wav` as soon as transcription succeeds. A retry reuses the turns and skips Transcribe. If transcription itself fails, the WAV is kept for a retry, deleted on the last failed attempt, and otherwise removed by the 24 h draft cleanup. The narration becomes public step text anyway, so storing the turns adds no new exposure.

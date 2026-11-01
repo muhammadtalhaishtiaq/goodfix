@@ -178,3 +178,10 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - Browser: `src/lib/supabase.ts` (anon client, `uploadSigned`), `src/lib/api.ts`, `CreateView` (form, access code kept in sessionStorage, consent screen naming the device / Supabase / Meta, 18+, runtime `canShrinkHere`, lazy-loaded Mediabunny shrink with progress, direct signed uploads, error + retry). The Mediabunny chunk (149 KB gzip) loads only on the Create page.
 - Live check through the dev bridge against the real Supabase: draft created (200); anon `uploadToSignedUrl` stored `video.mp4` 4.2 MB + `audio.wav` 1.0 MB; public video URL → 200 `video/mp4`; forged token rejected; test files and row removed.
 - Pending (T0b): Mediabunny shrink timing on a real phone file in the browser.
+
+## 2026-11-01 — T9 steps done; Spark reads Supabase public URLs
+
+- `api/_lib/guide-state.ts`: `claimGuide` (atomic draft/failed → processing, attempts+1, refuses at 3, 409 while processing or already done) + `failGuide` (plain reason only). `api/steps.ts` per ARCHITECTURE §7.1. Schema: `guides.turns` (applied).
+- Tests with an in-memory fake DB + mocked Meta (`api/_lib/steps.test.ts`, 7): times from turns, tip grounding, keyframe URLs + capture times, invalid output → failed with no steps, retry reuses the transcript (Transcribe called once), <2 turns, 4th attempt → 429, processing/ready → 409, last failed attempt deletes the WAV, 400/401. 55/55 total.
+- **Live through the dev bridge:** draft + signed uploads of a synthetic narrated video, then `/api/steps` → 200 in **28.6 s**. Muse Spark fetched `video_url` from the **Supabase public URL** (first time this path is verified). 4 sensible steps; the tip was a verbatim quote; guide `ready`, attempts 1; only `video.mp4` left in Storage. Server logs showed only route/status/ms/requestId. Test data removed.
+- Create flow now builds steps after upload (progress copy names Transcribe/Spark), with a plain retry on failure and a step list with per-step video previews.

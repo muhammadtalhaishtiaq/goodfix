@@ -3,15 +3,20 @@ import { Icon } from '../components/Icon'
 import { api } from '../lib/api'
 import { CATEGORIES, type Category } from '../lib/categories'
 import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
+import type { DraftStep } from '../lib/steps'
 import { uploadSigned } from '../lib/supabase'
 
 type Upload = { path: string; token: string }
 type Created = { id: string; uploads: { video: Upload; audio: Upload } }
+export type KeyframeUpload = Upload & { idx: number; atS: number }
+type Built = { steps: DraftStep[]; keyframeUploads: KeyframeUpload[] }
 type Phase =
   | { name: 'form' }
   | { name: 'preparing'; progress: number }
   | { name: 'uploading' }
-  | { name: 'uploaded'; guideId: string; mp4Url: string; mb: number; seconds: number; ms: number }
+  | { name: 'building'; guideId: string; mp4Url: string }
+  | { name: 'steps'; guideId: string; mp4Url: string; built: Built; ms: number }
+  | { name: 'stepsFailed'; guideId: string; mp4Url: string; message: string }
   | { name: 'error'; message: string }
 
 const CODE_KEY = 'showhow.accessCode'
@@ -48,9 +53,21 @@ export function CreateView() {
       }, code.trim())
       await uploadSigned(created.uploads.video.path, created.uploads.video.token, shrunk.mp4)
       await uploadSigned(created.uploads.audio.path, created.uploads.audio.token, shrunk.wav)
-      setPhase({ name: 'uploaded', guideId: created.id, mp4Url: URL.createObjectURL(shrunk.mp4), mb: shrunk.mp4.size / 1e6, seconds: shrunk.durationS, ms: shrunk.ms })
+      await buildSteps(created.id, URL.createObjectURL(shrunk.mp4))
     } catch (e) {
       setPhase({ name: 'error', message: e instanceof Error ? e.message : 'Something went wrong.' })
+    }
+  }
+
+  // Retry calls the same route; the server's status gate allows up to 3 attempts per guide.
+  async function buildSteps(guideId: string, mp4Url: string) {
+    setPhase({ name: 'building', guideId, mp4Url })
+    const t0 = performance.now()
+    try {
+      const built = await api<Built>('steps', { guideId }, code.trim())
+      setPhase({ name: 'steps', guideId, mp4Url, built, ms: performance.now() - t0 })
+    } catch (e) {
+      setPhase({ name: 'stepsFailed', guideId, mp4Url, message: e instanceof Error ? e.message : 'Something went wrong.' })
     }
   }
 
@@ -104,11 +121,34 @@ export function CreateView() {
         <div className="panel" aria-live="polite"><p className="working"><span className="spin" aria-hidden="true" /> Uploading the prepared video…</p></div>
       )}
 
-      {phase.name === 'uploaded' && (
+      {phase.name === 'building' && (
+        <div className="panel" aria-live="polite">
+          <p className="working"><span className="spin" aria-hidden="true" /> Building steps from your narration…</p>
+          <ul className="muted stage-list"><li>Meta Voice Transcribe: your words → text with timings</li><li>Meta Muse Spark: watches the video and splits it into steps</li><li>Showhow: checks every step and tip against what you actually said</li></ul>
+          <p className="muted">Usually under a minute.</p>
+        </div>
+      )}
+
+      {phase.name === 'stepsFailed' && (
         <div className="panel">
-          <p className="note"><Icon name="check" /><span>Uploaded: {phase.mb.toFixed(1)} MB, {Math.round(phase.seconds)} s (prepared in {(phase.ms / 1000).toFixed(0)} s).</span></p>
-          <video className="preview" src={phase.mp4Url} controls muted playsInline />
-          <p className="muted">Next: building the steps from your narration.</p>
+          <p className="note warn-note"><Icon name="alert" /><span>{phase.message}</span></p>
+          <div className="actions"><span className="sp" /><button className="btn btn-primary" onClick={() => buildSteps(phase.guideId, phase.mp4Url)}>Try again</button></div>
+        </div>
+      )}
+
+      {phase.name === 'steps' && (
+        <div className="panel">
+          <p className="note"><Icon name="check" /><span>{phase.built.steps.length} steps built in {(phase.ms / 1000).toFixed(0)} s, all in your own words.</span></p>
+          <ol className="built-steps">
+            {phase.built.steps.map(s => (
+              <li key={s.idx}>
+                <video src={`${phase.mp4Url}#t=${s.startS},${s.endS}`} muted playsInline preload="metadata" />
+                <div><b>{s.idx + 1}. {s.title}</b><span className="muted"> · {s.startS.toFixed(0)}–{s.endS.toFixed(0)} s</span><p>{s.instruction}</p>
+                  {s.tipQuote && <p className="muted">Tip, in your words: “{s.tipQuote}”</p>}</div>
+              </li>
+            ))}
+          </ol>
+          <p className="muted">Next: outlining the key part in each step.</p>
         </div>
       )}
 

@@ -100,6 +100,7 @@ guides(id uuid pk, title text, category text, creator_name text,
        kind text    -- video | voice
        image_style text,            -- voice guides: realistic|lineart|flat|blueprint|watercolor|clay
        attempts int default 0,      -- model-stage runs; routes refuse after 3 (credit guard)
+       turns jsonb,                 -- Transcribe turns; a retry reuses them instead of re-transcribing
        video_path text, duration_s real, error text, created_at timestamptz)
 steps(id uuid pk, guide_id uuid fk on delete cascade, idx int, unique(guide_id, idx),
       title text, instruction text, tip_quote text,
@@ -135,7 +136,7 @@ stateDiagram-v2
 | Path | Written by | Kept |
 |---|---|---|
 | `{guide}/video.mp4` | Browser via signed URL (T8) | Life of the guide |
-| `{guide}/audio.wav` | Browser via signed URL (T8) | **Deleted** after transcription, success or failure (`finally` in T9) |
+| `{guide}/audio.wav` | Browser via signed URL (T8) | **Deleted** as soon as transcription succeeds (turns saved on the guide), or on the last failed attempt; otherwise by the 24 h cleanup |
 | `{guide}/{idx}.jpg` | Browser via signed URLs returned by `/api/steps` (T9), the real keyframe | Life of the guide |
 | `{guide}/{idx}-ai.jpg`, `{idx}-ai-focus.jpg` | Server (T17 illustration / T18 enhanced + highlight) | Life of the guide |
 | `{guide}/{idx}.mp3` | Server (T16) | Life of the guide |
@@ -150,7 +151,7 @@ Every route is built with `route()` (`api/_lib/http.ts`), which provides: POST o
 |---|---|---|---|---|
 | `GET /api/health` | — | — | `{ok:true}` | T4 ✅ |
 | `/api/guides` | access code | `build` | Validate title/category/name/duration/consent/18+ → insert draft → signed upload URLs for `video.mp4`, `audio.wav` | T8 |
-| `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3`. Download WAV → Transcribe → Spark (video URL + numbered turns) → `validateSteps` → save steps → `ready` → return signed upload URLs for each `{idx}.jpg`. WAV deleted in `finally` | T9 |
+| `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3` (`claimGuide`). Transcribe once (save `turns`, delete WAV) → Spark (public `video_url` + numbered turns) → `validateSteps` → replace steps → `ready` → signed upload URLs for each `{idx}.jpg` + capture time. Measured live: 28.6 s | T9 ✅ |
 | `/api/outlines` `{guideId}` | access code | status gate | For each uploaded keyframe: SAM with `sam_noun` → `bestOutline` → save | T10 |
 | `/api/publish` `{guideId, edits[]}` | access code | — | Apply title/instruction edits → `published` → share link | T11 |
 | `/api/check` `{guideId, stepIdx, mode, photo: base64 JPEG data URL ≤1.5 MB, question?}` | — (public) | `check` | Load the step's **real keyframe** → Spark verdict → SAM on the photo if `differs` → gate. Photo held in memory only | T5 |
@@ -183,7 +184,7 @@ sequenceDiagram
   A->>M: Voice Transcribe (ENDPOINTING) → turns[]
   A->>M: Muse Spark (video_url + numbered turns, json_schema) → steps by turn index
   A->>A: validateSteps: order, ranges, 2–8 steps, tips must be real quotes
-  A->>S: insert steps · status ready · (finally) delete audio.wav
+  A->>S: save turns · delete audio.wav · insert steps · status ready
   A-->>B: steps + signed upload URLs for {idx}.jpg
   B->>B: capture keyframe at each step midpoint (local video)
   B->>S: upload {idx}.jpg (signed)
@@ -358,13 +359,14 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | RLS on the live DB | `scripts/check-db.ts` (manual, logged) |
 | Secrets in bundle / history | `scripts/scan-bundle.ts`, gitleaks (CI) |
 | Model accuracy | `scripts/spike-check.ts` (staged photos), `spike-pipeline.ts` (real video), logged |
-| To add | `/api/guides` (T8), `/api/steps` incl. status gate + WAV cleanup (T9), `safety.ts` (T17), check-uses-real-keyframe (T18) |
+| `/api/guides`, `/api/steps` (fake DB + mocked Meta) | `api/_lib/guides.test.ts` (5), `steps.test.ts` (7): validation, grounding, retry reuses transcript, 3-attempt guard, WAV cleanup |
+| To add | `/api/outlines` (T10), `/api/check` (T5), `safety.ts` (T17), check-uses-real-keyframe (T18) |
 
 ## 15. Known risks and open questions
 
-1. Muse Spark video limits (size/duration, frame sampling) are undocumented; the 3-min/48 MB cap is our guard. Spark fetching a Supabase public URL is verified in T9.
+1. Muse Spark video limits (size/duration, frame sampling) are undocumented; the 3-min/48 MB cap is our guard. Spark fetching a Supabase public URL works (verified 2026-11-01).
 2. SAM mask-to-frame mapping is undocumented; boxes only.
 3. AI image content can be wrong even when consistent (e.g. tank still attached while filling); creator review + regenerate.
 4. Check accuracy on real staged photos is unmeasured until T0.
 5. Hosting terms: Discord answer pending; build stays behind access codes until then.
-6. Unproven until logged (must not appear in the demo before then): Spark reading a Supabase public `video_url` (only the data-URL path is tested); Vercel `maxDuration` 300 s with Transcribe 90 s + Spark 180 s timeouts in one call (stream or split if close); real-photo check accuracy.
+6. Unproven until logged (must not appear in the demo before then): Vercel `maxDuration` in production (local `/api/steps` took 28.6 s, well under 300 s); real-photo check accuracy. ~~Spark reading a Supabase public `video_url`~~ verified 2026-11-01.
