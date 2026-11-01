@@ -63,7 +63,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 5. The creator edits titles and instructions, then `POST /api/publish {guideId, edits}`.
 
 **Voice guide build** (`POST /api/voice-guides`, access code required; nothing stored until the gate passes)
-1. Browser records (MediaRecorder) or takes an audio file, converts it to a 16 kHz mono WAV (≤2 min, ≈3.8 MB, so it fits one request under Vercel's 4.5 MB body limit) and shows the consent screen (Showhow server, Voice Transcribe, Muse Spark, Muse Image; published guides are public).
+1. Browser records (MediaRecorder) or takes an audio file, converts it to a 16 kHz mono WAV (≤2 min, ≈3.8 MB) and sends it as a **raw `audio/wav` body** (base64 JSON would exceed Vercel's 4.5 MB limit) and shows the consent screen (Showhow server, Voice Transcribe, Muse Spark, Muse Image; published guides are public).
 2. Server, in memory: Voice Transcribe → transcript.
 3. **Gate layer 1, hard rules (code):** a blocked-topics list (weapons, violence or harming people/animals, self-harm, drugs, gas work, mains electrical work, fire/explosives, medical procedures, vehicle brakes/steering, hacking, illegal activity) checked on the transcript. Any hit → blocked.
 4. **Gate layer 2, Muse Spark review** (schema): `{is_howto, complete, safety: "ok"|"blocked", category, missing[], reason}`. Not a how-to, incomplete, blocked, invalid output, error or timeout → **blocked (fail closed)**, with a plain reason and any missing steps listed. The creator can re-record.
@@ -133,7 +133,7 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 - Named function components and named exports. Small modules; pure logic in `src/lib/` with no React.
 - Model output is untrusted: parse with zod, render as text, never as HTML.
 - Fixture content is labelled `TEST FIXTURE` in the UI and filenames.
-- Match existing formatting: 2 spaces, no semicolons, single quotes in TS, as in `src/App.tsx`.
+- Match existing formatting: 2 spaces, no semicolons, single quotes in TS, as in `src/main.tsx` and `src/lib/*.ts`.
 
 ## 8. Testing strategy
 
@@ -156,8 +156,8 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 4. Learner photos are never stored; every check shows a payload preview first. Creators see a consent screen before their video leaves the device.
 5. The site works on a phone and on desktop; a judge can create a guide with the access code.
 6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
-8. (T18) With "Enhance with AI" ticked, each step shows a cleaner image of the same real scene, with the original frame one tap away; checks still use the real frame.
 7. (T17) A spoken how-to becomes an illustrated guide whose step images show the same object; a staged harmful or gibberish recording is blocked with a reason and nothing appears in the database or Storage.
+8. (T18) With "Enhance with AI" ticked, each step shows a cleaner image of the same real scene, with the original frame one tap away; checks still use the real frame.
 
 ## 11. Open questions (resolved on day 1 unless noted)
 

@@ -64,3 +64,15 @@ Approved by Talha 2026-10-31.
 - Honesty rules: labelled "Enhanced by AI", with the original frame one tap away; the creator approves each image. **The "I'm stuck" check always uses the real keyframe**, never an enhanced or illustrated image.
 - Order after the core loop: T17 voice guides → T18 enhanced images → T7 Where am I. All before T13 deploy if time allows.
 - API routes are flat (`/api/guides`, `/api/steps`, `/api/outlines`, `/api/publish`, `/api/check`, `/api/voice-guides`, `/api/voice-images`) with ids in the body, mapping 1:1 to files in `api/`.
+
+## 2026-11-01 — Consistency fixes after end-to-end review (supersedes conflicting lines above)
+
+Independent red-team audit of the spec, architecture, plan, schema and code (logged 2026-11-01). Where this entry conflicts with earlier ones, this entry wins:
+
+- **Models:** four Meta models (Voice Transcribe, Muse Spark, SAM 3.1, Muse Image) plus Wit.ai as a non-Model-API add-on. This supersedes "three models".
+- **Voice-guide images:** every step is an edit of **one base image**, not of the previous step. This supersedes "edit the previous step's image".
+- **Order after the core loop:** T17 → T18 → T16, with T7 stretch. **Cut order:** T7, T16, T18, T17. T18 and T16 are flagged as candidate cuts for Talha to decide.
+- **Deploy earlier:** T13 moves to Day 2, right after T11, so Vercel limits and the `video_url` fetch fail early. It still needs Talha's OK; the public-exposure decision is written before the URL is shared.
+- **Credit guard:** every model-stage route is status-gated, with `guides.attempts` < 3.
+- **Data shapes:** voice audio is sent as a raw `audio/wav` body (base64 would exceed 4.5 MB); the check photo is a base64 data URL in JSON; keyframe upload URLs come from `/api/steps`; the WAV is deleted in `finally`; drafts unpublished after 24 h are cleaned up (T14).
+- **API:** one Spark endpoint (`/v1/responses`) everywhere. `IP_SALT` is required in production. Routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, tts, health.

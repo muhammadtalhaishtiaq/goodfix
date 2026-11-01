@@ -9,6 +9,7 @@ create table if not exists public.guides (
   status text not null default 'draft' check (status in ('draft', 'processing', 'ready', 'published', 'failed')),
   kind text not null default 'video' check (kind in ('video', 'voice')),
   image_style text,
+  attempts int not null default 0, -- model-stage runs; routes refuse after 3 (credit guard)
   video_path text,
   duration_s real,
   error text,
@@ -29,7 +30,7 @@ create table if not exists public.steps (
   keyframe_path text,
   outline jsonb,      -- {frameW, frameH, box:[x,y,w,h], score} from SAM, or null
   audio_path text,    -- Wit.ai read-aloud MP3 (stretch)
-  image_path text,    -- voice guides: Muse Image illustration (labelled as AI)
+  image_path text,    -- AI image (labelled): voice illustration or T18 enhanced frame; highlight = same path with -focus
   unique (guide_id, idx),
   check (end_s > start_s)
 );
@@ -37,6 +38,7 @@ create table if not exists public.steps (
 -- Columns added after the first apply (2026-10-31): keep the script re-runnable on existing tables.
 alter table public.guides add column if not exists kind text not null default 'video' check (kind in ('video', 'voice'));
 alter table public.guides add column if not exists image_style text;
+alter table public.guides add column if not exists attempts int not null default 0;
 alter table public.steps add column if not exists image_path text;
 
 -- Daily counters for spend/abuse caps. No policies: invisible to the public.
@@ -72,7 +74,8 @@ begin
 end $$;
 revoke execute on function public.bump_usage(text, int) from public, anon, authenticated;
 
--- One public bucket: <guide-id>/video.mp4, audio.wav (deleted after transcription), <idx>.jpg, <idx>.mp3.
+-- One public bucket: <guide-id>/video.mp4, audio.wav (deleted after transcription), <idx>.jpg (real keyframe),
+-- <idx>-ai.jpg + <idx>-ai-focus.jpg (AI images, labelled), <idx>.mp3 (read-aloud).
 -- Public read so Muse Spark can fetch video_url and the viewer can stream. No upload policy:
 -- uploads only via signed URLs that /api creates with the server key.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

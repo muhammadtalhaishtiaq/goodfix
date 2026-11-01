@@ -7,7 +7,7 @@ import { join } from 'node:path'
 
 if (existsSync('.env.local')) process.loadEnvFile('.env.local') // locally, also check the real values (never printed)
 const dir = process.argv[2] ?? 'dist'
-const SERVER_VARS = ['META_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_URL', 'WIT_TOKEN', 'CREATE_ACCESS_CODES']
+const SERVER_VARS = ['META_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_URL', 'WIT_TOKEN', 'CREATE_ACCESS_CODES', 'IP_SALT']
 const needles = [
   ...SERVER_VARS.map(v => process.env[v]).filter((v): v is string => !!v && v.length >= 8),
   'sb_secret_', 'sbp_', ...SERVER_VARS,

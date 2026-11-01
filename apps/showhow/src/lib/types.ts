@@ -30,11 +30,9 @@ export type Guide = {
   isNew?: boolean
 }
 
-export type Verdict = {
-  status: 'match' | 'differs' | 'unclear'
-  differences: { part: string; note: string }[]
-  message: string
-}
+import type { ModelVerdict } from './verdict'
+
+export type Verdict = ModelVerdict
 
 export type CheckRequest = {
   guideId: string

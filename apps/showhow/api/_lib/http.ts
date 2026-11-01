@@ -18,6 +18,13 @@ export function checkAccessCode(given: string | null, configured: string | undef
 // Per-IP limits store only a salted hash, never the address.
 export const hashIp = (ip: string, salt: string) => createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 24)
 
+const devSalt = crypto.randomUUID()
+export function ipKey(ip: string) {
+  const salt = process.env.IP_SALT
+  if (!salt && process.env.VERCEL) throw new Error('IP_SALT is not configured')
+  return hashIp(ip, salt ?? devSalt) // local dev: random per process
+}
+
 const LOG_FIELDS = ['route', 'status', 'ms', 'model', 'requestId', 'code'] as const
 export function redact(fields: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(fields).filter(([k]) => (LOG_FIELDS as readonly string[]).includes(k)))

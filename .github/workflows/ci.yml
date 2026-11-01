@@ -21,6 +21,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ci-canary-service-7b2e4d9a
       WIT_TOKEN: ci-canary-wit-9c1d2e6f
       CREATE_ACCESS_CODES: ci-canary-code-5a8b3c1d
+      IP_SALT: ci-canary-salt-2e7f4b9c
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

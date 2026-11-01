@@ -5,8 +5,9 @@ import {
   Mp4OutputFormat, Output, Quality, WavOutputFormat,
 } from 'mediabunny'
 
-export const MAX_INPUT_BYTES = 500e6
-export const MAX_SECONDS = 180
+import { MAX_INPUT_BYTES, MAX_SECONDS } from './shrink-limits'
+
+export { MAX_INPUT_BYTES, MAX_SECONDS }
 const AUDIO_BPS = 64_000
 const VIDEO_BPS = 1_000_000 // 3 min at ~1.06 Mbps total ≈ 24 MB, well under the 48 MB cap
 

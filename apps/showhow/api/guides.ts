@@ -5,7 +5,7 @@ import { CATEGORIES } from '../src/lib/categories'
 import { MAX_SECONDS } from '../src/lib/shrink-limits'
 import { enforceCaps } from './_lib/caps'
 import { serverDb } from './_lib/db'
-import { hashIp, route } from './_lib/http'
+import { ipKey, route } from './_lib/http'
 
 export const Body = z.object({
   title: z.string().trim().min(1).max(120),
@@ -18,7 +18,7 @@ export const Body = z.object({
 
 export const POST = route({ name: 'guides', body: Body, accessCode: true }, async ({ body, ip }) => {
   const db = serverDb()
-  await enforceCaps((fn, args) => db.rpc(fn, args), 'build', hashIp(ip, process.env.IP_SALT ?? 'showhow'))
+  await enforceCaps((fn, args) => db.rpc(fn, args), 'build', ipKey(ip))
   const { data: guide, error } = await db.from('guides')
     .insert({ title: body.title, category: body.category, creator_name: body.creatorName, duration_s: body.durationS, kind: 'video', status: 'draft' })
     .select('id').single()

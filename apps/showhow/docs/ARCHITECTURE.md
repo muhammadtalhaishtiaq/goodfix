@@ -77,7 +77,7 @@ apps/showhow/
       http.ts             route() wrapper, HttpError, access code, hashIp, redact
       caps.ts             daily caps via bump_usage (fail closed)
       db.ts               server-only Supabase client (service role)
-      meta.ts             Meta calls (transcribe, sparkJson, SAM, image) with timeouts and store:false
+      meta.ts             Meta calls with timeouts and store:false: transcribe, sparkJson (SAM in T5/T10, image in T17)
   src/
     app/                  views: GalleryView, GuideView, CreateView
     components/           Icon, OutlineOverlay, StuckDialog, …
@@ -99,6 +99,7 @@ guides(id uuid pk, title text, category text, creator_name text,
        status text  -- draft | processing | ready | published | failed
        kind text    -- video | voice
        image_style text,            -- voice guides: realistic|lineart|flat|blueprint|watercolor|clay
+       attempts int default 0,      -- model-stage runs; routes refuse after 3 (credit guard)
        video_path text, duration_s real, error text, created_at timestamptz)
 steps(id uuid pk, guide_id uuid fk on delete cascade, idx int, unique(guide_id, idx),
       title text, instruction text, tip_quote text,
@@ -106,7 +107,7 @@ steps(id uuid pk, guide_id uuid fk on delete cascade, idx int, unique(guide_id, 
       key_part text, sam_noun text,
       keyframe_path text,           -- real frame (video guides); the ONLY image checks compare against
       outline jsonb,                -- SAM box on the keyframe, or null
-      image_path text,              -- AI image: voice illustration or T18 enhanced frame
+      image_path text,              -- AI image: voice illustration or T18 enhanced frame; highlight = same path + '-focus'
       audio_path text)              -- Wit.ai MP3 (T16)
 usage(day date, kind text, count int, pk(day, kind))  -- caps; invisible to the public
 bump_usage(kind, limit) → boolean   -- atomic increment; server key only
@@ -134,12 +135,12 @@ stateDiagram-v2
 | Path | Written by | Kept |
 |---|---|---|
 | `{guide}/video.mp4` | Browser via signed URL (T8) | Life of the guide |
-| `{guide}/audio.wav` | Browser via signed URL (T8) | **Deleted** right after transcription (T9) |
-| `{guide}/{idx}.jpg` | Browser via signed URL (T10), the real keyframe | Life of the guide |
+| `{guide}/audio.wav` | Browser via signed URL (T8) | **Deleted** after transcription, success or failure (`finally` in T9) |
+| `{guide}/{idx}.jpg` | Browser via signed URLs returned by `/api/steps` (T9), the real keyframe | Life of the guide |
 | `{guide}/{idx}-ai.jpg`, `{idx}-ai-focus.jpg` | Server (T17 illustration / T18 enhanced + highlight) | Life of the guide |
 | `{guide}/{idx}.mp3` | Server (T16) | Life of the guide |
 
-Never in Storage: learner photos, voice-guide recordings, blocked transcripts. Paths start with an unguessable UUID; failed or abandoned drafts are deleted. Budget (free tier: 1 GB stored, 5 GB egress/month): ~23 MB per video guide → ~40 guides, ~200 full plays, hence the daily build cap.
+Never in Storage: learner photos, voice-guide recordings, blocked transcripts. Paths start with an unguessable UUID; drafts not published within 24 h are deleted by `scripts/cleanup-drafts.ts` (T14). Budget (free tier: 1 GB stored, 5 GB egress/month): ~23 MB per video guide → ~40 guides, ~200 full plays, hence the daily build cap.
 
 ## 6. API (`/api/<name>`, POST with JSON body unless noted)
 
@@ -149,16 +150,16 @@ Every route is built with `route()` (`api/_lib/http.ts`), which provides: POST o
 |---|---|---|---|---|
 | `GET /api/health` | — | — | `{ok:true}` | T4 ✅ |
 | `/api/guides` | access code | `build` | Validate title/category/name/duration/consent/18+ → insert draft → signed upload URLs for `video.mp4`, `audio.wav` | T8 |
-| `/api/steps` `{guideId}` | access code | — | Download WAV → Transcribe → Spark (video URL + numbered turns) → `validateSteps` → save steps → delete WAV → `ready` | T9 |
-| `/api/outlines` `{guideId}` | access code | — | For each uploaded keyframe: SAM with `sam_noun` → `bestOutline` → save | T10 |
+| `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3`. Download WAV → Transcribe → Spark (video URL + numbered turns) → `validateSteps` → save steps → `ready` → return signed upload URLs for each `{idx}.jpg`. WAV deleted in `finally` | T9 |
+| `/api/outlines` `{guideId}` | access code | status gate | For each uploaded keyframe: SAM with `sam_noun` → `bestOutline` → save | T10 |
 | `/api/publish` `{guideId, edits[]}` | access code | — | Apply title/instruction edits → `published` → share link | T11 |
-| `/api/check` `{guideId, stepIdx, mode, photo, question?}` | — (public) | `check` | Load the step's **real keyframe** → Spark verdict → SAM on the photo if `differs` → gate. Photo held in memory only | T5 |
-| `/api/voice-guides` `{wav, title, category, name, style, consent, adult}` | access code | `build` | WAV ≤2 min → Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
-| `/api/voice-images` `{guideId}` | access code | — | Muse Image: base image in the style → per-step edit of the base → per-step highlight edit → save | T17 |
-| `/api/enhance` `{guideId}` | access code | — | Per keyframe: Muse Image edit (same scene, clearer) → highlight edit → save as `-ai` | T18 |
-| `/api/tts` `{guideId}` | access code | — | Wit.ai synthesize each instruction → MP3s | T16 |
+| `/api/check` `{guideId, stepIdx, mode, photo: base64 JPEG data URL ≤1.5 MB, question?}` | — (public) | `check` | Load the step's **real keyframe** → Spark verdict → SAM on the photo if `differs` → gate. Photo held in memory only | T5 |
+| `/api/voice-guides` raw `audio/wav` body (≤2 min ≈3.8 MB; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult in headers | access code | `build` | Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
+| `/api/voice-images` `{guideId}` | access code | status gate | Muse Image: base image in the style → per-step edit of the base → per-step highlight edit → save | T17 |
+| `/api/enhance` `{guideId}` | access code | status gate | Per keyframe: Muse Image edit (same scene, clearer) → highlight edit → save as `-ai` | T18 |
+| `/api/tts` `{guideId}` | access code | status gate | Wit.ai synthesize each instruction → MP3s | T16 |
 
-The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
+**Status gate (credit guard):** every model-stage route checks the guide's `status` and increments `attempts`, refusing after 3 runs, so re-calling a route can't burn credits. Retry from `failed` = calling the same route again. The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
 
 ## 7. End-to-end flows
 
@@ -177,11 +178,13 @@ sequenceDiagram
   A->>S: caps · insert draft · signed upload URLs
   B->>S: upload video.mp4 + audio.wav (direct)
   B->>A: POST /api/steps
+  A->>A: status gate (draft/failed, attempts < 3)
   A->>S: download audio.wav
   A->>M: Voice Transcribe (ENDPOINTING) → turns[]
   A->>M: Muse Spark (video_url + numbered turns, json_schema) → steps by turn index
   A->>A: validateSteps: order, ranges, 2–8 steps, tips must be real quotes
-  A->>S: insert steps · delete audio.wav · status ready
+  A->>S: insert steps · status ready · (finally) delete audio.wav
+  A-->>B: steps + signed upload URLs for {idx}.jpg
   B->>B: capture keyframe at each step midpoint (local video)
   B->>S: upload {idx}.jpg (signed)
   B->>A: POST /api/outlines
@@ -202,7 +205,7 @@ sequenceDiagram
   participant S as Supabase
   Cr->>B: access code, consent + 18+, style (sample previews), record ≤2 min
   B->>B: convert to 16 kHz mono WAV (≈3.8 MB)
-  B->>A: POST /api/voice-guides (WAV inline)
+  B->>A: POST /api/voice-guides (raw audio/wav body)
   A->>M: Voice Transcribe → turns
   A->>A: Layer 1: blocked-topics list (code)
   A->>M: Layer 2: Muse Spark review {is_howto, complete, safety, category, missing[], reason}
@@ -249,7 +252,7 @@ Voice guides hide "I'm stuck": they have no real reference frame.
 |---|---|---|---|---|
 | Transcribe | `POST /v1/asr/transcribe` · `muse-voice-transcribe-1.0`, `mode: ENDPOINTING` | multipart WAV (16 kHz mono, ≤32 MB, ≤10 min) → `turns[{startMs,endMs,transcript}]` | 90 s | 2026-10-30, 5.5 s |
 | Steps | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | video (URL or data URL) + numbered turns → steps by turn index | 180 s | 2026-10-30, 15.6 s (data URL) |
-| Verdict | `POST /v1/chat/completions` · `muse-spark-1.3`, `response_format: json_schema` | 2 images + step text → `{status, differences[{part, sam_noun, note}], message}` | 60 s | 2026-10-30, 5–9.5 s |
+| Verdict | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` (one Spark endpoint everywhere; the spike used `/v1/chat/completions`) | 2 images + step text → `{status, differences[{part, sam_noun, note}], message}` | 60 s | 2026-10-30, 5–9.5 s |
 | Voice review | `POST /v1/responses` · `muse-spark-1.3` | transcript → `{is_howto, complete, safety, category, missing[], reason}` | 60 s | T17 |
 | Segment | `POST /v1/responses` · `sam-3.1`, `metadata.include_confidence: "true"` | image + one simple noun → `<\|box;x1;y1;x2;y2;w;h;c\|>` tokens | 60 s | 2026-10-30, ~1 s |
 | Illustrate | `POST /v1/images/generations` · `muse-image-1.0` | prompt (+ style) → JPEG, $0.01 | 90 s | 2026-10-31, 10–21 s |
@@ -284,7 +287,7 @@ All Meta calls send `store: false` (Meta stores by default). Prompts are fixed i
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Secret (full DB access) |
 | `CREATE_ACCESS_CODES` | Server only | Secret (comma-separated) |
 | `WIT_TOKEN` | Server only | Secret |
-| `IP_SALT` | Server only | Secret (salts per-IP hashes) |
+| `IP_SALT` | Server only | Secret (salts per-IP hashes). Required on Vercel; locally a random per-process salt is used |
 | `SUPABASE_ACCESS_TOKEN` | Local scripts only (`apply-schema`) | Secret; never deployed; revoke after setup |
 
 Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any server value, `sb_secret_`/`sbp_` prefix, service_role JWT or server variable name reaches `dist/`; gitleaks scans the full Git history in CI.
@@ -310,7 +313,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 |---|---|---|
 | Creator video input | ≤500 MB, ≤3 min | Browser memory; free storage |
 | Shrunk video | ~1 Mbps H.264 ≤720p, ≤48 MB | Supabase 50 MB/file |
-| Voice recording | ≤2 min (≈3.8 MB WAV) | Fits one request under Vercel's ~4.5 MB body |
+| Voice recording | ≤2 min (≈3.8 MB WAV, sent as a raw body, not base64) | Fits one request under Vercel's ~4.5 MB body |
 | Learner photo | ≤1600 px JPEG (~0.3–1.5 MB) | Fits one request; fast model calls |
 | Steps per guide | 2–8 | `StepsSchema` |
 | Vercel Hobby function | 300 s, 4.5 MB body, 2 GB RAM | Plan limits |
@@ -324,7 +327,8 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Browser can't encode (`canShrinkHere` false) | "This browser can't prepare video. Use desktop Chrome or Edge." |
 | Wrong access code | "That access code isn't valid." |
 | Daily cap reached | "Today's demo limit is reached. Viewing guides still works." |
-| Upload fails | Retry; draft deleted if abandoned |
+| Upload fails | Retry; drafts unpublished after 24 h are cleaned up |
+| Same build stage failed 3 times | "This video couldn't be processed. Try a shorter, clearer clip." (credit guard) |
 | Too little narration (<2 turns) | "We couldn't hear enough narration to build steps." |
 | Spark returns invalid steps | Retry, or "we couldn't split this video"; nothing published |
 | SAM: no / ambiguous match | No box; "Show part" disabled; check says "couldn't pinpoint it on your photo" |
@@ -354,7 +358,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | RLS on the live DB | `scripts/check-db.ts` (manual, logged) |
 | Secrets in bundle / history | `scripts/scan-bundle.ts`, gitleaks (CI) |
 | Model accuracy | `scripts/spike-check.ts` (staged photos), `spike-pipeline.ts` (real video), logged |
-| To add | `/api/guides`, `/api/steps` (mocked Meta/DB), `safety.ts` (T17), check-uses-real-keyframe (T18) |
+| To add | `/api/guides` (T8), `/api/steps` incl. status gate + WAV cleanup (T9), `safety.ts` (T17), check-uses-real-keyframe (T18) |
 
 ## 15. Known risks and open questions
 
@@ -363,3 +367,4 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 3. AI image content can be wrong even when consistent (e.g. tank still attached while filling); creator review + regenerate.
 4. Check accuracy on real staged photos is unmeasured until T0.
 5. Hosting terms: Discord answer pending; build stays behind access codes until then.
+6. Unproven until logged (must not appear in the demo before then): Spark reading a Supabase public `video_url` (only the data-URL path is tested); Vercel `maxDuration` 300 s with Transcribe 90 s + Spark 180 s timeouts in one call (stream or split if close); real-photo check accuracy.

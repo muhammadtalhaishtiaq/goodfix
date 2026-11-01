@@ -163,3 +163,11 @@ Reviewed: PRD, ARCHITECTURE, TASKS, DECISIONS (independent `hackathon-red-team` 
 - `scripts/scan-bundle.ts`: fails on server env values, `sb_secret_`/`sbp_`, service_role JWTs, or server var names in `dist/`. Real build clean, including against real local key values. A planted canary was caught (exit 1).
 - gitleaks 8.30.1 (checksum-verified): full git history → 1 finding, a false positive (prose "Model API, …" in PRD.md), recorded by fingerprint in `.gitleaksignore`; rescan clean. Working tree findings only in `apps/showhow/.env.local` and `archive/vault-native/.env`, confirmed never tracked and never in any commit.
 - `.github/workflows/ci.yml`: read-only token, actions pinned to commit SHAs (checkout v7.0.1, setup-node v7.1.0), fake canary env, `npm ci` → lint → typecheck → test → build → bundle scan → `npm audit --audit-level=high`; separate full-history gitleaks job. Local: 43/43 tests, 0 vulnerabilities, YAML valid. Not yet run on GitHub (needs a push).
+
+## 2026-11-01 — End-to-end doc consistency review (independent `hackathon-red-team` subagent)
+
+- ARCHITECTURE.md rewritten end to end on 2026-10-31 (components, data, storage, routes, sequence diagrams, model calls, trust rules, env vars, retention, limits, failures, environments, tests, risks). A red-team audit then compared docs, schema and code: 13 findings.
+- Fixed in code: missing `src/lib/shrink-limits.ts` (T8 import), `Verdict` type now derived from the zod schema, `ipKey()` (`IP_SALT` required on Vercel, random per process locally), `IP_SALT` added to bundle scan + CI canaries, typed Meta JSON. Schema: `guides.attempts` (applied; RLS 11/11 again).
+- Fixed in docs: raw-WAV voice upload (base64 exceeded 4.5 MB), keyframe signed URLs from `/api/steps`, status gate + attempts credit guard, WAV deleted in `finally`, 24 h draft cleanup (T14), one Spark endpoint, `-ai`/`-ai-focus` image paths, success-criteria order, T7 Verify, public-exposure decision inside T13, a superseding DECISIONS entry.
+- Plan changes: deploy moved to Day 2 after T11; T5 built test-first without waiting for photos; T17 starts after T6 passes live; T18/T16 flagged as candidate cuts (Talha to decide).
+- Still unproven (not in the demo until logged): Spark reading a Supabase public `video_url`, Vercel 300 s with real latencies, real-photo check accuracy.

@@ -9,13 +9,15 @@ const auth = () => {
   return { Authorization: `Bearer ${k}` }
 }
 
-async function post(path: string, init: RequestInit, timeoutMs: number) {
+type MetaJson = { turns?: Turn[]; output_text?: string; output?: { content?: { type: string; text?: string }[] }[] }
+
+async function post(path: string, init: RequestInit, timeoutMs: number): Promise<MetaJson> {
   const res = await fetch(`${API}${path}`, { method: 'POST', ...init, signal: AbortSignal.timeout(timeoutMs) })
   if (!res.ok) throw new Error(`Meta ${path} ${res.status}`) // status only: never log bodies
-  return res.json()
+  return (await res.json()) as MetaJson
 }
 
-const outputText = (j: { output_text?: string; output?: { content?: { type: string; text?: string }[] }[] }) =>
+const outputText = (j: MetaJson) =>
   j.output_text ?? (j.output ?? []).flatMap(o => o.content ?? []).filter(c => c.type === 'output_text').map(c => c.text ?? '').join('')
 
 export async function transcribe(wav: Blob): Promise<Turn[]> {
