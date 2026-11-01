@@ -7,7 +7,7 @@ const step = (idx: number, title: string, startS: number, endS: number, keyPart:
 
 export const FIXTURE_GUIDES: Guide[] = [
   {
-    id: 'fixture-bookcase', title: 'Assemble a 3-shelf bookcase', category: 'DIY', creatorName: 'Ahmed R.', durationS: 210, fixture: true,
+    id: 'fixture-bookcase', title: 'Assemble a 3-shelf bookcase', category: 'DIY', creatorName: 'Ahmed R.', kind: 'video', durationS: 210, fixture: true,
     steps: [
       step(0, 'Sort the parts', 0, 31, 'Bag B · short screws', 'Lay every panel flat and open the three bags. Bag B has the short screws.', 'Ninety percent of mistakes are using the long screws where the short ones go.'),
       step(1, 'Fit dowels into the left side', 31, 58, 'Dowel holes', 'Push one wooden dowel into each of the four small holes on the inside face of the left panel.'),
@@ -16,7 +16,7 @@ export const FIXTURE_GUIDES: Guide[] = [
     ],
   },
   {
-    id: 'fixture-printer', title: 'Set up a Wi-Fi printer', category: 'Gadgets', creatorName: 'Mei L.', durationS: 102, fixture: true,
+    id: 'fixture-printer', title: 'Set up a Wi-Fi printer', category: 'Gadgets', creatorName: 'Mei L.', kind: 'video', durationS: 102, fixture: true,
     steps: [
       step(0, 'Remove all orange tape', 0, 24, 'Shipping tape', 'Pull off every strip of orange tape, including inside the cartridge door.'),
       step(1, 'Load paper', 24, 51, 'Paper tray', 'Slide a stack of paper in until it stops, then move the guide to touch it.'),
@@ -24,7 +24,7 @@ export const FIXTURE_GUIDES: Guide[] = [
     ],
   },
   {
-    id: 'fixture-plant', title: 'Re-pot a houseplant', category: 'Garden', creatorName: 'Priya S.', durationS: 90, fixture: true,
+    id: 'fixture-plant', title: 'Re-pot a houseplant', category: 'Garden', creatorName: 'Priya S.', kind: 'video', durationS: 90, fixture: true,
     steps: [
       step(0, 'Water the day before', 0, 15, 'Soil', 'Moist soil slides out of the old pot in one piece.'),
       step(1, 'Loosen the roots', 15, 50, 'Root ball', 'Tease the outer roots apart with your fingers.'),

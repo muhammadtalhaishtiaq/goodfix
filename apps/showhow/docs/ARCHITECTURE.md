@@ -152,15 +152,15 @@ Every route is built with `route()` (`api/_lib/http.ts`), which provides: POST o
 | `GET /api/health` | — | — | `{ok:true}` | T4 ✅ |
 | `/api/guides` | access code | `build` | Validate title/category/name/duration/consent/18+ → insert draft → signed upload URLs for `video.mp4`, `audio.wav` | T8 |
 | `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3` (`claimGuide`). Transcribe once (save `turns`, delete WAV) → Spark (public `video_url` + numbered turns) → `validateSteps` → replace steps → `ready` → signed upload URLs for each `{idx}.jpg` + capture time. Measured live: 28.6 s | T9 ✅ |
-| `/api/outlines` `{guideId}` | access code | status gate | For each uploaded keyframe: SAM with `sam_noun` → `bestOutline` → save | T10 |
-| `/api/publish` `{guideId, edits[]}` | access code | — | Apply title/instruction edits → `published` → share link | T11 |
+| `/api/outlines` `{guideId}` | access code | status gate | From `ready`, video only. For each uploaded keyframe (`storage.list`): SAM with `sam_noun` (fallback: last word of `key_part`) → `bestOutline` → save `keyframe_path` + `outline`. Failure returns the guide to `ready` | T10 ✅ |
+| `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, then `published`. Returns the share path | T11 ✅ |
 | `/api/check` `{guideId, stepIdx, mode, photo: base64 JPEG data URL ≤1.5 MB, question?}` | — (public) | `check` | Load the step's **real keyframe** → Spark verdict → SAM on the photo if `differs` → gate. Photo held in memory only | T5 |
 | `/api/voice-guides` raw `audio/wav` body (≤2 min ≈3.8 MB; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult in headers | access code | `build` | Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
 | `/api/voice-images` `{guideId}` | access code | status gate | Muse Image: base image in the style → per-step edit of the base → per-step highlight edit → save | T17 |
 | `/api/enhance` `{guideId}` | access code | status gate | Per keyframe: Muse Image edit (same scene, clearer) → highlight edit → save as `-ai` | T18 |
 | `/api/tts` `{guideId}` | access code | status gate | Wit.ai synthesize each instruction → MP3s | T16 |
 
-**Status gate (credit guard):** every model-stage route checks the guide's `status` and increments `attempts`, refusing after 3 runs, so re-calling a route can't burn credits. Retry from `failed` = calling the same route again. The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
+**Status gate (credit guard):** every model-stage route claims the guide atomically (`claimGuide`: right status, `attempts < 3`) and increments `attempts`; a successful stage resets it to 0 (`finishGuide`), so it counts consecutive failures of one stage. A failed later stage (outlines, enhance, tts, voice-images) returns the guide to `ready` (its steps exist); only `/api/steps` sets `failed`. Retry from `failed` = calling the same route again. The browser drives multi-stage builds (guides → upload → steps → outlines → publish) so each function call stays within Vercel's limits and progress is visible. Long routes set `maxDuration` in `vercel.json` (T13).
 
 ## 7. End-to-end flows
 
@@ -359,8 +359,8 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | RLS on the live DB | `scripts/check-db.ts` (manual, logged) |
 | Secrets in bundle / history | `scripts/scan-bundle.ts`, gitleaks (CI) |
 | Model accuracy | `scripts/spike-check.ts` (staged photos), `spike-pipeline.ts` (real video), logged |
-| `/api/guides`, `/api/steps` (fake DB + mocked Meta) | `api/_lib/guides.test.ts` (5), `steps.test.ts` (7): validation, grounding, retry reuses transcript, 3-attempt guard, WAV cleanup |
-| To add | `/api/outlines` (T10), `/api/check` (T5), `safety.ts` (T17), check-uses-real-keyframe (T18) |
+| `/api/guides`, `/api/steps`, `/api/outlines`, `/api/publish` (fake DB + mocked Meta) | `api/_lib/guides.test.ts` (5), `steps.test.ts` (7), `outlines.test.ts` (4), `publish.test.ts` (3) |
+| To add | `/api/check` (T5), `safety.ts` (T17), check-uses-real-keyframe (T18) |
 
 ## 15. Known risks and open questions
 

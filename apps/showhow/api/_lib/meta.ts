@@ -28,6 +28,18 @@ export async function transcribe(wav: Blob): Promise<Turn[]> {
   return (j.turns ?? []).map((t: Turn) => ({ startMs: t.startMs, endMs: t.endMs, transcript: t.transcript }))
 }
 
+// SAM 3.1 on one image (public URL or data URL) with one simple noun → raw box/mask token text.
+export async function samText(imageUrl: string, noun: string): Promise<string> {
+  const j = await post('/responses', {
+    headers: { ...auth(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'sam-3.1', store: false, metadata: { include_confidence: 'true' },
+      input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: noun }, { type: 'input_image', image_url: imageUrl }] }],
+    }),
+  }, 60_000)
+  return outputText(j)
+}
+
 // Muse Spark with schema-constrained JSON output. Returns the parsed object (still untrusted: zod-check it).
 export async function sparkJson(content: unknown[], name: string, schema: object, timeoutMs = 180_000): Promise<unknown> {
   const j = await post('/responses', {

@@ -14,7 +14,9 @@ export type Step = {
   startS: number
   endS: number
   keyPart: string
-  keyframeUrl?: string
+  keyframeUrl?: string // the real frame: the only image a learner photo is compared with
+  imageUrl?: string    // AI image (voice illustration or enhanced frame), always labelled
+  audioUrl?: string    // read-aloud MP3
   outline: Outline | null
 }
 
@@ -23,6 +25,7 @@ export type Guide = {
   title: string
   category: string
   creatorName: string
+  kind: 'video' | 'voice'
   videoUrl?: string
   durationS: number
   steps: Step[]

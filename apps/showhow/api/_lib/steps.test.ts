@@ -43,7 +43,7 @@ describe('POST /api/steps', () => {
       { idx: 0, atS: 6.5, path: `${ID}/0.jpg`, token: `tok-${ID}/0.jpg` },
       { idx: 1, atS: 13, path: `${ID}/1.jpg`, token: `tok-${ID}/1.jpg` },
     ])
-    expect(guide()).toMatchObject({ status: 'ready', attempts: 1, video_path: `${ID}/video.mp4` })
+    expect(guide()).toMatchObject({ status: 'ready', attempts: 0, video_path: `${ID}/video.mp4` }) // counter resets on success
     expect(db.files[`${ID}/audio.wav`]).toBeUndefined() // audio deleted once transcribed
     expect(meta.sparkJson.mock.calls[0][0][1]).toEqual({ type: 'input_video', video_url: `https://storage.test/media/${ID}/video.mp4` })
   })

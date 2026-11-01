@@ -224,3 +224,19 @@ textarea:focus { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px
 .built-steps video { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 6px; background: #1D1B18 }
 .built-steps p { margin: 4px 0 0 }
 @media (max-width: 600px) { .built-steps li { grid-template-columns: 1fr } }
+.thumb > img { display: block; width: 100%; height: 100%; object-fit: cover }
+.ai-tag { display: inline-block; background: rgba(29,27,24,.82); color: #fff; font: 700 11.5px var(--body); padding: 3px 8px; border-radius: 6px }
+.ai-tag.on-thumb { position: absolute; top: 10px; right: 10px }
+.stage-img { display: block; width: 100%; height: 100%; object-fit: contain; background: var(--surface-2) }
+.view-switch { display: flex; gap: 8px; padding: 10px 14px 0 }
+.read-aloud { display: flex; gap: 8px; flex-wrap: wrap }
+.built-steps .frame { position: relative; aspect-ratio: 16/10; background: #1D1B18; border-radius: 6px; overflow: hidden }
+.built-steps .frame img { width: 100%; height: 100%; object-fit: contain; display: block }
+.frame-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(29,27,24,.82); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 99px }
+.built-steps li { grid-template-columns: 260px 1fr }
+.edit { display: grid; gap: 8px }
+.share { display: grid; gap: 12px; justify-items: center; text-align: center; padding: 28px }
+.share h2 { font-size: 26px }
+.ok-ic { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok) }
+.linkbox { display: flex; gap: 8px; align-items: center; width: min(560px, 100%); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 16px }
+.linkbox code { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px }

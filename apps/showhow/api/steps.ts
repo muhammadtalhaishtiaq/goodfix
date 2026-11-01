@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps'
 import { serverDb } from './_lib/db'
-import { claimGuide, failGuide } from './_lib/guide-state'
+import { claimGuide, failGuide, finishGuide } from './_lib/guide-state'
 import { HttpError, route } from './_lib/http'
 import { sparkJson, transcribe } from './_lib/meta'
 
@@ -41,7 +41,7 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
       start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun,
     })))
     if (error) throw new Error('steps insert failed')
-    await db.from('guides').update({ status: 'ready', video_path: `${id}/video.mp4` }).eq('id', id)
+    await finishGuide(db, id, 'ready', { video_path: `${id}/video.mp4` })
 
     const keyframeUploads = await Promise.all(result.steps.map(async s => {
       const { data } = await media.createSignedUploadUrl(`${id}/${s.idx}.jpg`)

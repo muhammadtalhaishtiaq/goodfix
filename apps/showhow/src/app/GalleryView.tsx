@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
-import { CATEGORIES, listGuides } from '../lib/data'
+import { CATEGORIES, fetchGuides } from '../lib/data'
+import type { Guide } from '../lib/types'
 
 const initials = (name: string) => name.split(' ').map(w => w[0]).join('')
 
 export function GalleryView() {
   const [cat, setCat] = useState('All')
   const [q, setQ] = useState('')
+  const [all, setAll] = useState<Guide[] | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => { fetchGuides().then(setAll, e => setError((e as Error).message)) }, [])
   const needle = q.trim().toLowerCase()
-  const guides = listGuides().filter(g =>
+  const guides = (all ?? []).filter(g =>
     (cat === 'All' || g.category === cat) && (!needle || `${g.title} ${g.creatorName} ${g.category}`.toLowerCase().includes(needle)))
 
   return (
@@ -34,14 +38,17 @@ export function GalleryView() {
         </div>
       </div>
 
-      {guides.length ? (
+      {error ? <p className="empty">{error}</p> : !all ? <p className="working"><span className="spin" aria-hidden="true" /> Loading guides…</p> : guides.length ? (
         <div className="grid">
           {guides.map(g => (
             <a key={g.id} className="card" href={`#/guide/${g.id}/1`}>
               <div className="thumb">
-                {g.videoUrl ? <video src={`${g.videoUrl}#t=${g.steps[0]?.startS ?? 0}`} muted playsInline preload="metadata" /> : <span className="ph">{g.title}</span>}
+                {g.steps[0]?.keyframeUrl ? <img src={g.steps[0].keyframeUrl} alt="" loading="lazy" />
+                  : g.steps[0]?.imageUrl ? <img src={g.steps[0].imageUrl} alt="" loading="lazy" />
+                  : g.videoUrl ? <video src={`${g.videoUrl}#t=${g.steps[0]?.startS ?? 0}`} muted playsInline preload="metadata" /> : <span className="ph">{g.title}</span>}
                 <span className="badge"><Icon name="steps" /> {g.steps.length} steps</span>
                 {g.fixture && <span className="fixture-tag on-thumb">TEST FIXTURE</span>}
+                {g.kind === 'voice' && <span className="ai-tag on-thumb">Illustrated by AI</span>}
               </div>
               <div className="card-b">
                 <h3>{g.title}</h3>
@@ -50,7 +57,7 @@ export function GalleryView() {
             </a>
           ))}
         </div>
-      ) : <p className="empty">No guides match “{q}”.</p>}
+      ) : <p className="empty">{all.length ? `No guides match “${q}”.` : 'No guides yet. '}{!all.length && <a href="#/create">Create the first one</a>}</p>}
     </>
   )
 }

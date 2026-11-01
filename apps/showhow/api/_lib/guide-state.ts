@@ -1,4 +1,5 @@
-// Status gate + credit guard for every model-stage route (ARCHITECTURE §6).
+// Status gate + credit guard for every model-stage route (ARCHITECTURE §6). attempts counts consecutive
+// runs of the current stage and resets when a stage succeeds (finishGuide).
 // claimGuide atomically moves a guide to 'processing' and counts the attempt, so a double click,
 // a retry storm or a replayed request can't run the models twice or more than MAX_ATTEMPTS times.
 import type { serverDb } from './db'
@@ -20,8 +21,14 @@ export async function claimGuide(db: Db, id: string, from: string[]): Promise<Gu
   return { ...g, attempts: g.attempts + 1 } as GuideRow
 }
 
-// Record a plain, user-facing reason; never upstream error text.
-export async function failGuide(db: Db, id: string, e: unknown) {
+// A stage succeeded: back to `status` and reset the counter, so attempts count consecutive failures of one stage.
+export async function finishGuide(db: Db, id: string, status: string, extra: Record<string, unknown> = {}) {
+  await db.from('guides').update({ status, attempts: 0, error: null, ...extra }).eq('id', id)
+}
+
+// Record a plain, user-facing reason; never upstream error text. Later stages fall back to 'ready'
+// (their steps already exist) rather than 'failed'.
+export async function failGuide(db: Db, id: string, e: unknown, status: 'failed' | 'ready' = 'failed') {
   const error = e instanceof HttpError ? e.message : 'Something went wrong while building this guide. You can try again.'
-  await db.from('guides').update({ status: 'failed', error }).eq('id', id)
+  await db.from('guides').update({ status, error }).eq('id', id)
 }

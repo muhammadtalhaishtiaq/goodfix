@@ -3,7 +3,8 @@ import { CreateView } from './app/CreateView'
 import { GalleryView } from './app/GalleryView'
 import { GuideView } from './app/GuideView'
 import { Icon } from './components/Icon'
-import { getGuide } from './lib/data'
+import { fetchGuide } from './lib/data'
+import type { Guide } from './lib/types'
 
 // Hash routes: #/ · #/guide/:id/:step (1-based) · #/create
 function parseHash(hash: string) {
@@ -20,7 +21,6 @@ export function App() {
   }, [])
 
   const route = parseHash(hash)
-  const guide = route.view === 'guide' ? getGuide(route.id) : undefined
 
   return (
     <>
@@ -37,12 +37,24 @@ export function App() {
         </div>
       </header>
       <main>
-        {guide ? <GuideView key={guide.id} guide={guide} stepIdx={Math.min(route.step, guide.steps.length - 1)} />
+        {route.view === 'guide' ? <GuideLoader id={route.id} step={route.step} />
           : route.view === 'create' ? <CreateView />
           : <GalleryView />}
       </main>
     </>
   )
+}
+
+function GuideLoader({ id, step }: { id: string; step: number }) {
+  const [state, setState] = useState<{ id: string; guide?: Guide; error?: string } | null>(null)
+  useEffect(() => {
+    let live = true
+    fetchGuide(id).then(guide => { if (live) setState({ id, guide }) }, e => { if (live) setState({ id, error: (e as Error).message }) })
+    return () => { live = false }
+  }, [id])
+  if (!state || state.id !== id) return <p className="working"><span className="spin" aria-hidden="true" /> Loading guide…</p>
+  if (!state.guide) return <p className="empty">{state.error ?? 'This guide doesn’t exist or isn’t published.'} <a href="#/">Back to the gallery</a></p>
+  return <GuideView key={id} guide={state.guide} stepIdx={Math.min(step, state.guide.steps.length - 1)} />
 }
 
 export default App

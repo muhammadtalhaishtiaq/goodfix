@@ -35,6 +35,7 @@ export function fakeDb(seed: { guides?: Row[]; steps?: Row[]; files?: Record<str
     from: (t: string) => query(t),
     storage: {
       from: () => ({
+        list: async (dir: string) => ({ data: Object.keys(files).filter(k => k.startsWith(dir + '/')).map(k => ({ name: k.slice(dir.length + 1) })), error: null }),
         download: async (p: string) => ({ data: files[p] ?? null, error: files[p] ? null : { message: 'not found' } }),
         remove: async (ps: string[]) => { ps.forEach(p => delete files[p]); return { error: null } },
         getPublicUrl: (p: string) => ({ data: { publicUrl: `https://storage.test/media/${p}` } }),
