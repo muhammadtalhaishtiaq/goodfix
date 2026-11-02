@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showhow · UI v2 mockup (proposal)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Tokens: UI-AUDIT.md §4 "Workshop manual" ===== */
+:root{
+  --paper:#F4F3EF; --surface:#FFFFFF; --surface-2:#EAE8E2; --rule:#D4D1C8; --rule-strong:#8C887F;
+  --ink:#161614; --ink-2:#45433E; --ink-3:#65625B; --on-ink:#FFFFFF;
+  --signal:#FF5A1F; --signal-ink:#C2410C; --signal-soft:#FCE9DE; --differs:#9A3412;
+  --ok:#17663A; --ok-soft:#E3F1E8; --unclear:#3F4A5A; --unclear-soft:#E7EAEE; --focus:#1D4ED8; --stage:#111110;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+  --r1:4px; --r2:8px;
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:400 16px/24px var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit} button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mono{font-family:var(--mono);font-weight:500;font-size:13px;line-height:16px;letter-spacing:.04em;text-transform:uppercase}
+.muted{color:var(--ink-3)}
+/* ===== mockup chrome (not part of the design) ===== */
+.mock-bar{position:sticky;top:0;z-index:50;background:#2b2b2b;color:#ddd;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 16px;font:500 13px var(--sans)}
+.mock-bar b{color:#fff;margin-right:8px}
+.mock-bar button{background:#3a3a3a;border:0;color:#ddd;padding:6px 10px;border-radius:4px;cursor:pointer}
+.mock-bar button[aria-pressed=true]{background:#fff;color:#111}
+.mock-note{margin-left:auto;color:#aaa}
+.screen{display:none} .screen.on{display:block}
+/* ===== app shell ===== */
+.top{position:sticky;top:41px;z-index:20;background:var(--paper);box-shadow:0 1px 0 var(--rule)}
+.top-in{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;gap:24px}
+.logo{display:flex;gap:10px;align-items:center;font:700 22px var(--cond);text-decoration:none}
+.logo i{width:28px;height:28px;background:var(--ink);border-radius:4px;display:grid;place-items:center}
+.logo i::after{content:"";width:12px;height:7px;border:solid var(--signal);border-width:0 0 3px 3px;transform:rotate(-45deg) translate(1px,-1px)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;font-weight:600;text-decoration:none;border-bottom:2px solid transparent;color:var(--ink-2);background:none;border-top:0;border-left:0;border-right:0;cursor:pointer}
+.tab[aria-current=page],.tab[aria-pressed=true]{color:var(--ink);border-bottom-color:var(--ink)}
+.wrap{max-width:1200px;margin:0 auto;padding:var(--s6) 24px var(--s8)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:12px 20px;border-radius:var(--r1);font:600 16px/20px var(--sans);border:1.5px solid transparent;cursor:pointer;text-decoration:none;transition:background .15s}
+.btn-ink{background:var(--ink);color:var(--on-ink)} .btn-ink:hover{background:#2e2d2a}
+.btn-line{background:transparent;border-color:var(--rule-strong)} .btn-line:hover{background:var(--surface)}
+.btn-signal{background:var(--signal-ink);color:#fff}
+.tag{display:inline-block;padding:4px 6px;border-radius:var(--r1);background:rgba(17,17,16,.85);color:#fff}
+.tag-ai{background:#fff;color:var(--ink);border:1.5px dashed var(--ink)}
+.tag-fixture{background:var(--ink);color:#fff}
+h1,h2,h3{margin:0}
+/* gallery */
+.intro{display:grid;grid-template-columns:4fr 8fr;gap:var(--s6);align-items:center;padding-bottom:var(--s6);border-bottom:1px solid var(--rule)}
+.intro h1{font:700 48px/52px var(--cond);letter-spacing:-.01em}
+.intro p{font-size:18px;line-height:28px;color:var(--ink-2);margin:var(--s4) 0 var(--s5)}
+.example{position:relative;border-radius:var(--r2);overflow:hidden;background:var(--surface);outline:1.5px dashed var(--ink);outline-offset:-1.5px;aspect-ratio:3/2}
+.example img{width:100%;height:100%;object-fit:contain;display:block}
+.example .tag{position:absolute;top:12px;left:12px}
+.howline{display:flex;gap:var(--s6);padding:var(--s4) 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.howline span{display:flex;gap:10px;align-items:baseline}
+.howline b.mono{font-size:13px}
+.filters{display:flex;gap:var(--s4);align-items:center;margin:var(--s5) 0;flex-wrap:wrap}
+.search{flex:1 1 280px;min-height:48px;border:1.5px solid var(--rule-strong);border-radius:var(--r1);background:var(--surface);padding:0 14px}
+.cats{display:flex;gap:2px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s6) var(--s5)}
+.gcard{text-decoration:none;display:grid;gap:var(--s3)}
+.gcard .img{position:relative;aspect-ratio:4/3;border-radius:var(--r2);overflow:hidden;background:var(--surface);outline:1.5px dashed var(--ink);outline-offset:-1.5px}
+.gcard .img img{width:100%;height:100%;object-fit:contain}
+.gcard .img .tag{position:absolute;top:10px;left:10px}
+.gcard h3{font:600 20px/26px var(--sans)} .gcard:hover h3{text-decoration:underline}
+.gcard .meta{font-size:14px;line-height:20px;color:var(--ink-3)}
+/* guide workbench */
+.crumbs{display:flex;gap:var(--s3);align-items:baseline;margin-bottom:var(--s3)}
+.gtitle{font:700 36px/40px var(--cond);margin-bottom:var(--s5)}
+.bench{display:grid;grid-template-columns:240px minmax(0,1fr) 300px;gap:var(--s5);align-items:start}
+.steps{position:sticky;top:120px;border-top:2px solid var(--ink)}
+.steps .prog{display:flex;justify-content:space-between;align-items:center;padding:var(--s3) 0}
+.track{height:4px;background:var(--surface-2);margin-bottom:var(--s2)} .track i{display:block;height:100%;background:var(--ink)}
+.srow{display:grid;grid-template-columns:40px 1fr;gap:var(--s2);align-items:baseline;padding:var(--s3) var(--s2) var(--s3) var(--s3);border-top:1px solid var(--rule);cursor:pointer;background:none;border-left:4px solid transparent;border-right:0;border-bottom:0;text-align:left;width:100%;min-height:48px}
+.srow .n{font:500 16px var(--mono);color:var(--ink-3)}
+.srow .t{font-weight:500;color:var(--ink-2)}
+.srow[aria-current=step]{border-left-color:var(--ink)} .srow[aria-current=step] .t,.srow[aria-current=step] .n{color:var(--ink);font-weight:600}
+.srow.done .n{color:var(--ok)}
+.center{display:grid;gap:var(--s4)}
+.media{position:relative;border-radius:var(--r2);overflow:hidden;background:var(--surface)}
+.media.ai{outline:1.5px dashed var(--ink);outline-offset:-1.5px}
+.media img{display:block;width:100%;height:auto}
+.media.video{background:var(--stage);aspect-ratio:16/9}
+.media .tag{position:absolute;top:12px;left:12px}
+.media .ctrls{position:absolute;left:12px;bottom:12px;display:flex;gap:8px}
+.sq{min-width:44px;height:44px;border:0;border-radius:var(--r1);background:rgba(17,17,16,.85);color:#fff;font-weight:600;padding:0 12px;cursor:pointer}
+.sq.on{background:var(--signal-ink)}
+.nav-arrows{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none;padding:0 8px}
+.nav-arrows button{pointer-events:auto;width:44px;height:64px;border:0;border-radius:var(--r1);background:rgba(17,17,16,.55);color:#fff;font-size:22px;cursor:pointer}
+.nav-arrows button:disabled{opacity:.25}
+.stepnav{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s4);align-items:start;padding-top:var(--s2)}
+.bignum{font:500 56px/56px var(--mono)}
+.stepnav h2{font:600 28px/34px var(--sans)}
+.lead{font-size:20px;line-height:30px;max-width:38em;margin:var(--s2) 0 0}
+.keypart{display:flex;gap:8px;align-items:center;margin-top:var(--s3);font-size:14px}
+.keypart i{width:12px;height:12px;background:var(--signal)}
+.pn{display:flex;gap:var(--s2)}
+.timeline{display:flex;gap:4px;align-items:center}
+.seg{flex:1;height:44px;display:flex;align-items:center;border:0;background:none;padding:0;cursor:pointer}
+.seg span{display:block;height:12px;width:100%;background:var(--surface-2);border-radius:2px}
+.seg[aria-current=true] span{background:var(--ink)}
+.help{display:grid;gap:var(--s5);position:sticky;top:120px}
+.help section{border-top:1px solid var(--rule);padding-top:var(--s3)}
+.help h3{font:600 16px/20px var(--sans);margin-bottom:var(--s2)}
+.quote{border-left:3px solid var(--ink);padding-left:var(--s3);font-size:18px;line-height:28px}
+.quote .mono{display:block;margin-top:var(--s2);color:var(--ink-3)}
+.stuck{background:var(--ink);color:#fff;border-radius:var(--r2);padding:var(--s4);display:grid;gap:var(--s3)}
+.stuck h3{font:600 22px/28px var(--sans);margin:0} .stuck p{margin:0;color:#cfcbc2}
+.ask{display:grid;gap:var(--s2)}
+.ask input{min-height:44px;border:1.5px solid var(--rule-strong);border-radius:var(--r1);padding:0 12px;background:var(--surface)}
+.answer{background:var(--surface-2);border-left:4px solid var(--ink-3);padding:var(--s3);font-size:15px;line-height:22px}
+.answer .mono{display:block;color:var(--ink-3);margin-bottom:4px}
+.audio-row{display:flex;gap:8px}
+/* dialog / verdicts */
+.verdicts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s5)}
+.v{border-radius:var(--r2);padding:var(--s4);border-left:4px solid}
+.v h3{font:600 20px/26px var(--sans);margin-bottom:var(--s2)}
+.v.ok{background:var(--ok-soft);border-color:var(--ok)} .v.ok h3{color:var(--ok)}
+.v.diff{background:var(--signal-soft);border-color:var(--differs)} .v.diff h3{color:var(--differs)}
+.v.unc{background:var(--unclear-soft);border-color:var(--unclear)} .v.unc h3{color:var(--unclear)}
+.vphoto{position:relative;border-radius:var(--r2);overflow:hidden;background:var(--stage);aspect-ratio:4/3;margin-bottom:var(--s3);display:grid;place-items:center;color:#888}
+.vphoto .box{position:absolute;border:3px solid var(--signal);background:rgba(255,90,31,.12)}
+/* create */
+.narrow{max-width:720px}
+.drop{border:1.5px solid var(--rule-strong);border-radius:var(--r2);background:var(--surface);padding:var(--s6);display:grid;gap:var(--s2);justify-items:center;text-align:center}
+.drop .big{font:600 20px var(--sans)}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin-top:var(--s5)}
+.fl{display:grid;gap:6px;font:600 14px/20px var(--sans)}
+.fl input,.fl select{min-height:48px;border:1.5px solid var(--rule-strong);border-radius:var(--r1);padding:0 12px;background:var(--surface);font-weight:400}
+.hint{font-weight:400;color:var(--ink-3)}
+.ctable{width:100%;border-collapse:collapse;margin:var(--s5) 0}
+.ctable th,.ctable td{text-align:left;padding:var(--s3) var(--s2);border-top:1px solid var(--rule);vertical-align:top}
+.ctable th{font:500 13px var(--mono);text-transform:uppercase;color:var(--ink-3)}
+.check{display:flex;gap:12px;align-items:center;min-height:48px} .check input{width:24px;height:24px;accent-color:var(--ink)}
+details.how{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:var(--s3) 0}
+details.how summary{font-weight:600;cursor:pointer}
+/* review grid */
+.ticks{list-style:none;padding:0;margin:0 0 var(--s4);display:flex;gap:var(--s5);flex-wrap:wrap}
+.ticks li{display:flex;gap:8px;align-items:center} .ticks .k{font:500 13px var(--mono);color:var(--ok)}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s5)}
+.rc{display:grid;gap:var(--s2)}
+.rc .rimg{position:relative;border-radius:var(--r2);overflow:hidden;background:var(--surface);outline:1.5px dashed var(--ink);outline-offset:-1.5px;aspect-ratio:3/2}
+.rc .rimg img{width:100%;height:100%;object-fit:contain}
+.rc .rimg .tag{position:absolute;top:8px;left:8px}
+.rc .shim{position:absolute;inset:0;background:linear-gradient(100deg,var(--surface-2) 30%,#f6f5f1 50%,var(--surface-2) 70%);background-size:200% 100%;animation:sh 1.4s linear infinite;display:grid;place-items:center;color:var(--ink-3);font:500 13px var(--mono)}
+@keyframes sh{to{background-position:-200% 0}}
+.rc input,.rc textarea{width:100%;border:1.5px solid var(--rule-strong);border-radius:var(--r1);padding:10px 12px;background:var(--surface)}
+.rc input{font-weight:600}
+.rc textarea{min-height:72px;resize:vertical}
+/* phone */
+.phones{display:flex;gap:var(--s6);flex-wrap:wrap;justify-content:center}
+.phone{width:390px;height:780px;border:10px solid #222;border-radius:36px;overflow:hidden;background:var(--paper);position:relative;display:flex;flex-direction:column}
+.phone .ph-head{position:sticky;top:0;background:var(--paper);box-shadow:0 1px 0 var(--rule);padding:10px 16px;display:grid;gap:8px}
+.phone .ph-row{display:flex;justify-content:space-between;align-items:center}
+.phone .segs{display:flex;gap:3px} .phone .segs i{flex:1;height:4px;background:var(--surface-2)} .phone .segs i.on{background:var(--ink)}
+.phone .ph-body{overflow:auto;flex:1;padding-bottom:140px}
+.phone .ph-media{background:var(--surface);border-bottom:1.5px dashed var(--ink);position:relative} .phone .ph-media img{width:100%;display:block}
+.phone .ph-media .tag{position:absolute;top:8px;left:8px}
+.phone .ph-text{padding:16px}
+.phone .ph-text .bignum{font-size:40px;line-height:40px}
+.phone .ph-text h2{font:600 22px/28px var(--sans);margin:4px 0}
+.phone .ph-text .lead{font-size:18px;line-height:28px}
+.phone .ph-bar{position:absolute;left:0;right:0;bottom:0;background:var(--paper);box-shadow:0 -1px 0 var(--rule);padding:10px 16px 14px;display:grid;gap:8px}
+.phone .ph-bar .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.phone .ph-bar .btn{min-height:48px}
+/* changes table */
+.changes{width:100%;border-collapse:collapse}
+.changes th,.changes td{text-align:left;padding:10px 8px;border-top:1px solid var(--rule);vertical-align:top;font-size:15px;line-height:22px}
+.changes th{font:500 13px var(--mono);text-transform:uppercase;color:var(--ink-3)}
+.changes td:first-child{font:500 13px var(--mono);white-space:nowrap}
+.sec{font:700 28px/32px var(--cond);margin:var(--s6) 0 var(--s3)}
+.swatches{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 24px}
+.sw{display:grid;gap:4px;font:500 12px var(--mono)} .sw i{width:72px;height:44px;border-radius:4px;border:1px solid var(--rule)}
+@media (max-width:1023px){.bench{grid-template-columns:1fr}.steps,.help{position:static}.intro{grid-template-columns:1fr}.grid,.rgrid,.verdicts{grid-template-columns:1fr 1fr}}
+@media (max-width:599px){.grid,.rgrid,.verdicts,.form{grid-template-columns:1fr}.intro h1{font-size:34px;line-height:38px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="mock-bar" role="toolbar" aria-label="Mockup screens">
+  <b>Showhow UI v2 · proposal</b>
+  <button data-s="changes" aria-pressed="true">What changes</button>
+  <button data-s="gallery">Gallery</button>
+  <button data-s="guide">Guide (voice) · workbench</button>
+  <button data-s="video">Guide (video) + I'm stuck</button>
+  <button data-s="create">Create</button>
+  <button data-s="review">Review (live progress)</button>
+  <button data-s="phone">Phone</button>
+  <span class="mock-note">Mockup only · real guide data · ←/→ change step</span>
+</div>
+
+<header class="top"><div class="top-in">
+  <a class="logo" href="#"><i aria-hidden="true"></i>Showhow</a>
+  <nav class="tabs" aria-label="Main"><a class="tab" href="#" aria-current="page">Guides</a><a class="tab" href="#">Create</a></nav>
+</div></header>
+
+<!-- ============ WHAT CHANGES ============ -->
+<section class="screen on wrap" id="s-changes">
+  <h1 style="font:700 36px/40px var(--cond)">What would change</h1>
+  <p class="muted" style="max-width:60em">Direction: <b>“Workshop manual”</b> from <code>docs/UI-AUDIT.md</code>. A good printed instruction sheet: neutral paper, near-black ink, hairline rules instead of floating cards, big mono step numbers. <b>Safety orange appears only for what SAM found and for “I’m stuck”</b>, so when you see it, it means “look here”. Dashed edges mean “made by AI”. Use the tabs above to see each screen with your real dishwasher and pasta guides.</p>
+  <h2 class="sec">Colours</h2>
+  <div class="swatches" id="swatches"></div>
+  <h2 class="sec">Every change</h2>
+  <table class="changes">
+    <thead><tr><th>ID</th><th>Change</th><th>Why</th><th>Where you see it</th></tr></thead>
+    <tbody>
+      <tr><td>F13</td><td>3-column <b>workbench</b>: steps left · picture + instruction centre · help right (read aloud, creator tip, I’m stuck, ask)</td><td>Everything for the current step in one view, no scrolling</td><td>Guide tabs</td></tr>
+      <tr><td>F12</td><td><b>Prev / Next</b> on the picture (arrows) and right under the title; keyboard ←/→; phone gets a sticky bottom bar</td><td>Next was below the fold</td><td>Guide, Phone</td></tr>
+      <tr><td>F11</td><td>Pictures keep <b>their own shape</b>: no letterbox bands, no cropping anywhere (gallery, review, verdicts)</td><td>Images looked cut off</td><td>Gallery, Guide, Review</td></tr>
+      <tr><td>F13+</td><td>New <b>“Ask about this step”</b>: a typed question, answered only from this guide’s own steps (Muse Spark, same topic rules, daily cap); says so when the guide doesn’t cover it</td><td>Gives voice guides something interactive, since they have no photo check</td><td>Guide (voice)</td></tr>
+      <tr><td>T19-1</td><td>Fonts → IBM Plex Sans / Condensed / Mono; one type scale (13·14·16·18·20·22·28·36·48·56), no half-pixel sizes</td><td>16 sizes, Bricolage = template look; slashed zeros were noisy</td><td>Everywhere</td></tr>
+      <tr><td>T19-2</td><td>Colours → neutral paper + ink; green removed; orange reserved; all text ≥4.5:1</td><td>Beige+green+orange template; 2 contrast failures</td><td>Everywhere</td></tr>
+      <tr><td>T19-3</td><td>No pills (radius 0/4/8 only), no boxed cards; hairline rules + whitespace</td><td>9 pill shapes, 15 identical boxes</td><td>Everywhere</td></tr>
+      <tr><td>T19-4</td><td>Guide hierarchy: 56px mono step number, 20px instruction beside the picture, key part as an inline marker, tip as a ruled quote, solid (not “marching ants”) SAM outline</td><td>The instruction was the least visible text</td><td>Guide</td></tr>
+      <tr><td>T19-5</td><td>Gallery intro: one sentence + a real example frame instead of the 3 “how it works” cards and the highlighter</td><td>Generic hero pattern</td><td>Gallery</td></tr>
+      <tr><td>T19-6</td><td>Provenance tags in mono: <span class="mono tag tag-ai">Illustration by AI</span> with a dashed edge on AI images; real frames only carry a timecode tag</td><td>Real vs AI readable at a glance</td><td>All images</td></tr>
+      <tr><td>T19-7</td><td>Every touch target ≥44px (timeline, tabs, back link), checkbox rows 48px</td><td>Several were 28–40px</td><td>Everywhere</td></tr>
+      <tr><td>T19-8</td><td>Icons only where they mean something (camera, mic, play); consent becomes a ruled Who / What / Keeps table</td><td>An icon in every button reads as template</td><td>Create, I’m stuck</td></tr>
+      <tr><td>T19-9</td><td>Create: the drop zone / recorder first, then the fields; Film / Talk as text tabs</td><td>The main input was buried under fields</td><td>Create</td></tr>
+      <tr><td>T19-10</td><td>Copy: plain verbs in progress (“Finding the steps in what you said”), model names in one “How it works” section</td><td>Model names everywhere felt like a spec sheet</td><td>Review, footer</td></tr>
+      <tr><td>F9/F10</td><td>Already built: live progress ticks + grid review. Restyled here</td><td>Done in part 3</td><td>Review</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section class="screen wrap" id="s-gallery">
+  <div class="intro">
+    <div><h1>Follow along.<br>Get unstuck.</h1>
+      <p>Step-by-step guides from real people’s know-how, filmed or spoken. Stuck on a step of a video guide? Show it a photo and it points at what’s different.</p>
+      <a class="btn btn-ink" href="#">Create a guide</a></div>
+    <div class="example"><img id="ex-img" alt="Example step with the key part circled"><span class="mono tag tag-ai">Illustration by AI</span></div>
+  </div>
+  <div class="howline"><span><b class="mono">1</b> Watch one step at a time</span><span><b class="mono">2</b> Stuck? Snap a photo</span><span><b class="mono">3</b> See what’s different, circled on your photo</span></div>
+  <div class="filters"><input class="search" placeholder="Search guides" aria-label="Search guides"><div class="cats" role="group" aria-label="Category"><button class="tab" aria-pressed="true">All</button><button class="tab">Kitchen</button><button class="tab">Cleaning</button><button class="tab">Cooking</button><button class="tab">Gadgets</button><button class="tab">DIY</button></div></div>
+  <div class="grid" id="g-grid"></div>
+</section>
+
+<!-- ============ GUIDE (VOICE) ============ -->
+<section class="screen wrap" id="s-guide">
+  <div class="crumbs"><a href="#" class="muted">← All guides</a><span class="mono muted">Talked through by <span id="g-creator"></span> · illustrated by AI</span></div>
+  <h1 class="gtitle" id="g-title"></h1>
+  <div class="bench">
+    <nav class="steps" aria-label="Steps"><div class="prog"><span class="mono" id="g-prog"></span><span class="mono muted">←/→</span></div><div class="track"><i id="g-track"></i></div><div id="g-steps"></div></nav>
+    <div class="center">
+      <div class="media ai"><img id="g-img" alt=""><span class="mono tag tag-ai">Illustration by AI</span>
+        <div class="nav-arrows"><button id="g-prev2" aria-label="Previous step">‹</button><button id="g-next2" aria-label="Next step">›</button></div>
+        <div class="ctrls"><button class="sq on" id="g-part" aria-pressed="true">Show part</button></div></div>
+      <div class="stepnav"><span class="bignum" id="g-num"></span><div><h2 id="g-h"></h2><p class="lead" id="g-lead"></p><div class="keypart"><i aria-hidden="true"></i><span>Key part: <b id="g-kp"></b></span></div></div>
+        <div class="pn"><button class="btn btn-line" id="g-prev">Back</button><button class="btn btn-ink" id="g-next">Next step</button></div></div>
+    </div>
+    <aside class="help" aria-label="Help with this step">
+      <section><h3>Listen</h3><div class="audio-row"><button class="btn btn-line">▶ Read aloud</button></div></section>
+      <section id="g-tipsec"><h3>Creator’s tip</h3><p class="quote"><span id="g-tip"></span><span class="mono">In their words · transcribed</span></p></section>
+      <section><h3>Ask about this step</h3><div class="ask"><input value="Do I need to rinse the plates first?" aria-label="Your question"><button class="btn btn-ink">Ask</button>
+        <p class="answer"><span class="mono">From this guide · step 1</span>No. The creator says you don’t need to rinse them properly, just scrape the big bits off into the bin.</p></div></section>
+      <section><p class="muted" style="font-size:14px;line-height:20px;margin:0">The photo check (“I’m stuck”) is for video guides, which have real frames to compare with.</p></section>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ GUIDE (VIDEO) + STUCK ============ -->
+<section class="screen wrap" id="s-video">
+  <div class="crumbs"><a href="#" class="muted">← All guides</a><span class="mono muted">Made from Talha’s video · 4 steps</span></div>
+  <h1 class="gtitle">Change the air purifier’s water <span class="mono tag tag-fixture" style="vertical-align:middle">Mockup</span></h1>
+  <div class="bench">
+    <nav class="steps" aria-label="Steps"><div class="prog"><span class="mono">Step 2 / 4</span></div><div class="track"><i style="width:25%"></i></div>
+      <button class="srow done"><span class="n">✓</span><span class="t">Release the tank</span></button>
+      <button class="srow" aria-current="step"><span class="n">2</span><span class="t">Slide the tank out</span></button>
+      <button class="srow"><span class="n">3</span><span class="t">Fill to the MAX line</span></button>
+      <button class="srow"><span class="n">4</span><span class="t">Put it back until it clicks</span></button></nav>
+    <div class="center">
+      <div class="media video"><div style="position:absolute;inset:0;display:grid;place-items:center;color:#777;font:500 13px var(--mono)">YOUR VIDEO PLAYS THIS STEP ON A LOOP</div>
+        <div style="position:absolute;left:52%;top:28%;width:26%;height:46%;border:3px solid var(--signal);background:rgba(255,90,31,.12)"></div>
+        <span class="mono tag">00:31–00:58 · Talha’s video</span>
+        <div class="nav-arrows"><button aria-label="Previous step">‹</button><button aria-label="Next step">›</button></div>
+        <div class="ctrls"><button class="sq" aria-label="Pause">❚❚</button><button class="sq on">Show part</button><button class="sq">Enhanced by AI</button></div></div>
+      <div class="timeline" aria-label="Full video"><span class="mono muted" style="margin-right:8px">Video</span><button class="seg" style="flex:2"><span></span></button><button class="seg" aria-current="true" style="flex:3"><span></span></button><button class="seg" style="flex:3"><span></span></button><button class="seg" style="flex:2"><span></span></button></div>
+      <div class="stepnav"><span class="bignum">2</span><div><h2>Slide the tank out</h2><p class="lead">Hold the tank with both hands and slide it straight out.</p><div class="keypart"><i aria-hidden="true"></i><span>Key part: <b>water tank</b></span></div></div><div class="pn"><button class="btn btn-line">Back</button><button class="btn btn-ink">Next step</button></div></div>
+    </div>
+    <aside class="help"><section><h3>Listen</h3><button class="btn btn-line">▶ Read aloud</button></section>
+      <div class="stuck"><h3>Stuck on this step?</h3><p>Snap your work. It’s compared with Talha’s real frame for step 2.</p><button class="btn btn-signal">📷 I’m stuck</button></div>
+      <section><h3>Ask about this step</h3><div class="ask"><input placeholder="Type a question" aria-label="Your question"><button class="btn btn-ink">Ask</button></div></section></aside>
+  </div>
+  <h2 class="sec">The three possible answers to “I’m stuck”</h2>
+  <div class="verdicts">
+    <div><div class="vphoto">your photo</div><div class="v ok"><h3>Looks like the creator’s step</h3><p style="margin:0">Your tank is out and matches step 2.</p></div></div>
+    <div><div class="vphoto">your photo<span class="box" style="left:30%;top:25%;width:40%;height:45%"></span></div><div class="v diff"><h3>Something’s different</h3><p style="margin:0"><b>Water tank</b>: still clipped in; press the latch first.</p></div></div>
+    <div><div class="vphoto">your photo (blurry)</div><div class="v unc"><h3>Photo unclear</h3><p style="margin:0">Take a closer, well-lit photo of the tank.</p></div></div>
+  </div>
+</section>
+
+<!-- ============ CREATE ============ -->
+<section class="screen wrap narrow" id="s-create">
+  <h1 style="font:700 36px/40px var(--cond);margin-bottom:8px">Share how you do it</h1>
+  <div class="tabs" style="margin:0 0 24px"><button class="tab" aria-pressed="true">Film it</button><button class="tab">Talk it through</button></div>
+  <div class="drop"><span style="font-size:32px" aria-hidden="true">⬆</span><span class="big">Choose a video</span><span class="muted">Up to 3 minutes. Talk while you work: your words become the steps.</span><button class="btn btn-ink">Choose file</button></div>
+  <div class="form">
+    <label class="fl">Guide title <span class="hint">Optional: AI writes it from your narration</span><input placeholder="Leave blank"></label>
+    <label class="fl">Category<select><option>Let AI choose</option><option>Kitchen</option><option>Cleaning</option></select></label>
+    <label class="fl">Your name<span class="hint">Shown on your guide</span><input></label>
+    <label class="fl">Access code <span class="hint">Creating uses paid AI credits. Judges: see the submission notes.</span><input type="password"></label>
+  </div>
+  <details class="how" style="margin-top:24px"><summary>How we check your video before anything is published</summary><ol><li>Your words become text.</li><li>Hard topic rules (our own code).</li><li>An AI review for public suitability.</li><li>One still per step is checked too.</li><li>You review every step before publishing.</li></ol></details>
+  <table class="ctable"><thead><tr><th>Who</th><th>What happens</th><th>Keeps it?</th></tr></thead><tbody>
+    <tr><td><b>This device</b></td><td>Shrinks your video to 720p; the original never leaves</td><td><span class="mono">Local</span></td></tr>
+    <tr><td><b>Showhow</b></td><td>Stores the small video + one still per step; public once you publish; audio deleted after transcription</td><td><span class="mono">Stores</span></td></tr>
+    <tr><td><b>Meta AI models</b></td><td>Transcribe, find steps, outline parts (response storage off)</td><td><span class="mono">Processes</span></td></tr></tbody></table>
+  <label class="check"><input type="checkbox"> I agree, and the video shows nothing private</label>
+  <label class="check"><input type="checkbox"> I’m 18 or older</label>
+  <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-ink">Prepare and upload</button></div>
+</section>
+
+<!-- ============ REVIEW ============ -->
+<section class="screen wrap" id="s-review">
+  <h1 style="font:700 36px/40px var(--cond);margin-bottom:16px">Review your steps</h1>
+  <ul class="ticks"><li><span class="k">✓</span>Heard you</li><li><span class="k">✓</span>Topic rules passed</li><li><span class="k">✓</span>Review passed</li><li><span class="k">✓</span>7 steps written</li><li><span class="mono muted">Drawing 4 of 7…</span></li></ul>
+  <div class="form" style="margin:0 0 24px"><label class="fl">Title<input id="r-title"></label><label class="fl">Category<select><option>Kitchen</option></select></label></div>
+  <div class="rgrid" id="r-grid"></div>
+  <div style="display:flex;justify-content:space-between;margin-top:24px"><button class="btn btn-line">Redraw all illustrations</button><button class="btn btn-ink">Publish guide</button></div>
+</section>
+
+<!-- ============ PHONE ============ -->
+<section class="screen wrap" id="s-phone">
+  <div class="phones">
+    <div class="phone"><div class="ph-head"><div class="ph-row"><a class="muted" href="#">← Guides</a><span class="mono" id="p-prog"></span><button class="btn btn-line" style="min-height:36px;padding:6px 10px">All steps</button></div><div class="segs" id="p-segs"></div></div>
+      <div class="ph-body"><div class="ph-media"><img id="p-img" alt=""><span class="mono tag tag-ai">Illustration by AI</span></div>
+        <div class="ph-text"><span class="bignum" id="p-num"></span><h2 id="p-h"></h2><p class="lead" id="p-lead"></p><div class="keypart"><i></i><span>Key part: <b id="p-kp"></b></span></div></div></div>
+      <div class="ph-bar"><button class="btn btn-line">Help: read aloud · ask</button><div class="row"><button class="btn btn-line" id="p-prev">Back</button><button class="btn btn-ink" id="p-next">Next step</button></div></div></div>
+  </div>
+</section>
+
+<script>
+const DATA = [{"id": "f0d67934-3ffb-4d36-a9ba-f2d711b03e88", "title": "Dishwasher Dishes Steps", "category": "Kitchen", "creator": "Tal", "steps": [{"t": "Scrape Food Off Plates", "i": "Scrape the food off your plates into the bin. You don't need to rinse them properly, just get the big bits off.", "k": "plates", "tip": "Honestly that's the step everyone skips", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/0-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/0.mp3"}, {"t": "Load Bottom Rack", "i": "Start with the bottom rack. Put plates in the slots at the back all facing the middle and big pots and pans along the sides face down.", "k": "bottom rack", "tip": "so the water can reach them", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/1-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/1.mp3"}, {"t": "Load Top Rack Upside Down", "i": "Put cups, glasses and bowls on the top rack upside down. Leave a little gap between them.", "k": "cups", "tip": "otherwise they just don't get washed", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/2-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/2.mp3"}, {"t": "Sort Cutlery in Basket", "i": "Put cutlery in the basket with forks and spoons handle down but knives handle up.", "k": "cutlery", "tip": "you don't want to grab one by the blade", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/3-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/3.mp3"}, {"t": "Spin Spray Arm Clear", "i": "Before you close it, give the spray arm a little spin with your hand. If it hits a pan handle, move the pan.", "k": "spray arm", "tip": "That's usually why things come out dirty", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/4-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/4.mp3"}, {"t": "Add Detergent and Rinse Aid", "i": "Pop one tablet into the little compartment on the door and click the lid shut. Check the rinse aid too and top it up if the light's on.", "k": "detergent tablet", "tip": null, "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/5-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/5.mp3"}, {"t": "Start Cycle Unload Bottom First", "i": "Close the door until it clicks, pick the normal or eco program and press start. When it's done, empty the bottom rack first.", "k": "door", "tip": "so water from the top doesn't drip all over your clean plates", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/6-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/f0d67934-3ffb-4d36-a9ba-f2d711b03e88/6.mp3"}]}, {"id": "4fd78823-625b-45c6-b395-87829417a101", "title": "Fast pasta", "category": "Kitchen", "creator": "Tal", "steps": [{"t": "Gather pasta ingredients", "i": "You'll need pasta, a couple of garlic cloves, olive oil, oil, a tin of chopped tomatoes, salt, and some cheese if you've got it.", "k": "pasta ingredients", "tip": null, "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/0-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/0.mp3"}, {"t": "Boil salted water", "i": "Fill a big pot with water, add a good pinch of salt, and bring it to a boil while slicing the garlic nice and thin.", "k": "big pot", "tip": "Don't skip the salt", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/1-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/1.mp3"}, {"t": "Add pasta to boiling water", "i": "When the water's boiling, add the pasta and give it a stir so it doesn't stick. Set a timer for about a minute less than the packet says.", "k": "pasta", "tip": "Set a timer for about a minute less than the packet says.", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/2-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/2.mp3"}, {"t": "Cook garlic tomato sauce", "i": "Warm a splash of olive oil on medium heat, add the garlic and let it go just golden, not brown. Pour in the tomatoes with a pinch of salt and let it bubble away for a few minutes.", "k": "pan", "tip": "Not brown.", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/3-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/3.mp3"}, {"t": "Reserve water and toss pasta", "i": "Before you drain the pasta, scoop out a mug of the cooking water. Drain the pasta, tip it into the sauce, add a splash of that water, and toss it for a minute until it looks glossy.", "k": "cooking water", "tip": "this is the secret honestly.", "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/4-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/4.mp3"}, {"t": "Add cheese and season", "i": "Turn off the heat, grate over some cheese, and taste it. Add a bit more salt if it needs it.", "k": "cheese", "tip": null, "img": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/5-ai.jpg", "audio": "https://tbruclocjvvlxvwdbqnu.supabase.co/storage/v1/object/public/media/4fd78823-625b-45c6-b395-87829417a101/5.mp3"}]}];
+const G = DATA.find(g => g.title.toLowerCase().includes('dish')) ?? DATA[0];
+const focus = u => u ? u.replace(/-ai\.jpg$/, '-ai-focus.jpg') : '';
+let i = 0, showPart = true;
+const $ = id => document.getElementById(id);
+// swatches
+const sw = [['--paper','page'],['--surface','surface'],['--ink','ink / brand'],['--ink-3','meta text'],['--rule','hairline'],['--signal','SAM outline only'],['--signal-ink','I’m stuck'],['--ok','match'],['--differs','differs'],['--unclear','unclear'],['--focus','focus ring']];
+$('swatches').innerHTML = sw.map(([v, l]) => `<div class="sw"><i style="background:var(${v})"></i>${l}</div>`).join('');
+// gallery
+$('ex-img').src = focus(G.steps[2]?.img || G.steps[0].img);
+$('g-grid').innerHTML = [...DATA, ...DATA.slice(0, 1)].map((g, n) => `<a class="gcard" href="#"><div class="img"><img src="${g.steps[n === 2 ? 4 : 0].img}" alt=""><span class="mono tag tag-ai">Illustration by AI</span></div><h3>${n === 2 ? 'Example: a third guide' : g.title}</h3><span class="meta">${g.creator} · ${g.category} · ${g.steps.length} steps</span></a>`).join('');
+// guide + phone render
+function render() {
+  const s = G.steps[i], n = G.steps.length;
+  $('g-title').textContent = G.title; $('g-creator').textContent = G.creator;
+  $('g-prog').textContent = `Step ${i + 1} / ${n}`; $('g-track').style.width = `${(i / n) * 100}%`;
+  $('g-steps').innerHTML = G.steps.map((x, k) => `<button class="srow ${k < i ? 'done' : ''}" ${k === i ? 'aria-current="step"' : ''} data-k="${k}"><span class="n">${k < i ? '✓' : k + 1}</span><span class="t">${x.t}</span></button>`).join('');
+  $('g-img').src = showPart ? focus(s.img) : s.img; $('g-img').alt = `Illustration of step ${i + 1}`;
+  $('g-num').textContent = i + 1; $('g-h').textContent = s.t; $('g-lead').textContent = s.i; $('g-kp').textContent = s.k;
+  $('g-tipsec').style.display = s.tip ? '' : 'none'; $('g-tip').textContent = s.tip ? `“${s.tip}”` : '';
+  for (const id of ['g-prev', 'g-prev2', 'p-prev']) $(id).disabled = i === 0;
+  for (const id of ['g-next', 'g-next2', 'p-next']) $(id).disabled = i === n - 1;
+  $('p-prog').textContent = `Step ${i + 1} / ${n}`; $('p-segs').innerHTML = G.steps.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
+  $('p-img').src = focus(s.img); $('p-num').textContent = i + 1; $('p-h').textContent = s.t; $('p-lead').textContent = s.i; $('p-kp').textContent = s.k;
+}
+const go = d => { i = Math.max(0, Math.min(G.steps.length - 1, i + d)); render() };
+for (const id of ['g-prev', 'g-prev2', 'p-prev']) $(id).onclick = () => go(-1);
+for (const id of ['g-next', 'g-next2', 'p-next']) $(id).onclick = () => go(1);
+$('g-steps').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { i = +b.dataset.k; render() } };
+$('g-part').onclick = () => { showPart = !showPart; $('g-part').classList.toggle('on', showPart); $('g-part').setAttribute('aria-pressed', showPart); render() };
+addEventListener('keydown', e => { if (e.target.closest('input,textarea,select')) return; if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1) });
+render();
+// review grid (live progress mock: 4 drawn, rest drawing)
+$('r-title').value = G.title;
+$('r-grid').innerHTML = G.steps.map((s, k) => `<div class="rc"><div class="rimg">${k < 4 ? `<img src="${focus(s.img)}" alt="">` : `<span class="shim">Drawing…</span>`}<span class="mono tag tag-ai">${k + 1} · Illustration by AI</span></div><input value="${s.t.replace(/"/g, '&quot;')}" aria-label="Step ${k + 1} title"><textarea aria-label="Step ${k + 1} instruction">${s.i}</textarea><label class="check" style="min-height:32px"><input type="checkbox" checked style="width:20px;height:20px"> Keep this illustration</label></div>`).join('');
+// screen switcher
+document.querySelector('.mock-bar').onclick = e => { const b = e.target.closest('button[data-s]'); if (!b) return; document.querySelectorAll('.mock-bar button').forEach(x => x.setAttribute('aria-pressed', x === b)); document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === 's-' + b.dataset.s)); scrollTo(0, 0) };
+const start = new URLSearchParams(location.search).get('s') || location.hash.slice(1);
+if (start) document.querySelector(`.mock-bar button[data-s="${start}"]`)?.click();
+</script>
+</body>
+</html>
