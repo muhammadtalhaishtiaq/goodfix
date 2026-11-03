@@ -8,7 +8,7 @@ type Rpc = (fn: string, args: { p_kind: string; p_limit: number }) => PromiseLik
 const LIMITS = {
   check: { total: 300, perIp: 40 },   // "I'm stuck" checks
   ask: { total: 400, perIp: 30 },     // "Ask about this step": one text-only Muse Spark call each
-  image: { total: 400, perIp: 100 },  // Muse Image runs (≈ $0.01 each): a voice guide is 5–9, so a creator can make ~10 guides with redraws
+  image: { total: 1000, perIp: 1000 }, // Muse Image runs (≈ $0.01 each, ≤ $10/day). Needs an access code, so no separate per-IP squeeze; the total is a runaway guard
   build: { total: 40, perIp: 12 },    // video or voice guides built (a creator filming 3–4 guides with retries fits)
 } as const
 
