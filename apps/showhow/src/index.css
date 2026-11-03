@@ -157,7 +157,8 @@ details.how p { margin: var(--s2) 0 0 }
 .ticks { list-style: none; padding: 0; margin: 0; display: flex; gap: var(--s2) var(--s5); flex-wrap: wrap }
 .ticks li { display: flex; gap: 8px; align-items: center; color: var(--ink-3) }
 .ticks li.done, .ticks li.run { color: var(--ink) }
-.ticks .k { font: 500 13px var(--mono); width: 1ch }
+.ticks .k { font: 500 13px var(--mono); width: 14px; text-align: center }
+.ticks .spin { width: 14px; height: 14px }
 .ticks li.done .k { color: var(--ok) }
 .rgrid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5) }
 .rc { display: grid; gap: var(--s2); align-content: start }
