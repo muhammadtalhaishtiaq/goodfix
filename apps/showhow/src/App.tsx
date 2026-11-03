@@ -4,7 +4,6 @@ import { GalleryView } from './app/GalleryView'
 import { GuideView } from './app/GuideView'
 import { PrivacyView } from './app/PrivacyView'
 import { VoiceCreate } from './app/VoiceCreate'
-import { Icon } from './components/Icon'
 import { fetchGuide } from './lib/data'
 import type { Guide } from './lib/types'
 
@@ -28,13 +27,10 @@ export function App() {
     <>
       <header className="top">
         <div className="top-in">
-          <a className="logo" href="#/">
-            <svg className="logo-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1F5A4C" /><rect x="7" y="8" width="18" height="14" rx="3" fill="none" stroke="#F5F0E6" strokeWidth="2.4" /><path d="M11.5 15.5l3 3 6-6.5" fill="none" stroke="#EE5A17" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 25.5h8" stroke="#F5F0E6" strokeWidth="2.4" strokeLinecap="round" /></svg>
-            Showhow
-          </a>
-          <nav className="nav" aria-label="Main">
-            <a href="#/" aria-current={route.view === '' ? 'page' : undefined}>Gallery</a>
-            <a className="btn btn-primary" href="#/create"><Icon name="plus" /><span className="lbl-sm">Create guide</span></a>
+          <a className="logo" href="#/"><i aria-hidden="true" />Showhow</a>
+          <nav className="tabs" aria-label="Main">
+            <a className="tab" href="#/" aria-current={route.view === '' ? 'page' : undefined}>Guides</a>
+            <a className="tab" href="#/create" aria-current={route.view === 'create' ? 'page' : undefined}>Create</a>
           </nav>
         </div>
       </header>
@@ -45,8 +41,8 @@ export function App() {
           : <GalleryView />}
       </main>
       <footer className="foot">
-        <span>Showhow · Meta Global AI Developer Hackathon prototype · built with Muse Spark, SAM 3.1, Voice Transcribe and Muse Image</span>
-        <a href="#/privacy">Privacy</a>
+        <span>Showhow · hackathon prototype</span>
+        <a href="#/privacy" aria-current={route.view === 'privacy' ? 'page' : undefined}>Privacy and how it works</a>
       </footer>
     </>
   )

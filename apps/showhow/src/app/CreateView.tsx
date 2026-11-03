@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StageTicks } from '../components/StageTicks'
 import { api, apiStream } from '../lib/api'
-import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, WhoKeepsWhat, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import { captureFrame } from '../lib/image'
 import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
@@ -131,39 +131,37 @@ export function CreateView() {
     setPhase(p => (p.name === 'review' ? { ...p, steps: p.steps.map(s => (s.idx === idx ? { ...s, ...patch } : s)) } : p))
 
   return (
-    <div className="c-wrap">
-      <a className="back" href="#/"><Icon name="back" /> Gallery</a>
-      <h1>Turn your video into a guide</h1>
-      <p className="lead">Film yourself doing it once, talking as you go. Showhow splits it into steps in your own words and outlines the key part in each.</p>
+    <div className="narrow">
+      <h1>Share how you do it</h1>
+      <p className="sub">Film yourself doing it once, talking as you go. Showhow splits it into steps in your own words and outlines the key part in each.</p>
       <CreateTabs active="video" />
 
       {phase.name === 'form' && (
-        <div className="panel form-grid">
-          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} code={code} setCode={setCode} source="video" />
-          {canShrink === false && <p className="note warn-note span2"><Icon name="alert" /><span>This browser can’t prepare video on your device. Please use desktop Chrome or Edge.</span></p>}
-          <label className="fl">Your name (shown on the guide)<input className="txt" value={creatorName} maxLength={60} onChange={e => setCreatorName(e.target.value)} /></label>
-
-          <label className="drop span2">
-            <span className="ic"><Icon name="upload" /></span>
-            <b>{file ? file.name : 'Choose a video'}</b>
+        <div className="cform">
+          <label className="drop">
+            <span className="drop-ic"><Icon name="upload" /></span>
+            <b className="big">{file ? file.name : 'Choose a video'}</b>
             <span className="muted">{file ? `${(file.size / 1e6).toFixed(0)} MB${tooBig ? ' · too large (max 500 MB)' : ''}` : 'Up to 3 minutes and 500 MB. Talk while you work: your words become the steps.'}</span>
+            <span className="btn btn-ink" aria-hidden="true">{file ? 'Choose another' : 'Choose file'}</span>
             <input type="file" accept="video/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
           </label>
+          {canShrink === false && <p className="note warn-note">This browser can’t prepare video on your device. Please use desktop Chrome or Edge.</p>}
+
+          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} creatorName={creatorName} setCreatorName={setCreatorName} code={code} setCode={setCode} source="video" />
 
           <HowWeCheck source="video" />
-          <div className="span2 consent">
-            <p><b>Before anything leaves your device</b></p>
-            <ul className="recip">
-              <li><Icon name="film" /><span><b>On this device</b>: your video is shrunk to 720p. The original never leaves your computer.</span><span className="tag">local</span></li>
-              <li><Icon name="server" /><span><b>Showhow (Supabase storage)</b>: the shrunk video and one still per step are stored, public once you publish. The audio copy is deleted after transcription.</span><span className="tag">stores</span></li>
-              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, SAM 3.1</b>: turn your narration into steps and outline the key parts. Sent with Meta’s response storage turned off; Meta’s terms apply.</span><span className="tag">processes</span></li>
-            </ul>
+          <WhoKeepsWhat rows={[
+            { who: 'This device', what: 'Your video is shrunk to 720p. The original never leaves your computer.', keeps: 'Local' },
+            { who: 'Showhow (Supabase storage)', what: 'The shrunk video and one still per step are stored, public once you publish. The audio copy is deleted after transcription.', keeps: 'Stores' },
+            { who: 'Meta Voice Transcribe, Muse Spark, SAM 3.1', what: 'Turn your narration into steps and outline the key parts. Sent with Meta’s response storage turned off; Meta’s terms apply.', keeps: 'Processes' },
+          ]} />
+          <div className="consent">
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this, and the video shows nothing private (faces, documents, addresses).</label>
             <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
             <label className="check"><input type="checkbox" checked={enhance} onChange={e => setEnhance(e.target.checked)} /> Optional: also make a cleaner “Enhanced by AI” still of each step (Meta Muse Image). Learners can always switch back to your real video, and checks always use your real frames.</label>
           </div>
 
-          <div className="actions span2"><span className="sp" /><button className="btn btn-primary" disabled={!ready} onClick={start}>Prepare and upload <Icon name="right" /></button></div>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" disabled={!ready} onClick={start}>Prepare and upload</button></div>
         </div>
       )}
 
@@ -179,44 +177,45 @@ export function CreateView() {
 
       {phase.name === 'building' && (
         <div className="panel">
-          <h2 className="panel-title">Building steps from your narration</h2>
+          <h2>Finding the steps in what you said</h2>
           <StageTicks done={phase.stages} />
           <p className="muted">Usually under a minute.</p>
         </div>
       )}
 
       {phase.name === 'framing' && (
-        <Working text={phase.done < phase.total ? `Taking a still of each step… ${phase.done + 1} of ${phase.total}` : 'Meta SAM 3.1 is outlining the key part in each step…'} />
+        <Working text={phase.done < phase.total ? `Taking a still of each step… ${phase.done + 1} of ${phase.total}` : 'Outlining the key part in each step…'} />
       )}
 
       {phase.name === 'review' && (
-        <div className="panel">
-          <p className="note"><Icon name="check" /><span>{phase.steps.length} steps in your own words. Check them, fix anything, then publish.</span></p>
+        <div className="panel wide">
+          <h2>Review your steps</h2>
+          <p className="note">{phase.steps.length} steps in your own words. Check them, fix anything, then publish.</p>
           <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
-          <ol className="review-grid">
+          <ol className="rgrid">
             {phase.steps.map(s => (
-              <li key={s.idx} className="rcard">
-                <div className="media video-media">
+              <li key={s.idx} className="rc">
+                <div className="rimg">
                   {s.frameUrl ? <img src={s.frameUrl} alt={`Step ${s.idx + 1}, your real frame`} /> : <span className="ph">No still</span>}
                   {s.outline && <OutlineOverlay outline={s.outline} label={s.keyPart} />}
-                  <span className="frame-tag">Step {s.idx + 1} · {s.outline ? `outlined: ${s.keyPart}` : 'no confident outline'}</span>
+                  <span className="mono tag">Step {s.idx + 1} · {s.outline ? `outlined: ${s.keyPart}` : 'no confident outline'}</span>
                 </div>
-                <div className="body">
-                  <label className="fl"><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => editStep(s.idx, { title: e.target.value })} /></label>
-                  <label className="fl"><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => editStep(s.idx, { instruction: e.target.value })} /></label>
-                  <span className="muted">{s.startS.toFixed(0)}–{s.endS.toFixed(0)} s{s.tipQuote ? ` · tip: “${s.tipQuote}”` : ''}</span>
-                  {s.enh !== 'off' && (
-                    <div className="enh">
-                      <div className="enh-media">{s.enh === 'ok' ? <img src={mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)} alt={`Enhanced still of step ${s.idx + 1}`} /> : s.enh === 'drawing' ? <span className="shimmer">Enhancing…</span> : <span className="ph">Not enhanced</span>}</div>
-                      {s.enh === 'ok' && <label className="check"><input type="checkbox" checked={s.keepEnhanced} onChange={e => editStep(s.idx, { keepEnhanced: e.target.checked })} /> Keep “Enhanced by AI”</label>}
-                    </div>
-                  )}
-                </div>
+                <label><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => editStep(s.idx, { title: e.target.value })} /></label>
+                <label><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => editStep(s.idx, { instruction: e.target.value })} /></label>
+                <span className="mono muted">{s.startS.toFixed(0)}–{s.endS.toFixed(0)} s</span>
+                {s.tipQuote && <span className="muted">Tip: “{s.tipQuote}”</span>}
+                {s.enh !== 'off' && (
+                  <div className="enh">
+                    <div className="rimg ai">{s.enh === 'ok' ? <img src={mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)} alt={`Enhanced still of step ${s.idx + 1}`} /> : s.enh === 'drawing' ? <span className="shim">Enhancing…</span> : <span className="ph">Not enhanced</span>}
+                      <span className="mono tag tag-ai">Enhanced by AI</span></div>
+                    {s.enh === 'ok' && <label className="check"><input type="checkbox" checked={s.keepEnhanced} onChange={e => editStep(s.idx, { keepEnhanced: e.target.checked })} /> Keep “Enhanced by AI”</label>}
+                  </div>
+                )}
               </li>
             ))}
           </ol>
           <div className="actions"><span className="sp" />
-            <button className="btn btn-primary" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase, phase.steps, phase.meta)}><Icon name="check" /> Publish guide</button>
+            <button className="btn btn-ink" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase, phase.steps, phase.meta)}>Publish guide</button>
           </div>
         </div>
       )}
@@ -227,15 +226,15 @@ export function CreateView() {
 
       {phase.name === 'stageFailed' && (
         <div className="panel">
-          <p className="note warn-note"><Icon name="alert" /><span>{phase.message}</span></p>
-          <div className="actions"><span className="sp" /><button className="btn btn-primary" onClick={phase.retry}>Try again</button></div>
+          <p className="note warn-note">{phase.message}</p>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={phase.retry}>Try again</button></div>
         </div>
       )}
 
       {phase.name === 'error' && (
         <div className="panel">
-          <p className="note warn-note"><Icon name="alert" /><span>{phase.message}</span></p>
-          <div className="actions"><span className="sp" /><button className="btn btn-primary" onClick={() => setPhase({ name: 'form' })}>Try again</button></div>
+          <p className="note warn-note">{phase.message}</p>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={() => setPhase({ name: 'form' })}>Try again</button></div>
         </div>
       )}
     </div>
@@ -251,13 +250,12 @@ export function Published({ path, title }: { path: string; title: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <div className="panel share">
-      <span className="ok-ic"><Icon name="check" /></span>
       <h2>“{title}” is live</h2>
       <p className="muted">Anyone with the link can follow it, no account needed.</p>
       <div className="linkbox"><code>{url}</code>
-        <button className="btn btn-primary" onClick={() => navigator.clipboard?.writeText(url).then(() => setCopied(true), () => setCopied(false))}><Icon name="link" /> {copied ? 'Copied' : 'Copy'}</button>
+        <button className="btn btn-ink" onClick={() => navigator.clipboard?.writeText(url).then(() => setCopied(true), () => setCopied(false))}>{copied ? 'Copied' : 'Copy link'}</button>
       </div>
-      <div className="actions"><a className="btn btn-ghost" href={path}><Icon name="eye" /> Open as a learner</a><a className="btn btn-ghost" href="#/">Gallery</a></div>
+      <div className="actions"><a className="btn btn-line" href={path}>Open as a learner</a><a className="btn btn-line" href="#/">All guides</a></div>
     </div>
   )
 }

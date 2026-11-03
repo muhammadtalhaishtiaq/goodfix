@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { StageTicks } from '../components/StageTicks'
 import { api, apiStream } from '../lib/api'
-import { GuideFields, HowWeCheck, ReviewMetaEditor, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
+import { GuideFields, HowWeCheck, ReviewMetaEditor, WhoKeepsWhat, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import type { DraftStep } from '../lib/steps'
 import { STYLE_IDS, STYLES, type StyleId } from '../lib/styles'
@@ -92,21 +92,17 @@ export function VoiceCreate() {
   }
 
   return (
-    <div className="c-wrap">
-      <a className="back" href="#/"><Icon name="back" /> Gallery</a>
+    <div className="narrow">
       <h1>Talk it through</h1>
-      <p className="lead">No video? Explain the fix out loud, step by step. Showhow checks it’s a clear, safe how-to, writes the steps in your words, and illustrates each one.</p>
+      <p className="sub">No video? Explain the fix out loud, step by step. Showhow checks it’s a clear, safe how-to, writes the steps in your words, and illustrates each one.</p>
       <CreateTabs active="voice" />
 
       {phase.name === 'form' && (
-        <div className="panel form-grid">
-          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} code={code} setCode={setCode} source="voice" />
-          <label className="fl">Your name (shown on the guide)<input className="txt" value={creatorName} maxLength={60} onChange={e => setCreatorName(e.target.value)} /></label>
+        <div className="cform">
+          <Recorder onAudio={setAudio} />
 
-          <div className="span2"><Recorder onAudio={setAudio} /></div>
-
-          <fieldset className="span2 styles">
-            <legend><b>Illustration style</b> <span className="muted">(every image is labelled “Illustration by AI”)</span></legend>
+          <fieldset className="styles">
+            <legend><b>Illustration style</b> <span className="hint">Every image is labelled “Illustration by AI”</span></legend>
             <div className="style-grid">
               {STYLE_IDS.map(id => (
                 <label key={id} className={`style-opt ${style === id ? 'on' : ''}`}>
@@ -118,24 +114,25 @@ export function VoiceCreate() {
             </div>
           </fieldset>
 
+          <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} creatorName={creatorName} setCreatorName={setCreatorName} code={code} setCode={setCode} source="voice" />
+
           <HowWeCheck source="voice" />
-          <div className="span2 consent">
-            <p><b>Before anything leaves your device</b></p>
-            <ul className="recip">
-              <li><Icon name="server" /><span><b>Showhow</b>: checks the recording in memory. <b>Nothing is stored unless it passes</b> the safety check; the recording itself is never stored.</span><span className="tag">checks</span></li>
-              <li><Icon name="eye" /><span><b>Meta Voice Transcribe, Muse Spark, Muse Image</b>: turn your words into checked steps and illustrations. Sent with Meta’s response storage turned off; Meta’s terms apply.</span><span className="tag">processes</span></li>
-              <li><Icon name="link" /><span><b>Once you publish</b>: the steps and illustrations are public.</span><span className="tag">public</span></li>
-            </ul>
+          <WhoKeepsWhat rows={[
+            { who: 'Showhow', what: <>Checks the recording in memory. <b>Nothing is stored unless it passes</b> the safety check; the recording itself is never stored.</>, keeps: 'Checks' },
+            { who: 'Meta Voice Transcribe, Muse Spark, Muse Image', what: 'Turn your words into checked steps and illustrations. Sent with Meta’s response storage turned off; Meta’s terms apply.', keeps: 'Processes' },
+            { who: 'Once you publish', what: 'The steps and illustrations are public.', keeps: 'Public' },
+          ]} />
+          <div className="consent">
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this.</label>
             <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
           </div>
-          <div className="actions span2"><span className="sp" /><button className="btn btn-primary" disabled={!ready} onClick={start}>Check and build <Icon name="right" /></button></div>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" disabled={!ready} onClick={start}>Check and build</button></div>
         </div>
       )}
 
       {phase.name === 'checking' && (
         <div className="panel">
-          <h2 className="panel-title">Checking your recording</h2>
+          <h2>Checking your recording</h2>
           <StageTicks done={phase.stages} />
           <p className="muted">Nothing is saved unless every check passes.</p>
         </div>
@@ -143,43 +140,42 @@ export function VoiceCreate() {
 
       {phase.name === 'blocked' && (
         <div className="panel">
-          <p className="note warn-note"><Icon name="shield" /><span>{phase.message}</span></p>
-          <div className="actions"><span className="sp" /><button className="btn btn-primary" onClick={() => { setAudio(null); setPhase({ name: 'form' }) }}>Record again</button></div>
+          <p className="note warn-note">{phase.message}</p>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={() => { setAudio(null); setPhase({ name: 'form' }) }}>Record again</button></div>
         </div>
       )}
 
       {phase.name === 'review' && (
-        <div className="panel">
-          <p className="note"><Icon name="check" /><span>Passed our topic check and reads as a clear how-to. AI can be wrong: review each step while the pictures are drawn, then publish.</span></p>
+        <div className="panel wide">
+          <h2>Review your steps</h2>
+          <p className="note">Passed our topic check and reads as a clear how-to. AI can be wrong: review each step while the pictures are drawn, then publish.</p>
           <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
-          <p className="muted" aria-live="polite">
-            {phase.base === 'drawing' ? `Meta Muse Image is drawing the base picture in “${STYLES[style].label}”…`
+          <p className="mono muted" aria-live="polite">
+            {phase.base === 'drawing' ? `Drawing the base picture in “${STYLES[style].label}”…`
               : phase.base === 'failed' ? 'The illustrations couldn’t be drawn right now. You can publish text-only steps or redraw.'
               : `${phase.steps.filter(s => s.img === 'ok').length} of ${phase.steps.length} illustrations ready`}
           </p>
-          <ol className="review-grid">
+          <ol className="rgrid">
             {phase.steps.map(s => (
-              <li key={s.idx} className="rcard">
-                <div className="media">
+              <li key={s.idx} className="rc">
+                <div className="rimg ai">
                   {s.img === 'ok' && s.keep
                     ? <img src={`${mediaUrl(`${phase.guideId}/${s.idx}-ai-focus.jpg`)}?v=${s.v}`} alt={`Illustration of step ${s.idx + 1}`} />
                     : s.img === 'waiting' || s.img === 'drawing'
-                      ? <span className="shimmer">{s.img === 'drawing' ? 'Drawing…' : 'Waiting for the base picture…'}</span>
+                      ? <span className="shim">{s.img === 'drawing' ? 'Drawing…' : 'Waiting for the base picture…'}</span>
                       : <span className="ph">No illustration</span>}
-                  <span className="frame-tag">Step {s.idx + 1} · Illustration by AI</span>
+                  <span className="mono tag tag-ai">{s.idx + 1} · Illustration by AI</span>
                 </div>
-                <div className="body">
-                  <label className="fl"><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => setStep(s.idx, { title: e.target.value })} /></label>
-                  <label className="fl"><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => setStep(s.idx, { instruction: e.target.value })} /></label>
-                  {s.img === 'ok' && <label className="check"><input type="checkbox" checked={s.keep} onChange={e => setStep(s.idx, { keep: e.target.checked })} /> Keep this illustration</label>}
-                </div>
+                <label><span className="sr">Step {s.idx + 1} title</span><input className="txt" value={s.title} maxLength={60} onChange={e => setStep(s.idx, { title: e.target.value })} /></label>
+                <label><span className="sr">Step {s.idx + 1} instruction</span><textarea value={s.instruction} maxLength={300} onChange={e => setStep(s.idx, { instruction: e.target.value })} /></label>
+                {s.img === 'ok' && <label className="check"><input type="checkbox" checked={s.keep} onChange={e => setStep(s.idx, { keep: e.target.checked })} /> Keep this illustration</label>}
               </li>
             ))}
           </ol>
           <div className="actions">
-            <button className="btn btn-ghost" disabled={phase.base === 'drawing' || phase.steps.some(s => s.img === 'drawing')} onClick={() => drawAll(phase.guideId, phase.steps.map(s => s.idx))}>Redraw all illustrations</button>
+            <button className="btn btn-line" disabled={phase.base === 'drawing' || phase.steps.some(s => s.img === 'drawing')} onClick={() => drawAll(phase.guideId, phase.steps.map(s => s.idx))}>Redraw all illustrations</button>
             <span className="sp" />
-            <button className="btn btn-primary" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase)}><Icon name="check" /> Publish guide</button>
+            <button className="btn btn-ink" disabled={!phase.meta.title.trim() || phase.steps.some(s => !s.title.trim() || !s.instruction.trim())} onClick={() => publish(phase)}>Publish guide</button>
           </div>
         </div>
       )}
@@ -188,8 +184,8 @@ export function VoiceCreate() {
       {phase.name === 'published' && <Published path={phase.path} title={phase.title} />}
       {phase.name === 'error' && (
         <div className="panel">
-          <p className="note warn-note"><Icon name="alert" /><span>{phase.message}</span></p>
-          <div className="actions"><span className="sp" /><button className="btn btn-primary" onClick={phase.retry ?? (() => setPhase({ name: 'form' }))}>Try again</button></div>
+          <p className="note warn-note">{phase.message}</p>
+          <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={phase.retry ?? (() => setPhase({ name: 'form' }))}>Try again</button></div>
         </div>
       )}
     </div>
@@ -198,9 +194,9 @@ export function VoiceCreate() {
 
 export function CreateTabs({ active }: { active: 'video' | 'voice' }) {
   return (
-    <div className="chips create-tabs" role="tablist" aria-label="How do you want to share it?">
-      <a className="chip" role="tab" aria-selected={active === 'video'} aria-pressed={active === 'video'} href="#/create"><Icon name="film" /> Film it</a>
-      <a className="chip" role="tab" aria-selected={active === 'voice'} aria-pressed={active === 'voice'} href="#/create/voice"><Icon name="mic" /> Talk it through</a>
+    <div className="tabs create-tabs" role="tablist" aria-label="How do you want to share it?">
+      <a className="tab" role="tab" aria-selected={active === 'video'} href="#/create">Film it</a>
+      <a className="tab" role="tab" aria-selected={active === 'voice'} href="#/create/voice">Talk it through</a>
     </div>
   )
 }
@@ -238,17 +234,18 @@ function Recorder({ onAudio }: { onAudio: (b: Blob | null) => void }) {
   }
 
   return (
-    <div className="recorder">
+    <div className="drop recorder">
+      <b className="big">Record your explanation</b>
       <div className="rec-row">
         {state === 'recording'
           ? <button className="btn btn-signal" onClick={() => rec.current?.stop()}><Icon name="pause" /> Stop ({seconds}s / 120s)</button>
-          : <button className="btn btn-primary" onClick={startRec}><Icon name="mic" /> {state === 'done' ? 'Record again' : 'Start recording'}</button>}
+          : <button className="btn btn-ink" onClick={startRec}><Icon name="mic" /> {state === 'done' ? 'Record again' : 'Start recording'}</button>}
         <span className="muted">or</span>
-        <label className="btn btn-ghost file-btn"><Icon name="upload" /> Upload audio<input type="file" accept="audio/*" onChange={e => { const f = e.target.files?.[0]; if (f) take(f) }} /></label>
+        <label className="btn btn-line file-btn">Upload audio<input type="file" accept="audio/*" onChange={e => { const f = e.target.files?.[0]; if (f) take(f) }} /></label>
       </div>
       {state === 'done' && url && <audio controls src={url} className="rec-audio" />}
       <p className="muted">Up to 2 minutes. Say each step in order, naming the parts: “First, press the latch on the side…”</p>
-      {err && <p className="note warn-note"><Icon name="alert" /><span>{err}</span></p>}
+      {err && <p className="note warn-note">{err}</p>}
     </div>
   )
 }

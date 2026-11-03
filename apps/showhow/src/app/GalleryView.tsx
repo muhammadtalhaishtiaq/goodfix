@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../components/Icon'
+import { OutlineOverlay } from '../components/OutlineOverlay'
 import { CATEGORIES, fetchGuides } from '../lib/data'
-import type { Guide } from '../lib/types'
+import type { Guide, Outline } from '../lib/types'
 
-const initials = (name: string) => name.split(' ').map(w => w[0]).join('')
+type Example = { guide: Guide; idx: number; src: string; ai: boolean; outline: Outline | null }
+
+// The intro shows a real published step: a video frame with the outline SAM returned, else a voice guide's AI illustration.
+function pickExample(guides: Guide[]): Example | null {
+  for (const guide of guides) {
+    const s = guide.steps.find(s => s.keyframeUrl && s.outline)
+    if (s?.keyframeUrl) return { guide, idx: s.idx, src: s.keyframeUrl, ai: false, outline: s.outline }
+  }
+  for (const guide of guides.filter(g => g.kind === 'voice')) {
+    const s = guide.steps.find(s => s.imageUrl)
+    if (s?.imageUrl) return { guide, idx: s.idx, src: s.imageUrl.replace(/-ai\.jpg$/, '-ai-focus.jpg'), ai: true, outline: null }
+  }
+  return null
+}
 
 export function GalleryView() {
   const [cat, setCat] = useState('All')
@@ -14,48 +27,59 @@ export function GalleryView() {
   const needle = q.trim().toLowerCase()
   const guides = (all ?? []).filter(g =>
     (cat === 'All' || g.category === cat) && (!needle || `${g.title} ${g.creatorName} ${g.category}`.toLowerCase().includes(needle)))
+  const ex = pickExample(all ?? [])
 
   return (
     <>
-      <section className="hero">
+      <section className={ex ? 'intro' : 'intro solo'}>
         <div>
-          <h1>Follow along.<br /><em>Get unstuck.</em></h1>
-          <p>Step-by-step guides made from real people’s know-how, filmed or just spoken. Stuck on a step of a video guide? Show it one photo. It checks your work against the creator’s and points at what’s off.</p>
+          <h1>Follow along.<br />Get unstuck.</h1>
+          <p>Step-by-step guides from real people’s know-how, filmed or spoken. Stuck on a step of a video guide? Show it a photo and it points at what’s different.</p>
+          <a className="btn btn-ink" href="#/create">Create a guide</a>
         </div>
-        <ol className="how" aria-label="How it works">
-          <li><span className="n">1</span><div><b>Watch one step at a time</b><span>A short clip of the creator’s video, or an illustration of their words</span></div></li>
-          <li><span className="n">2</span><div><b>Stuck? Snap a photo</b><span>Only when you need it, only the step you’re on</span></div></li>
-          <li><span className="n">3</span><div><b>See what’s different</b><span>The part is outlined on your own photo</span></div></li>
-        </ol>
+        {ex && (
+          <a className="example-link" href={`#/guide/${ex.guide.id}/${ex.idx + 1}`}>
+            <div className={ex.ai ? 'example ai' : 'example'}>
+              <img src={ex.src} alt={`Example: step ${ex.idx + 1} of “${ex.guide.title}”, key part ${ex.ai ? 'circled' : 'outlined'}`} />
+              {ex.outline && <OutlineOverlay outline={ex.outline} label={ex.guide.steps[ex.idx]?.keyPart ?? ''} />}
+              <span className={ex.ai ? 'mono tag tag-ai' : 'mono tag'}>{ex.ai ? 'Illustration by AI' : `${ex.guide.creatorName}’s video · step ${ex.idx + 1}`}</span>
+            </div>
+            <span className="meta">Example: “{ex.guide.title}”, step {ex.idx + 1}</span>
+          </a>
+        )}
       </section>
+      <ol className="howline" aria-label="How it works">
+        <li><b className="mono">1</b> Watch one step at a time</li>
+        <li><b className="mono">2</b> Stuck? Snap a photo</li>
+        <li><b className="mono">3</b> See what’s different, outlined on your photo</li>
+      </ol>
 
       <div className="filters">
-        <label className="search"><Icon name="search" /><span className="sr">Search guides</span>
-          <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search guides: bookcase, printer…" />
-        </label>
-        <div className="chips" role="group" aria-label="Category">
-          {['All', ...CATEGORIES].map(c => <button key={c} className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
+        <input className="search" type="search" aria-label="Search guides" value={q} onChange={e => setQ(e.target.value)} placeholder="Search guides: bookcase, printer…" />
+        <div className="cats" role="group" aria-label="Category">
+          {['All', ...CATEGORIES].map(c => <button key={c} className="tab" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
         </div>
       </div>
 
-      {error ? <p className="empty">{error}</p> : !all ? <p className="working"><span className="spin" aria-hidden="true" /> Loading guides…</p> : guides.length ? (
+      {error ? <p className="note warn-note">{error}</p> : !all ? <p className="working"><span className="spin" aria-hidden="true" /> Loading guides…</p> : guides.length ? (
         <div className="grid">
-          {guides.map(g => (
-            <a key={g.id} className="card" href={`#/guide/${g.id}/1`}>
-              <div className="thumb">
-                {g.steps[0]?.keyframeUrl ? <img src={g.steps[0].keyframeUrl} alt="" loading="lazy" />
-                  : g.steps[0]?.imageUrl ? <img src={g.steps[0].imageUrl} alt="" loading="lazy" />
-                  : g.videoUrl ? <video src={`${g.videoUrl}#t=${g.steps[0]?.startS ?? 0}`} muted playsInline preload="metadata" /> : <span className="ph">{g.title}</span>}
-                <span className="badge"><Icon name="steps" /> {g.steps.length} steps</span>
-                {g.fixture && <span className="fixture-tag on-thumb">TEST FIXTURE</span>}
-                {g.kind === 'voice' && <span className="ai-tag on-thumb">Illustrated by AI</span>}
-              </div>
-              <div className="card-b">
+          {guides.map(g => {
+            const s = g.steps[0]
+            const aiImg = !s?.keyframeUrl && !!s?.imageUrl
+            return (
+              <a key={g.id} className="gcard" href={`#/guide/${g.id}/1`}>
+                <div className={aiImg ? 'img ai' : 'img'}>
+                  {s?.keyframeUrl ? <img src={s.keyframeUrl} alt="" loading="lazy" />
+                    : s?.imageUrl ? <img src={s.imageUrl} alt="" loading="lazy" />
+                    : g.videoUrl ? <video src={`${g.videoUrl}#t=${s?.startS ?? 0}`} muted playsInline preload="metadata" /> : <span className="ph">No picture yet</span>}
+                  {g.fixture && <span className="mono tag tag-fixture">TEST FIXTURE</span>}
+                  {!g.fixture && aiImg && <span className="mono tag tag-ai">Illustration by AI</span>}
+                </div>
                 <h3>{g.title}</h3>
-                <div className="meta"><span className="av" aria-hidden="true">{initials(g.creatorName)}</span>{g.creatorName}<span className="dot" />{g.category}</div>
-              </div>
-            </a>
-          ))}
+                <span className="meta">{g.creatorName} · {g.category} · {g.steps.length} steps</span>
+              </a>
+            )
+          })}
         </div>
       ) : <p className="empty">{all.length ? `No guides match “${q}”.` : 'No guides yet. '}{!all.length && <a href="#/create">Create the first one</a>}</p>}
     </>
