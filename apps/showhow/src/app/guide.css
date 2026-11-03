@@ -1,0 +1,170 @@
+/* Guide page + I'm stuck dialog, from design/ui-v2-mockup.html ("Workshop manual").
+   Scoped under .gv / .sd so it wins over older global rules; tokens come from index.css :root. */
+
+.gv .mono, .sd .mono { font-family: var(--mono); font-weight: 500; font-size: 13px; line-height: 16px; letter-spacing: .04em; text-transform: uppercase }
+.gv .sr, .sd .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+.gv h1, .gv h2, .gv h3, .sd h2, .sd h3 { margin: 0; font-family: var(--sans); letter-spacing: 0 }
+
+/* buttons */
+.gv .btn, .sd .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 12px 20px; border-radius: var(--r1); font: 600 16px/20px var(--sans); border: 1.5px solid transparent; text-decoration: none; transition: background .15s }
+.gv .btn-ink, .sd .btn-ink { background: var(--ink); color: var(--on-ink) }
+.gv .btn-ink:hover:not(:disabled), .sd .btn-ink:hover:not(:disabled) { background: var(--ink-2) }
+.gv .btn-line, .sd .btn-line { background: transparent; border-color: var(--rule-strong); color: var(--ink) }
+.gv .btn-line:hover:not(:disabled), .sd .btn-line:hover:not(:disabled) { background: var(--surface) }
+.gv .btn-signal { background: var(--signal-ink); color: #fff }
+.gv .btn:disabled, .sd .btn:disabled { opacity: .4; cursor: not-allowed }
+.gv .gv-small { min-height: 36px; padding: 6px 10px }
+
+/* tags */
+.gv-tag { display: inline-block; padding: 4px 6px; border-radius: var(--r1); background: rgba(17,17,16,.85); color: #fff }
+.gv-tag-ai { background: #fff; color: var(--ink); border: 1.5px dashed var(--ink) }
+.gv-tag-fixture { background: var(--ink); color: #fff }
+
+/* header */
+.gv-crumbs { display: flex; gap: var(--s3); align-items: baseline; flex-wrap: wrap; margin-bottom: var(--s3) }
+.gv-crumbs a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center }
+.gv-crumbs a:hover { text-decoration: underline }
+.gv .gv-title { font: 700 36px/40px var(--cond); margin-bottom: var(--s5) }
+
+/* F13 workbench: steps | picture + instruction | help */
+.gv-bench { display: grid; grid-template-columns: 240px minmax(0, 1fr) 300px; gap: var(--s5); align-items: start }
+.gv-steps { position: sticky; top: 88px; border-top: 2px solid var(--ink) }
+.gv-prog { display: flex; justify-content: space-between; align-items: center; padding: var(--s3) 0 }
+.gv-track { height: 4px; background: var(--surface-2); margin-bottom: var(--s2) }
+.gv-track i { display: block; height: 100%; background: var(--ink); transition: width .3s }
+.gv-srow { display: grid; grid-template-columns: 40px 1fr; gap: var(--s2); align-items: baseline; width: 100%; min-height: 48px; padding: var(--s3) var(--s2) var(--s3) var(--s3); background: none; border: 0; border-top: 1px solid var(--rule); border-left: 4px solid transparent; text-align: left; cursor: pointer }
+.gv-srow:hover { background: var(--surface) }
+.gv-srow .n { font: 500 16px var(--mono); color: var(--ink-3) }
+.gv-srow .t { font-weight: 500; color: var(--ink-2) }
+.gv-srow .t small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-3) }
+.gv-srow[aria-current=step] { border-left-color: var(--ink) }
+.gv-srow[aria-current=step] .t, .gv-srow[aria-current=step] .n { color: var(--ink); font-weight: 600 }
+.gv-srow.done .n { color: var(--ok) }
+
+.gv-center { display: grid; gap: var(--s4); min-width: 0 }
+
+/* F11: media keeps its own shape. The box shrink-wraps the picture, so no letterbox, no crop,
+   and the outline overlay (inset: 0, viewBox in source pixels) lines up exactly. */
+.gv-media { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; border-radius: var(--r2); overflow: hidden; background: var(--surface) }
+.gv-media.ai { outline: 1.5px dashed var(--ink); outline-offset: -1.5px }
+.gv-media.video { background: var(--stage) }
+.gv-media > img, .gv-media > video { display: block; width: auto; height: auto; max-width: 100%; max-height: 72vh }
+.gv-ph { display: grid; place-items: center; width: min(720px, 80vw); max-width: 100%; aspect-ratio: 16/9; padding: var(--s4); text-align: center; color: var(--ink-3); font: 500 13px var(--mono); background: var(--surface-2) }
+.gv-media.video .gv-ph { background: var(--stage); color: #888 }
+.gv-media > .gv-tag { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 24px) }
+.gv-ctrls { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap }
+.gv-sq { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: var(--r1); background: rgba(17,17,16,.85); color: #fff; font: 600 15px var(--sans); cursor: pointer }
+.gv-sq.on { background: var(--signal-ink) }
+.gv-sq:disabled { opacity: .7; cursor: default }
+.gv-arrows { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 8px; pointer-events: none }
+.gv-arrows button { pointer-events: auto; width: 44px; height: 64px; border: 0; border-radius: var(--r1); background: rgba(17,17,16,.55); color: #fff; font-size: 26px; line-height: 1; cursor: pointer }
+.gv-arrows button:hover:not(:disabled) { background: rgba(17,17,16,.8) }
+.gv-arrows button:disabled { opacity: .25; cursor: default }
+
+.overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none }
+.sam { fill: rgba(255,90,31,.12); stroke: var(--signal); stroke-width: 3; vector-effect: non-scaling-stroke }
+
+.gv-timeline { display: flex; gap: 4px; align-items: center }
+.gv-timeline > .mono { margin-right: var(--s2) }
+.gv-seg { flex: 1; height: 44px; display: flex; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; min-width: 12px }
+.gv-seg span { display: block; width: 100%; height: 12px; border-radius: 2px; background: var(--surface-2) }
+.gv-seg:hover span { background: var(--rule-strong) }
+.gv-seg[aria-current=true] span { background: var(--ink) }
+
+.gv-stepnav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s4); align-items: start; padding-top: var(--s2) }
+.gv-bignum { font: 500 56px/56px var(--mono) }
+.gv .gv-stepnav h2 { font: 600 28px/34px var(--sans) }
+.gv-lead { font-size: 20px; line-height: 30px; max-width: 38em; margin: var(--s2) 0 0 }
+.gv-keypart { display: flex; gap: 8px; align-items: center; margin-top: var(--s3); font-size: 14px }
+.gv-keypart i { width: 12px; height: 12px; flex: none; background: var(--signal) }
+.gv-pn { display: flex; gap: var(--s2) }
+
+/* help column */
+.gv-help { display: grid; gap: var(--s5); position: sticky; top: 88px }
+.gv-help section { border-top: 1px solid var(--rule); padding-top: var(--s3) }
+.gv .gv-help h3 { font: 600 16px/20px var(--sans); margin-bottom: var(--s2) }
+.gv-audio { display: flex; gap: 8px; flex-wrap: wrap }
+.gv-quote { margin: 0; border-left: 3px solid var(--ink); padding-left: var(--s3); font-size: 18px; line-height: 28px }
+.gv-quote .mono { display: block; margin-top: var(--s2); color: var(--ink-3) }
+.gv-stuck { display: grid; gap: var(--s3); padding: var(--s4); border-radius: var(--r2); background: var(--ink); color: #fff }
+.gv .gv-stuck h3 { font: 600 22px/28px var(--sans); margin: 0 }
+.gv-stuck p { margin: 0; color: #cfcbc2 }
+.gv-note { margin: 0; font-size: 14px; line-height: 20px }
+
+/* phone / tablet: steps behind "All steps", sticky Back/Next bar (F12) */
+.gv-phead, .gv-pbar { display: none }
+@media (max-width: 1023px) {
+  .gv-bench { grid-template-columns: minmax(0, 1fr) }
+  .gv-help { position: static; scroll-margin-top: 88px }
+  .gv-phead { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); align-items: center; margin-bottom: var(--s4) }
+  .gv-segs { grid-column: 1 / -1; display: flex; gap: 3px }
+  .gv-segs i { flex: 1; height: 4px; background: var(--surface-2) }
+  .gv-segs i.on { background: var(--ink) }
+  .gv-steps { display: none; position: static }
+  .gv-steps.open { display: block }
+  .gv-steps .gv-prog .muted { display: none }
+  .gv-pn { display: none }
+  .gv-stepnav { grid-template-columns: minmax(0, 1fr) }
+  .gv-pbar { display: grid; gap: 8px; position: sticky; bottom: 0; z-index: 10; margin-top: var(--s5); padding: 10px 0 14px; background: var(--paper); box-shadow: 0 -1px 0 var(--rule) }
+  .gv-pbar .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+  .gv-pbar .btn { min-height: 48px }
+}
+@media (max-width: 599px) {
+  .gv .gv-title { font-size: 28px; line-height: 32px; margin-bottom: var(--s4) }
+  .gv-arrows { display: none }
+  .gv-media > img, .gv-media > video { max-height: 60vh }
+  .gv-bignum { font-size: 40px; line-height: 40px }
+  .gv .gv-stepnav h2 { font-size: 22px; line-height: 28px }
+  .gv-lead { font-size: 18px; line-height: 28px }
+  .gv-crumbs .mono { display: none }
+}
+
+/* I'm stuck dialog */
+.sd.backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 12px; background: rgba(17,17,16,.6) }
+.sd .dialog { width: min(760px, 100%); max-height: calc(100vh - 24px); overflow: auto; background: var(--paper); border-radius: var(--r2); box-shadow: 0 30px 80px -20px rgba(0,0,0,.45) }
+.sd .d-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: var(--s4) var(--s5); border-bottom: 1px solid var(--rule) }
+.sd .d-head h2 { font: 700 26px/30px var(--cond); outline: none }
+.sd .d-body { display: grid; gap: var(--s4); padding: var(--s5) }
+.sd .d-body p { margin: 0 }
+.sd .d-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding: var(--s4) var(--s5); border-top: 1px solid var(--rule) }
+.sd .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; border: 1.5px solid var(--rule-strong); border-radius: var(--r1); background: transparent; cursor: pointer }
+.sd .opt { position: relative; display: grid; gap: 6px; justify-items: start; padding: var(--s5); border: 1.5px solid var(--rule-strong); border-radius: var(--r2); background: var(--surface); cursor: pointer }
+.sd .opt:hover, .sd .opt:focus-within { border-color: var(--ink) }
+.sd .opt b { font-size: 18px }
+.sd .opt span { color: var(--ink-3); font-size: 15px }
+.sd .opt .ic { color: var(--ink) }
+.sd .opt input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer }
+.sd .fl { display: grid; gap: 6px; font: 600 14px/20px var(--sans) }
+.sd textarea { width: 100%; min-height: 72px; padding: 10px 12px; border: 1.5px solid var(--rule-strong); border-radius: var(--r1); background: var(--surface); font-weight: 400; resize: vertical }
+.sd .review { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); align-items: start }
+.sd .rv { margin: 0 }
+.sd .rv .im { display: grid; place-items: center; border-radius: var(--r2); overflow: hidden; background: var(--surface-2); min-height: 120px }
+.sd .rv .im img { display: block; max-width: 100%; max-height: 300px; width: auto; height: auto }
+.sd .rv figcaption { padding-top: var(--s2); font-size: 14px; line-height: 20px; color: var(--ink-3) }
+.sd .rv figcaption b { color: var(--ink) }
+.sd-who { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 22px }
+.sd-who th, .sd-who td { padding: var(--s3) var(--s2); border-top: 1px solid var(--rule); text-align: left; vertical-align: top }
+.sd-who thead th { font: 500 13px var(--mono); text-transform: uppercase; color: var(--ink-3) }
+.sd-who tbody th { font-weight: 600 }
+.sd .note { margin: 0; padding: var(--s3); border-left: 4px solid var(--ink-3); background: var(--surface-2); font-size: 14px; line-height: 20px; color: var(--ink-2) }
+.sd .check { display: flex; gap: 12px; align-items: center; min-height: 48px; font-weight: 600; cursor: pointer }
+.sd .check input { width: 24px; height: 24px; margin: 0; accent-color: var(--ink) }
+.sd .working { display: flex; gap: 12px; align-items: center }
+.sd .spin { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--ink); animation: gv-spin .9s linear infinite }
+@keyframes gv-spin { to { transform: rotate(360deg) } }
+.sd-fixture { display: inline-block; justify-self: start; padding: 4px 6px; border-radius: var(--r1); background: var(--ink); color: #fff }
+
+/* verdicts: match / differs / unclear */
+.sd .verdict { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--s4); align-items: start }
+.sd .v-photo { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; border-radius: var(--r2); overflow: hidden; background: var(--stage) }
+.sd .v-photo img { display: block; max-width: 100%; max-height: 60vh; width: auto; height: auto }
+.sd .v-card { display: grid; gap: var(--s2); padding: var(--s4); border-radius: var(--r2); border-left: 4px solid }
+.sd .v-card h3 { font: 600 20px/26px var(--sans) }
+.sd .v-card.ok { background: var(--ok-soft); border-color: var(--ok) }
+.sd .v-card.ok h3 { color: var(--ok) }
+.sd .v-card.diff { background: var(--signal-soft); border-color: var(--differs) }
+.sd .v-card.diff h3 { color: var(--differs) }
+.sd .v-card.unc { background: var(--unclear-soft); border-color: var(--unclear) }
+.sd .v-card.unc h3 { color: var(--unclear) }
+.sd .checks { display: grid; gap: 6px; margin: 0; padding-left: 20px; font-size: 15px }
+@media (max-width: 767px) { .sd .verdict, .sd .review { grid-template-columns: 1fr } }
