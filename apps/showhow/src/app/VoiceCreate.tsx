@@ -21,7 +21,7 @@ type Phase =
   | { name: 'form' }
   | { name: 'checking'; stages: string[] }
   | { name: 'blocked'; message: string; stages: string[] }
-  | { name: 'review'; guideId: string; steps: ReviewStep[]; meta: ReviewMeta; base: 'drawing' | 'ok' | 'failed' }
+  | { name: 'review'; guideId: string; steps: ReviewStep[]; meta: ReviewMeta; base: 'drawing' | 'ok' | 'failed'; why?: string }
   | { name: 'publishing' }
   | { name: 'published'; path: string; title: string }
   | { name: 'error'; message: string; retry?: () => void }
@@ -87,11 +87,11 @@ export function VoiceCreate() {
 
   // Base picture once, then every step in parallel; each card fills in as its image arrives.
   async function drawAll(guideId: string, idxs: number[]) {
-    setPhase(p => (p.name === 'review' ? { ...p, base: 'drawing', steps: p.steps.map(s => ({ ...s, img: 'waiting' })) } : p))
+    setPhase(p => (p.name === 'review' ? { ...p, base: 'drawing', why: undefined, steps: p.steps.map(s => ({ ...s, img: 'waiting' })) } : p))
     try {
       await api('voice-images', { guideId }, key())
-    } catch {
-      setPhase(p => (p.name === 'review' ? { ...p, base: 'failed', steps: p.steps.map(s => ({ ...s, img: 'failed', keep: false })) } : p))
+    } catch (e) {
+      setPhase(p => (p.name === 'review' ? { ...p, base: 'failed', why: message(e), steps: p.steps.map(s => ({ ...s, img: 'failed', keep: false })) } : p))
       return
     }
     setPhase(p => (p.name === 'review' ? { ...p, base: 'ok' } : p))
@@ -100,8 +100,9 @@ export function VoiceCreate() {
       try {
         const r = await api<{ ok: boolean; outline: Outline | null }>('voice-images', { guideId, idx }, key())
         setStep(idx, { img: r.ok ? 'ok' : 'failed', keep: r.ok, v: Date.now(), outline: r.outline })
-      } catch {
+      } catch (e) { // e.g. the daily limit: say why instead of a silent "No illustration"
         setStep(idx, { img: 'failed', keep: false })
+        setPhase(p => (p.name === 'review' ? { ...p, why: message(e) } : p))
       }
     }))
   }
@@ -184,6 +185,7 @@ export function VoiceCreate() {
               : phase.base === 'failed' ? 'The illustrations couldn’t be drawn right now. You can publish text-only steps or redraw.'
               : `${phase.steps.filter(s => s.img === 'ok').length} of ${phase.steps.length} illustrations ready`}
           </p>
+          {phase.why && <p className="note warn-note" role="alert">Some illustrations failed: {phase.why}</p>}
           <ol className="rgrid">
             {phase.steps.map(s => (
               <li key={s.idx} className="rc">

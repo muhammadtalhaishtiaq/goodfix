@@ -146,3 +146,7 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 - **Highlight = SAM 3.1 on the generated picture**, drawn by our overlay (same as video); no match → no outline, toggle says "No outline for this step". The AI-drawn `-ai-focus.jpg` circle is no longer made for voice guides (enhanced video stills keep theirs). Halves Muse Image calls per step. Image cap now counted after the guide/step lookups.
 - **Instant checks on the device (no sending):** on file pick, voice recordings are converted locally and checked for length (8 s–2 min), request size and speech level; videos for picture + sound tracks, 500 MB and 3 min. Problems show in plain words and keep the button disabled. Server checks are unchanged and still need the button (Talha, same day).
 - **Style prompts** reworded (realistic: documentary photo in a lived-in home, daylight, 35 mm). Samples in `public/styles/` are unchanged.
+
+## 2026-11-03 — Image cap raised; image failures say why
+
+- Live: three voice guides in a row hit the per-IP image cap (20/day) and every step showed a silent "No illustration"; Redraw hit it again (Vercel logs: `voice-images` 429). Image cap is now **400/day total, 100 per IP** (≈ $0.01 per image, so ≤ $4/day; a voice guide is 5–9 images). The review screen now shows the server's reason ("Some illustrations failed: Today’s demo limit is reached…") instead of failing silently.
