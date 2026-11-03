@@ -150,3 +150,7 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 ## 2026-11-03 — Image cap raised; image failures say why
 
 - Live: three voice guides in a row hit the per-IP image cap (20/day) and every step showed a silent "No illustration"; Redraw hit it again (Vercel logs: `voice-images` 429). Image cap is now **1000/day total (per-IP limit also 1000, i.e. none in practice; Talha, for the demo — image calls already need an access code)**; first raised to 400/100 the same day (≈ $0.01 per image, so ≤ $4/day; a voice guide is 5–9 images). The review screen now shows the server's reason ("Some illustrations failed: Today’s demo limit is reached…") instead of failing silently.
+
+## 2026-11-03 — Picture briefs become a shot list
+
+- Talha: the briefs were too thin. `picture` is now 3–4 sentences (~60–100 words): shot size + camera angle; every object with colour, material and size; the key part (named as `key_part`, so SAM can find it) large near the centre with what the hands do; background + light matching `setting`. Over-long briefs are trimmed to 700 characters, never rejected (a long brief must not fail the guide). Applies to new voice guides only; existing drafts keep their briefs (Redraw reuses them).

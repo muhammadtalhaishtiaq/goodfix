@@ -35,3 +35,10 @@ test('validateSteps passes the picture fields through when present', () => {
   expect(r).toMatchObject({ ok: true, pictureMode: 'scene', setting: 'a room' })
   if (r.ok) expect(r.steps.map(s => s.picture)).toEqual(['a chair', undefined])
 })
+
+test('a very long picture brief is trimmed, never rejected', () => {
+  const turns = [{ startMs: 0, endMs: 1000, transcript: 'a' }, { startMs: 1000, endMs: 2000, transcript: 'b' }]
+  const base = { title: 't', instruction: 'i', tip_quote: '', key_part: 'k', sam_noun: 'k' }
+  const r = validateSteps({ steps: [{ ...base, first_turn: 0, last_turn: 0, picture: 'x'.repeat(2000) }, { ...base, first_turn: 1, last_turn: 1 }] }, turns)
+  expect(r.ok && r.steps[0].picture?.length).toBe(700)
+})

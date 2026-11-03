@@ -18,7 +18,7 @@ export const StepsSchema = z.object({
     tip_quote: z.string().max(200),
     key_part: z.string().min(1).max(60),
     sam_noun: z.string().min(1).max(40),
-    picture: z.string().max(300).optional(),
+    picture: z.string().optional(), // trimmed below: a long picture brief must never fail the whole guide
   })).min(2).max(8),
 })
 
@@ -44,7 +44,8 @@ export function stepsPrompt(turns: Turn[], source: 'video' | 'voice' = 'video'):
 const PICTURE_RULES = [
   'picture_mode: "object" if every step handles the same single object (a device, a piece of furniture); "scene" if the steps happen around a person or place (a routine, a habit, cooking, studying).',
   'setting: one sentence describing the place and light shared by all pictures, e.g. "a tidy living room with a reading chair, warm afternoon daylight".',
-  'picture: for each step, one or two sentences describing a single still photo of the moment the step is done: what is visible and where. Describe only what IS in the frame; never mention things the creator says to avoid, remove, or not do (for "put the phone in another room", show an empty side table and a closed door). People: only hands and forearms entering from the frame edge, or a person seen from behind; never a face. No text, labels or numbers in the picture. This is only a picture description: add no instructions or advice.',
+  'picture: for each step, 3-4 specific sentences (about 60-100 words) describing ONE still photo of the moment the step is being done, like a shot list for a photographer: (1) the shot: close-up, medium or wide, and the camera angle (eye level, over the shoulder, top-down); (2) every object in frame with its colour, material and rough size (e.g. "a black rubber wiper blade with a silver metal frame"); (3) the key part, named exactly as in key_part, large and clearly visible near the centre, and what the hands are doing to it right now; (4) the background and light, matching setting.',
+  'Describe only what IS in the frame; never mention things the creator says to avoid, remove or not do (for "put the phone in another room", show an empty side table and a closed door). People: only hands and forearms entering from the frame edge, or a person seen from behind or below the shoulders; never a face. No text, labels or numbers in the picture. This is only a picture description: add no instructions or advice.',
 ]
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
@@ -78,7 +79,7 @@ export function validateSteps(raw: unknown, turns: Turn[]): StepsResult {
         endS: turns[s.last_turn].endMs / 1000,
         keyPart: s.key_part,
         samNoun: s.sam_noun,
-        ...(s.picture?.trim() ? { picture: s.picture.trim() } : {}),
+        ...(s.picture?.trim() ? { picture: s.picture.trim().slice(0, 700) } : {}),
       }
     }),
   }
