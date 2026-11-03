@@ -257,3 +257,8 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 
 - `ndjson()` in `api/_lib/http.ts`; `/api/steps` + `/api/voice-guides` stream `transcribed → topic_rules → reviewed → steps → done/error`; the dev bridge pipes streamed bodies. `voice-images` split into base mode + per-step mode; `enhance` per step. Client: `apiStream`, `StageTicks`, voice review opens immediately with shimmering cards that fill in, video review grid with per-step enhance. Tests rewritten (stage order asserted via a `settle()` helper; base-anchored step edits; caps on every image call). 151/151.
 - **Live (dev bridge):** dishwasher test audio → events at 18.1 s (transcribed, topic rules), 26.1 s (reviewed), 62.6 s (7 steps), done 63.1 s. Base image 19.1 s; 7 step images in parallel, each arriving individually between 25.3 s and 45.4 s. Test guide removed.
+
+## 2026-11-02 — UI v2 approved; docs for Ask, deploy and demo
+
+- Talha approved `design/ui-v2-mockup.html` (commit 5cb1ba7) as the UI reference, superseding `design/showhow-prototype.html`, and approved "Ask about this step" (decision 2026-11-02). F11–F13 and F13+ marked in progress; T19 refreshed, T20 added in `TASKS.md`.
+- Docs only: PRD/ARCHITECTURE specify `/api/ask` and the 3-column workbench; new `DEPLOY.md` (T13 checklist) and `DEMO-SCRIPT.md` (draft). No code, deploy or recording happened in this step. A red-team review of the demo script is still to run (with T14).

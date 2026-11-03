@@ -1,6 +1,6 @@
 # Showhow Plan and Tasks
 
-**Updated:** 2026-11-01 · **Deadline:** 2026-11-04 21:00 ET (target submit ~15:00 ET)
+**Updated:** 2026-11-02 · **Deadline:** 2026-11-04 21:00 ET (target submit ~15:00 ET)
 Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) · Decisions: [`DECISIONS.md`](DECISIONS.md)
 
 **Rules.** A task is `[x]` only when its **Verify** step has passed and is logged in `HACKATHON-LOG.md`. Each task is one `/build` run: test first where there's logic, then lint, typecheck, test and build, then commit. **Docs are updated in the same commit as the change** (PRD, ARCHITECTURE, TASKS, DECISIONS as relevant).
@@ -9,7 +9,7 @@ Spec: [`PRD.md`](PRD.md) · Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) �
 
 | Done ✅ | In progress 🔨 | Next ⏭ | Waiting on Talha 📥 |
 |---|---|---|---|
-| T1 foundation · T2 UI (fixtures) · T3 database + RLS · T4 API + CI · T17a image-consistency spike · live checks of all Meta APIs + Wit.ai · end-to-end doc consistency review | T8 upload | T9 → T10 → T11 → T5 (all local) | Videos (air purifier first) · staged photos · Vercel account (Day 4) |
+| T1–T6, T8–T11, T16–T18 (local, live Meta + Supabase) · feedback F2–F10 · UI v2 mockup approved (2026-11-02) | T19 restyle · T20 Ask | T13 deploy (needs OK) → T14 | Footage for T0/T0b/T12 · OK + Vercel account/secrets for T13 |
 
 ## Talha's inputs
 
@@ -78,11 +78,15 @@ flowchart LR
 
 ## Day 5: Wed 2026-11-04 (submit by ~15:00 ET; hard deadline 21:00 ET)
 
-- [ ] **T15 Demo + submission** *(each public step needs Talha's go-ahead)*. Final 3-minute video: problem → video guide from a phone clip → "I'm stuck" catches a mistake → voice guide with illustrations → vision (Ray-Ban Meta live help). README listing work done 2026-10-27 → 11-04. Git history scan, repo public, submit, post on X. **Verify:** every demo claim matches the live build; submission confirmed.
+- [ ] **T15 Demo + submission** *(each public step needs Talha's go-ahead)*. Final 3-minute video per [`DEMO-SCRIPT.md`](DEMO-SCRIPT.md): problem → video guide from a phone clip → workbench → "I'm stuck" catches a mistake → voice guide with illustrations → Ask → safety gate → honest failure → vision. Deploy steps: [`DEPLOY.md`](DEPLOY.md). README listing work done 2026-10-27 → 11-04. Git history scan, repo public, submit, post on X. **Verify:** every demo claim matches the live build; submission confirmed.
+
+## UI v2 + Ask (approved 2026-11-02; Day 3–4)
+
+- [x] **UI v2 mockup approved** (2026-11-02, decision of that date): [`design/ui-v2-mockup.html`](../design/ui-v2-mockup.html) (commit 5cb1ba7) replaces `design/showhow-prototype.html` as the UI reference.
+- [ ] **T19 UI restyle to the approved mockup** (F1, F11, F12, F13). *(In progress 2026-11-02.)* Tokens and component rules from [`UI-AUDIT.md`](UI-AUDIT.md) option A + the mockup's T19-1…T19-10 list; accessibility defects first (`--ink-3` contrast, white-on-orange 3.44:1, touch targets <44 px, `<select>` font, link colour). Viewer becomes the 3-column workbench ≥1200 px (steps · frame + instruction + Prev/Next · help: read aloud, creator tip, I'm stuck, Ask); tablet = step strip + 2 columns; phone = 1 column + sticky Prev · n of N · Next bar + help sheet. Media keep their own aspect ratio (no letterbox, no crop; gallery thumbnails crop centred only). IBM Plex from Google Fonts (CSP already allows `fonts.googleapis.com` / `fonts.gstatic.com`). **Verify:** screenshots at 1440×900, 1024 and 390 px of gallery, a published video guide, a published voice guide, stuck dialog, Create and review; at 1440×900 the instruction, Prev/Next and help panel are visible without scrolling (F12/F13); no image cropped or letterboxed in viewer, review or verdict (F11); ←/→ change steps; contrast pairs ≥4.5:1 and touch targets ≥44 px; no CSP violations with the fonts in `vite preview` using `vercel.json` headers; red-team look at before/after. Only then mark F11–F13 fixed in `FEEDBACK.md`.
+- [ ] **T20 "Ask about this step"** (F13+). *(In progress 2026-11-02.)* `POST /api/ask {guideId, stepIdx, question ≤300}`: public (no access code), published guides only (video and voice), `ask` daily cap (total + per IP, fail closed, checked before any model call) → `blockedTopic` on the question → Muse Spark with fixed prompt, this guide's steps as delimited data, the question as delimited data, `json_schema` `{covered, answer, step_refs[]}` → zod → `blockedTopic` on the answer (hit → "not covered") → reply. Nothing stored; log line has allow-listed fields only. Help-panel UI: input, Ask, answer with the step(s) it came from, honest "This guide doesn't cover that" and error + Retry. Test-first. **Verify:** route tests (fake DB + mocked Spark): unpublished/draft → 404; blocked question → refused with no model call; cap → 429 with no model call; answer citing a step outside the guide or invalid JSON → 502, never shown; blocked answer → not covered; timeout → 504; question with injected instructions stays data. Live: on the dishwasher guide one covered question (answer matches the step text) and one uncovered question ("not covered"), logged with latency.
 
 ## After Talha's testing
-
-- [ ] **T19 UI restyle** (feedback F1). Apply [`UI-AUDIT.md`](UI-AUDIT.md): the "Workshop manual" tokens and component rules, plus its 10-item change list (~half a day). Fix the accessibility defects it found first: `--ink-3` contrast, white-on-orange 3.44:1, touch targets under 44 px, `<select>` font, base link colour. **Verify:** screenshots at 1366/500 px of every screen incl. a published video guide and the stuck dialog; contrast pairs ≥4.5:1; red-team look at the before/after.
 - [ ] Fixes from `FEEDBACK.md` items as they arrive (each updates the linked docs).
 
 ## Stretch (only if everything above is green)
@@ -92,11 +96,12 @@ flowchart LR
 ## Cut order if behind
 
 1. T7 Where am I?
-2. T16 Read aloud
-3. T18 AI-enhanced images
-4. T17 voice guides (if the core loop isn't solid by end of Day 3)
-5. Gallery search/filters
-6. Step editing in review (publish as generated)
-7. Third seed guide
+2. T20 Ask (UI hidden, route not deployed)
+3. T16 Read aloud
+4. T18 AI-enhanced images
+5. T17 voice guides (if the core loop isn't solid by end of Day 3)
+6. Gallery search/filters
+7. Step editing in review (publish as generated)
+8. Third seed guide
 
 **Never cut:** real model calls, consent screens, honest failure states, the "I'm stuck" check on video guides, a deployed live build.

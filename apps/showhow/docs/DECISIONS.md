@@ -112,3 +112,12 @@ A separate `/api/tts` run before publishing would speak text the creator could s
 - **Safety (F2, F4):** both creation paths use the same two layers. Layer 1 adds adult content, hate/harassment and personal details (phone/email/card numbers). Video keyframes get a Muse Spark frame review, and a video can't be published without `frames_ok`. Errors fail closed everywhere.
 - **Metadata (F5, F6):** title is optional and category defaults to "Let AI choose" (17 categories). The review's title and category fill the blanks (`auto_title`, `auto_category`), and the creator edits both in review.
 - **Duplicates (F7):** warn, don't block (Talha: "fix all" = the recommended option).
+
+## 2026-11-02 — UI v2 "Workshop manual" approved; "Ask about this step" added to scope
+
+Talha's decision (2026-11-02), after reviewing [`design/ui-v2-mockup.html`](../design/ui-v2-mockup.html) (commit 5cb1ba7).
+
+- **UI reference:** `design/ui-v2-mockup.html` is the UI going forward. It **supersedes `design/showhow-prototype.html`** as the UI reference; the old prototype stays in `design/` for history. Direction and tokens: [`UI-AUDIT.md`](UI-AUDIT.md) option A (neutral paper, near-black ink, hairline rules, IBM Plex Sans/Condensed/Mono via Google Fonts, safety orange only for SAM outlines and "I'm stuck", dashed edge = made by AI).
+- **Restyle scope (T19):** F11 (media keeps its own aspect ratio, never cropped), F12 (Prev/Next on and under the frame, ←/→ keys, sticky phone bar), F13 (3-column workbench), and the mockup's T19-1…T19-10 change list.
+- **New feature (F13+, T20): "Ask about this step".** `POST /api/ask {guideId, stepIdx, question}`, public (no access code), on published video and voice guides. Muse Spark answers **only from this guide's own steps**; if the guide doesn't cover it, it says so. `blockedTopic` screens the question and the answer; its own daily `ask` cap (total + per IP), failing closed; nothing stored, nothing logged beyond the allow-listed route fields; any model error shows an honest message and a retry. It never gives safety, medical or electrical advice and never adds steps the creator didn't give.
+- The "I'm stuck" photo check is unchanged and still video-only.

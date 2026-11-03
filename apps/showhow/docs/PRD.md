@@ -2,7 +2,7 @@
 
 **Working title:** Showhow (brand open) · **Status:** approved direction 2026-10-30 (see `DECISIONS.md`)
 **Event:** Meta Global AI Developer Hackathon, Indie track, theme "Build for Your World"
-**Deadline:** 2026-11-04 21:00 ET · **Code:** `apps/showhow/` · **Prototype:** [`design/showhow-prototype.html`](../design/showhow-prototype.html)
+**Deadline:** 2026-11-04 21:00 ET · **Code:** `apps/showhow/` · **UI reference:** [`design/ui-v2-mockup.html`](../design/ui-v2-mockup.html) ("Workshop manual", approved 2026-11-02; supersedes `design/showhow-prototype.html`)
 
 ## 1. Objective
 
@@ -21,13 +21,14 @@
 3. As a learner who lost track, I tap **Where am I?**, send a photo, and get told which step I'm on.
 4. As a creator I upload a video (up to 500 MB / 3 min; desktop Chrome or Edge is the supported path for the demo). It becomes an editable step-by-step guide: steps, timestamps, instructions in my own words, key parts outlined. I review, publish, and get a share link.
 5. As a voice creator I record or upload ≤2 min of audio and pick an illustration style from sample previews. The recording is checked against the safety and quality gate **before anything is saved**. If it passes, it becomes steps in my words, each with an AI illustration labelled as one. If it fails, I'm told why (unsafe topic, not a how-to, or missing steps) and nothing is kept.
+6. As a learner on any published guide (video or voice), I type a question about the current step and get an answer drawn **only from this guide's own steps**, or a plain "this guide doesn't cover that" (T20, approved 2026-11-02).
 
 **How each Meta model is used (each has a distinct role):**
 
 | Model | Role |
 |---|---|
 | Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end); voice-guide recordings → text |
-| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps |
+| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps; learner question + this guide's steps → grounded answer (Ask) |
 | SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
 | Muse Image | Voice guides: one illustration per step in the creator's chosen style ("Illustration by AI"). Video guides (optional): enhanced version of each real keyframe ("Enhanced by AI"). Highlight edits circle the key part. |
 
@@ -37,7 +38,8 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 **In (demo build):**
 - Gallery: browse, search, category filter, guide cards. Seeded with 3–4 real guides we film and build **through our own pipeline**.
-- Guide viewer: step list, looping step segment of the creator video (one video file, start/end times), "Show part" outline, full-video segment bar, instruction, creator tip quote, done/next.
+- Guide viewer as a **3-column workbench** (T19, approved 2026-11-02): ≥1200 px = step list left · centre frame (looping step segment of the creator video or illustration, at its own aspect ratio, never cropped) with "Show part", Prev/Next on and under the frame, instruction, segment bar · help panel right (read aloud, creator tip quote, I'm stuck, Ask). Tablet = step strip + 2 columns. Phone = 1 column, sticky Prev · n of N · Next bar, help in a bottom sheet. ←/→ keys change steps.
+- **Ask about this step** (T20): a typed question answered only from this guide's steps; on video and voice guides.
 - **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
 - **Voice guides** (T17, after the core loop): record/upload ≤2 min audio → two-layer safety and quality gate → steps → Muse Image illustrations in one of 6 styles (realistic photo, line art, flat colour, blueprint, watercolour, 3D clay) with stored sample previews → review → publish. The "I'm stuck" photo check is **off** for voice guides (no real reference frame).
 - **AI-enhanced step images for video guides** (T18, optional checkbox at upload): each step's real keyframe → Muse Image edit (same scene, cleaner light, sharper) + highlight edit. Labelled "Enhanced by AI" with a "View original frame" toggle. The creator approves each one. **The "I'm stuck" check always compares against the real frame, never the enhanced one.**
@@ -54,6 +56,12 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 2. Server: Muse Spark gets the learner photo, the creator's keyframe, the step text and the optional question, and returns schema-constrained JSON `{status: "match"|"differs"|"unclear", differences:[{part, sam_noun, note}], message}`. `sam_noun` is a short noun with no spatial words, as SAM expects.
 3. If `differs`: SAM 3.1 runs on the learner photo with `differences[0].sam_noun` and `include_confidence`, returning boxes plus masks in source pixels.
 4. Gate: zero matches, or several matches with no clear winner, or invalid geometry → show the verdict text with "couldn't pinpoint it on your photo", never a guessed outline. The demo draws the **box**; the mask is used only once its mapping to the frame has been verified. `unclear` → ask for a closer, better-lit photo. The photo is not stored.
+
+**Ask about this step** (`POST /api/ask {guideId, stepIdx, question}`, T20, decision 2026-11-02)
+1. Public, no access code; published guides only (video or voice). The question (≤300 chars) is typed text; no photo or audio.
+2. Server: daily `ask` cap (total + per IP, fail closed, before any model call) → `blockedTopic` on the question (hit → refused, no model call) → Muse Spark with a fixed prompt, this guide's steps and the question as delimited data, schema `{covered, answer, step_refs[]}` → zod → `blockedTopic` on the answer (hit → "not covered").
+3. The answer may only restate what the creator said in the steps; uncovered → "This guide doesn't cover that." No new steps, no safety, medical or electrical advice. Invalid output, timeout or error → honest message + retry, never a guessed answer.
+4. Nothing is stored; the log line carries only the allow-listed route fields.
 
 **Creator build** (client-driven, so each server call stays short)
 1. Browser checks the file (video, ≤500 MB, ≤3 min) and checks encoder support at runtime (`canEncode`, not a browser-name guess). It then shrinks the video with Mediabunny/WebCodecs to H.264 720p MP4 at ~1 Mbps (~23 MB for 3 min, hard cap 48 MB) and extracts a 16 kHz mono WAV.
@@ -79,7 +87,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 ## 4. Tech stack
 
-- **Web:** React 19 + TypeScript + Vite 8, plain CSS ported from the prototype tokens. Hash routing is enough for a three-view app (no router dependency).
+- **Web:** React 19 + TypeScript + Vite 8, plain CSS using the UI v2 "Workshop manual" tokens (`UI-AUDIT.md` option A; IBM Plex from Google Fonts). Hash routing is enough for a three-view app (no router dependency).
 - **Video in the browser:** Mediabunny (WebCodecs) for shrinking and WAV extraction; `<video>` + canvas for keyframes.
 - **API:** Vercel serverless functions in `apps/showhow/api/` (Node, TypeScript). The Meta key lives only here.
 - **Data:** Supabase free tier. Postgres for `guides`, `steps`, `usage`; one public-read Storage bucket `media`. Writes happen only from the server with the service role key.
@@ -101,7 +109,7 @@ npm test               # vitest run
 
 ```
 apps/showhow/
-  api/                 flat routes: guides, steps, outlines, publish, check, voice-guides, voice-images, enhance, health (read-aloud runs inside publish)
+  api/                 flat routes: guides, steps, outlines, publish, check, ask, voice-guides, voice-images, enhance, health (read-aloud runs inside publish)
     _lib/              route wrapper, caps, server DB client, Meta calls (not deployed as routes)
   src/
     app/               routing + top-level views (Gallery, Guide, Create)
@@ -110,7 +118,7 @@ apps/showhow/
     fixtures/          TEST FIXTURE data for offline UI work and tests
   supabase/schema.sql  tables, RLS, buckets
   docs/                PRD (this), ARCHITECTURE, TASKS, DECISIONS, HACKATHON-LOG
-  design/              HTML prototypes
+  design/              HTML mockups (ui-v2-mockup.html is the UI reference)
 ```
 
 ## 7. Code style
@@ -160,6 +168,8 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 6. A 3-minute demo video and public repo clearly identify work done 2026-10-27 to 2026-11-04.
 7. (T17) A spoken how-to becomes an illustrated guide whose step images show the same object; a staged harmful or gibberish recording is blocked with a reason and nothing appears in the database or Storage.
 8. (T18) With "Enhance with AI" ticked, each step shows a cleaner image of the same real scene, with the original frame one tap away; checks still use the real frame.
+9. (T19) At 1440×900 the current step's frame, instruction, Prev/Next and help panel are visible without scrolling; no guide image is cropped or letterboxed.
+10. (T20) Ask answers a covered question with the guide's own step text and says plainly when the guide doesn't cover a question; a blocked-topic question is refused before any model call.
 
 ## 11. Open questions (resolved on day 1 unless noted)
 

@@ -1,6 +1,6 @@
 # Showhow Architecture
 
-**Updated:** 2026-10-31 · **Spec:** [`PRD.md`](PRD.md) · **Plan:** [`TASKS.md`](TASKS.md) · **Decisions:** [`DECISIONS.md`](DECISIONS.md)
+**Updated:** 2026-11-02 · **Spec:** [`PRD.md`](PRD.md) · **Plan:** [`TASKS.md`](TASKS.md) · **Decisions:** [`DECISIONS.md`](DECISIONS.md)
 
 This document is the end-to-end technical picture: every component, every flow, every piece of data, and every safety rule. When it and the code disagree, fix one of them in the same commit.
 
@@ -17,13 +17,16 @@ Three ways to **create** a guide, one way to **follow** it:
 | **Voice guide** | ≤2 min of speech, no video | AI illustration per step in a chosen style, highlight circle on the key part | T17 |
 | **Learner** | Follows steps; optionally sends one photo when stuck | Verdict (match / differs / unclear) + box on *their* photo (video guides only) | T5–T6 |
 
-Extras: read a step aloud (Wit.ai, T16), "Where am I?" (T7).
+Extras: read a step aloud (Wit.ai, T16), "Ask about this step" (typed question answered only from the guide's steps, video and voice guides, T20), "Where am I?" (T7).
+
+**Viewer layout (T19, UI v2 approved 2026-11-02, `design/ui-v2-mockup.html`):** ≥1200 px a 3-column workbench: steps · frame (own aspect ratio, never cropped) + instruction + Prev/Next · help panel (read aloud, creator tip, I'm stuck, Ask). Tablet: step strip + 2 columns. Phone: 1 column, sticky Prev · n of N · Next bar, help in a bottom sheet. ←/→ change steps.
 
 ```mermaid
 flowchart LR
   subgraph Browser["Browser (React + Vite)"]
     G[Gallery] --> V[Guide viewer]
     V --> SD[I'm stuck dialog]
+    V --> AK[Ask panel]
     C[Create: video / voice]
     MB[Mediabunny: shrink + WAV]
     KF[canvas: keyframes]
@@ -47,6 +50,7 @@ flowchart LR
   KF -- "signed upload URL (direct)" --> ST
   C --> R
   SD --> R
+  AK --> R
   R --> PG
   R --> ST
   R --> VT & SP & SAM & MI
@@ -66,7 +70,7 @@ flowchart LR
 | **Meta Model API** | Transcribe, understand video/images, segment, generate images | Get media without consent; keep it (`store: false`) |
 | **Wit.ai** | Text-to-speech for step text only (stretch) | Receive any user media |
 
-**Stack:** React 19, TypeScript, Vite 8, plain CSS (prototype tokens), zod 4, Mediabunny 1.65, supabase-js 2, Vitest 5 + Testing Library. Node 22. Free tiers: Vercel Hobby, Supabase. Meta usage is paid from the $150 hackathon credits.
+**Stack:** React 19, TypeScript, Vite 8, plain CSS (UI v2 "Workshop manual" tokens, IBM Plex via Google Fonts), zod 4, Mediabunny 1.65, supabase-js 2, Vitest 5 + Testing Library. Node 22. Free tiers: Vercel Hobby, Supabase. Meta usage is paid from the $150 hackathon credits.
 
 ## 3. Repository layout
 
@@ -161,6 +165,7 @@ Long routes (`/api/steps`, `/api/voice-guides`) stream NDJSON progress events vi
 | `/api/outlines` `{guideId}` | access code | status gate | From `ready`, video only. For each uploaded keyframe (`storage.list`): SAM with `sam_noun` (fallback: last word of `key_part`) → `bestOutline` → save `keyframe_path` + `outline`. Failure returns the guide to `ready` | T10 ✅ |
 | `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, makes read-aloud MP3s from the **final** text (Wit.ai, best effort, T16), then `published`. Returns the share path + read-aloud results | T11 ✅ T16 ✅ |
 | `/api/check` `{guideId, stepIdx, mode:'stuck', photo: base64 JPEG data URL ≤1.5 MB, question?≤300}` | — (public) | `check` | Published video guides only. Load the step's **real keyframe** (never `image_path`) → Spark verdict (`/v1/responses`, 60 s) → zod (invalid → 502) → SAM on the photo if `differs` (SAM failure → verdict without box) → gate. Model error/timeout → 504. Photo held in memory only | T5 ✅ |
+| `/api/ask` `{guideId, stepIdx, question ≤300}` | — (public) | `ask` | Published guides only (video or voice; else 404). Cap first (429, no model call) → `blockedTopic` on the question (refused, no model call) → Spark (`/v1/responses`, fixed prompt, the guide's steps + question as delimited data, `json_schema` `{covered, answer, step_refs[]}`) → zod; `step_refs` outside the guide or invalid JSON → 502 → `blockedTopic` on the answer (hit → `covered:false`). Timeout → 504. Nothing stored | T20 (in progress 2026-11-02) |
 | `/api/voice-guides` raw `audio/wav` body (≤4.2 MB ≈ 2 min; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult as URI-encoded JSON in `x-meta` | access code | `build` | ✅ T17. Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
 | `/api/voice-images` `{guideId[, idx]}` | access code | status gate (base) + `image` cap | Base mode (claimed): base image → `base.jpg`. Step mode (parallel, unclaimed, guide must be `ready`): edit of the base → highlight → `{idx}-ai.jpg` + `-ai-focus.jpg` (F9). Previously: ✅ T17. Base image from `subject` + style → per-step edit **of the base** → highlight edit → `{idx}-ai.jpg` + `-ai-focus.jpg` (a step that fails stays text-only; all fail → 502). Measured live: 44 s for 3 steps |
 | `/api/enhance` `{guideId, idx}` | access code | `image` cap | One step per call, parallel (F9). Previously: ✅ T18. Video only. Per real keyframe: Muse Image edit with `size = sizeLike(jpegSize(frame))` so the shape matches (no reframing) → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the real keyframe is never touched. Per-step failure tolerated; all fail → 502 (guide stays `ready`). Live: 27–32 s for 3 steps |
@@ -253,6 +258,29 @@ sequenceDiagram
 
 Voice guides hide "I'm stuck": they have no real reference frame.
 
+### 7.4 Learner: "Ask about this step" (T20)
+
+```mermaid
+sequenceDiagram
+  actor L as Learner
+  participant B as Browser
+  participant A as /api/ask
+  participant M as Meta
+  L->>B: types a question in the help panel (≤300 chars) · Ask
+  B->>A: guideId + stepIdx + question
+  A->>A: published guide? · caps (ask) · blockedTopic(question)
+  alt blocked / cap / not published
+    A-->>B: refusal or 429/404 (no model call)
+  else ok
+    A->>M: Muse Spark: fixed prompt + this guide's steps + question (delimited data)
+    A->>A: zod {covered, answer, step_refs} · refs inside the guide · blockedTopic(answer)
+    A-->>B: answer + step refs, or "This guide doesn't cover that"
+  end
+  B->>L: answer with the step(s) it came from · errors: honest message + Retry
+```
+
+Nothing from Ask is stored. It works on voice guides too, giving them an interactive helper without a photo check.
+
 ## 8. Meta model calls (all verified live; request shapes in `api/_lib/meta.ts` and the spike scripts)
 
 | Call | Endpoint · model | Input → output | Timeout | Verified |
@@ -261,6 +289,7 @@ Voice guides hide "I'm stuck": they have no real reference frame.
 | Steps | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | video (URL or data URL) + numbered turns → steps by turn index | 150 s (120 s for voice) | 2026-10-30, 15.6 s (data URL) |
 | Verdict | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` (one Spark endpoint everywhere; the spike used `/v1/chat/completions`) | 2 images + step text → `{status, differences[{part, sam_noun, note}], message}` | 60 s | 2026-10-30, 5–9.5 s |
 | Voice review | `POST /v1/responses` · `muse-spark-1.3` | transcript → `{is_howto, complete, safety, category, subject, missing[], reason}` | 45 s | T17 |
+| Ask | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | the guide's steps + question (delimited) → `{covered, answer, step_refs[]}` | set in T20 (≤60 s) | not yet (T20) |
 | Segment | `POST /v1/responses` · `sam-3.1`, `metadata.include_confidence: "true"` | image + one simple noun → `<\|box;x1;y1;x2;y2;w;h;c\|>` tokens | 60 s | 2026-10-30, ~1 s |
 | Illustrate | `POST /v1/images/generations` · `muse-image-1.0` | prompt (+ style) → JPEG, $0.01 | 90 s | 2026-10-31, 10–21 s |
 | Edit / highlight | `POST /v1/images/edits` · `muse-image-1.0`, `images[{image_url}]` | reference + instruction → JPEG, $0.01 | 90 s | 2026-10-31, 8–18 s |
@@ -274,6 +303,7 @@ All Meta calls send `store: false` (Meta stores by default). Prompts are fixed i
 |---|---|
 | Two-layer content check on BOTH creation paths: hard topic rules (incl. adult, hate/harassment, personal details) + Muse Spark review, fail closed; video keyframes get a frame review and publish requires `frames_ok` | `safety.ts`, `/api/steps`, `/api/voice-guides`, `/api/outlines`, `/api/publish` (tested) |
 | Hard topic rules apply to video narration, voice recordings, creator edits at publish, and the check's own answer | `blockedTopic` in `/api/steps`, `/api/voice-guides`, `/api/publish`, `/api/check` (tested) |
+| Ask answers only from this guide's steps; topic rules on the question and the answer; uncovered → says so | `/api/ask` prompt + zod + `blockedTopic` (T20, test-first) |
 | The learner's question is passed as delimited data, never as instructions | `verdictPrompt` (tested) |
 | Instructions come from the creator's words; tips must be verbatim quotes | `stepsPrompt` + `validateSteps` (tested) |
 | Step times come from Transcribe timestamps, not the model | `validateSteps` |
@@ -307,13 +337,14 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Data | Stored? |
 |---|---|
 | Learner photo + question | Never. In memory for one request; sent to Meta with `store:false` |
+| Ask question + answer (T20) | Never. In memory for one request; `store:false` |
 | Voice-guide recording | Never. In memory; transcript kept only as step text if the gate passes |
 | Creator video | Storage, public, life of the guide (creator consented) |
 | Creator WAV | Storage until transcription, then deleted |
 | IP address | Never raw; salted hash inside a daily `usage` counter key |
 | Logs | Route, status, ms, model, request ID only |
 
-**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `image` (voice-images, enhance): 60 total / 20 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
+**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `image` (voice-images, enhance): 60 total / 20 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6; `ask` (T20): its own total + per-IP numbers, set in `caps.ts` when built), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
 
 **Meta Terms:** fixed prompts, allowlisted models, no prompt passthrough (an Integrated Product, not a gateway, §10.1(i)); Standard models only, never Contributor mode; 18+ confirmation on create and on the first check. Public exposure needs a dated decision (Discord question pending).
 
@@ -346,6 +377,9 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Meta timeout / 429 / 5xx | "The checker didn't answer. Try again." Nothing guessed |
 | Voice guide blocked | The reason (unsafe topic / not a how-to / unreadable check); nothing saved; Record again |
 | Voice guide possibly missing a step | Built anyway; review shows "The AI thinks you may have skipped: …" |
+| Ask: the guide doesn't cover the question (or the answer hit a topic rule) | "This guide doesn't cover that." Nothing guessed |
+| Ask: blocked-topic question | Plain refusal; no model call |
+| Ask: Meta timeout / invalid output | "Couldn't get an answer. Try again." + Retry |
 | Muse Image fails or is policy-blocked | Step shows text only, "No illustration"; Regenerate |
 
 ## 13. Environments
