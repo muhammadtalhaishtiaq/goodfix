@@ -122,7 +122,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
 
       <div className="gv-pbar">
         <button className="btn btn-line" onClick={() => helpRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-          {canCheck ? 'Help: I’m stuck · listen' : 'Help: listen · tips'}
+          {canCheck ? 'Help: I’m stuck · ask' : 'Help: listen · ask'}
         </button>
         <div className="row">{backNext}</div>
       </div>
