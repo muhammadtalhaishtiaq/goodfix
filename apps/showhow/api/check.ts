@@ -21,13 +21,13 @@ const noAnswer = () => new HttpError(504, 'The checker didn’t answer. Nothing 
 
 export const POST = route({ name: 'check', body: Body, maxBytes: 2_200_000 }, async ({ body, ip }) => {
   const db = serverDb()
-  await enforceCaps((fn, args) => db.rpc(fn, args), 'check', ipKey(ip))
 
   const { data: g } = await db.from('guides').select('id, kind').eq('id', body.guideId).eq('status', 'published').maybeSingle()
   if (!g) throw new HttpError(404, 'That guide doesn’t exist or isn’t published.')
   if (g.kind !== 'video') throw new HttpError(409, 'This guide has no real photos to compare with.')
   const { data: step } = await db.from('steps').select('title, instruction, keyframe_path').eq('guide_id', g.id).eq('idx', body.stepIdx).maybeSingle()
   if (!step?.keyframe_path) throw new HttpError(409, 'This step has no reference frame to compare with.')
+  await enforceCaps((fn, args) => db.rpc(fn, args), 'check', ipKey(ip)) // after the lookups: refused requests don't spend it
   const reference = db.storage.from('media').getPublicUrl(step.keyframe_path).data.publicUrl
 
   let raw: unknown

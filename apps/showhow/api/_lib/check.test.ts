@@ -4,8 +4,8 @@ import { fakeDb } from './fake-db'
 const ID = '8d0c1c3e-6a5f-4f7e-9b0a-2f6d1f5b7a11'
 let db = fakeDb()
 const meta = { sparkJson: vi.fn(), samText: vi.fn() }
-const caps = { ok: true }
-vi.mock('./db', () => ({ serverDb: () => ({ ...db, rpc: async () => ({ data: caps.ok, error: null }) }) }))
+const caps = { ok: true, n: 0 }
+vi.mock('./db', () => ({ serverDb: () => ({ ...db, rpc: async () => { caps.n++; return { data: caps.ok, error: null } } }) }))
 vi.mock('./meta', () => ({ sparkJson: (...a: unknown[]) => meta.sparkJson(...a), samText: (...a: unknown[]) => meta.samText(...a) }))
 const { POST } = await import('../check')
 
@@ -22,7 +22,7 @@ const diff = [{ part: 'Water tank', sam_noun: 'tank', note: 'not filled to MAX' 
 const box = (c: number) => `<|box;x1=1;y1=2;x2=101;y2=202;w=1600;h=1200;c=${c}|>`
 
 describe('POST /api/check', () => {
-  beforeEach(() => { db = seed(); caps.ok = true; meta.sparkJson.mockReset(); meta.samText.mockReset() })
+  beforeEach(() => { db = seed(); caps.ok = true; caps.n = 0; meta.sparkJson.mockReset(); meta.samText.mockReset() })
 
   test('compares the learner photo with the REAL keyframe only, never the AI image', async () => {
     meta.sparkJson.mockResolvedValue(verdict('match'))
@@ -89,6 +89,7 @@ describe('POST /api/check', () => {
     db = seed({ kind: 'voice' }); expect((await call()).status).toBe(409)
     db = seed({ status: 'ready' }); expect((await call()).status).toBe(404)
     expect(meta.sparkJson).not.toHaveBeenCalled()
+    expect(caps.n).toBe(0) // refused requests never spend the daily cap
   })
   test('rejects anything that is not a JPEG data URL, or too large', async () => {
     expect((await call({ photo: 'https://evil.example/x.jpg' })).status).toBe(400)
