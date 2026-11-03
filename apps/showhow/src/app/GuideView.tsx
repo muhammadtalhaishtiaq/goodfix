@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { AskPanel } from '../components/AskPanel'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StuckDialog } from '../components/StuckDialog'
@@ -109,7 +110,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
             <p>Snap your work. It’s compared with {guide.creatorName}’s real frame for step {stepIdx + 1}.</p>
             <button className="btn btn-signal" onClick={() => setDialog('stuck')}><Icon name="camera" /> I’m stuck</button>
           </div>}
-          {/* ASK_PANEL: <AskPanel guideId={guide.id} stepIdx={i} /> */}
+          <AskPanel guideId={guide.id} stepIdx={stepIdx} />
           {guide.kind === 'voice' && <section><p className="muted gv-note">The photo check (“I’m stuck”) is for video guides, which have real frames to compare with.</p></section>}
         </aside>
       </div>

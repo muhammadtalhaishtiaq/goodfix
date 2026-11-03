@@ -33,7 +33,7 @@ test('arrow keys are clamped at the first and last step', async () => {
 
 test('arrow keys are ignored while typing in a field', async () => {
   const user = userEvent.setup()
-  render(<><input aria-label="Your question" /><GuideView guide={video} stepIdx={1} /></>)
+  render(<GuideView guide={video} stepIdx={1} />)
   await user.click(screen.getByLabelText('Your question'))
   await user.keyboard('{ArrowRight}{ArrowLeft}')
   expect(location.hash).toBe('#/start')
