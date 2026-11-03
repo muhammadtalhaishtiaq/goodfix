@@ -26,12 +26,25 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
   const [errorText, setErrorText] = useState('')
   const [adult, setAdult] = useState(wasAdult) // Meta API Terms: 18+, asked once per session
   const headRef = useRef<HTMLHeadingElement>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
   const step = guide.steps[stepIdx]
 
   useEffect(() => headRef.current?.focus(), [phase])
+  useEffect(() => { // give focus back to whatever opened the dialog ("I'm stuck")
+    const opener = document.activeElement as HTMLElement | null
+    return () => opener?.focus()
+  }, [])
   useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url) }, [photo])
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Tab' || !boxRef.current) return // keep Tab inside the dialog
+      const els = [...boxRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), textarea, select, [tabindex="0"]')]
+      if (!els.length) return
+      const [first, last] = [els[0], els[els.length - 1]]
+      if (e.shiftKey && (document.activeElement === first || !boxRef.current.contains(document.activeElement))) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
   }, [onClose])
@@ -67,7 +80,7 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
 
   return (
     <div className="backdrop sd" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <div className="dialog" ref={boxRef} role="dialog" aria-modal="true" aria-labelledby="dlg-title">
         <div className="d-head">
           <h2 id="dlg-title" ref={headRef} tabIndex={-1}>{titles[phase]}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close"><Icon name="x" /></button>

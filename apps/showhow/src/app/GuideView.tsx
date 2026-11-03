@@ -26,6 +26,11 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
   const go = (idx: number) => { if (idx >= 0 && idx < n) location.hash = `#/guide/${guide.id}/${idx + 1}` }
   const next = () => { setDone(d => new Set(d).add(stepIdx)); go(stepIdx + 1) }
 
+  // Announce step changes to screen readers: focus the step title (skipped on first load).
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const firstRender = useRef(true)
+  useEffect(() => { if (firstRender.current) firstRender.current = false; else titleRef.current?.focus({ preventScroll: true }) }, [stepIdx])
+
   // F12: ←/→ change step, except while typing or with the photo dialog open.
   useEffect(() => {
     if (dialog) return
@@ -93,7 +98,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
           <div className="gv-stepnav">
             <span className="gv-bignum" aria-hidden="true">{stepIdx + 1}</span>
             <div>
-              <h2 id="st-title"><span className="sr">Step {stepIdx + 1} of {n}: </span>{step.title}</h2>
+              <h2 id="st-title" ref={titleRef} tabIndex={-1}><span className="sr">Step {stepIdx + 1} of {n}: </span>{step.title}</h2>
               <p className="gv-lead">{step.instruction}</p>
               <div className="gv-keypart"><i aria-hidden="true" /><span>Key part: <b>{step.keyPart}</b></span></div>
             </div>
@@ -137,7 +142,7 @@ function AiImage({ url, label, showPart, onTogglePart, arrows, extra }: MediaPro
       <span className="mono gv-tag gv-tag-ai">{label}</span>
       {arrows}
       <div className="gv-ctrls">
-        {url && <button className={`gv-sq ${showPart ? 'on' : ''}`} onClick={onTogglePart} aria-pressed={showPart}>Show part</button>}
+        {url && <button className={`gv-sq ${showPart ? 'on' : ''}`} onClick={onTogglePart} aria-pressed={showPart}>AI circle</button>}
         {extra}
       </div>
     </div>

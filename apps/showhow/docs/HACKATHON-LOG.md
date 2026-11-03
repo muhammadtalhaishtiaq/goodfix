@@ -267,3 +267,18 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 
 - Reported by the build agent (coordinator message, 2026-11-02): `POST /api/ask` on the dishwasher guide, step 1 → HTTP 200 in ~8.2 s; the answer came from the creator's own words in the step. Built as: `blockedTopic(question)` (422, no cap counted) → `enforceCaps('ask')` 400 total / 30 per IP → published guide + step (404) → one Spark call, 45 s (504 error, 502 unusable output) → `gateAnswer` → fixed "The creator’s guide doesn’t cover that, so we can’t answer it here." for not covered / no valid step ref / blocked topic. Schema `{answer, covered, stepRefs}`; no DB schema change.
 - Still to log for T20 Verify: an uncovered question on the live route and the route-test list.
+
+## 2026-11-02 — UI v2 merged + red-team milestone review and fixes
+
+- **Merged** (branch `chore/claude-migration`): T19 restyle, F11/F12/F13 guide workbench, T20 Ask, docs. Checked by eye in headless Chrome against the dev server with real published guides (gallery, dishwasher guide, Create) at 1440 px: matches `design/ui-v2-mockup.html`. Not yet seen: a video guide + I'm stuck dialog with real data (no published video guide), phone width with real data, contrast measurement.
+- **Red team** (`hackathon-red-team`, ran 2026-11-02, read-only). Top findings and what we did:
+  1. Cap ordering let one IP over its own limit keep spending the global budget (`caps.ts`) → **fixed**: per-IP counter first; test added.
+  2. Ask showed model prose under "From this guide", so it could add advice the creator never gave or be prompt-injected → **fixed**: Spark now returns only `{covered, stepRefs}`; the learner sees the cited steps' own `instruction`/`tip_quote` from the DB. Injection route test added. Cap now counted only after the guide/step lookup (random ids can't spend it).
+  3. Ask had no disclosure → one line under the panel + a Privacy section.
+  4. "safe how-to" wording (VoiceCreate) → "clear how-to and not a blocked topic"; "safe for a public audience" → "suitable".
+  5. AI-painted circle shared the "Show part" label with SAM outlines → button on AI images now says "AI circle".
+  6. Fixture check returned `match` → now `unclear`.
+  7. Dialog: Tab now stays inside, focus returns to the opener on close; step title gets focus on step change; "All steps" 44 px; no nested `role=alert` in Ask.
+  Still open from the review: T0 real-photo accuracy (demo's "differs" beat never seen live), nothing run on Vercel yet, contrast not measured, deadline may be **20:00 EST** not 21:00 ET (DST ended 2026-11-01; unofficial source — check the official page).
+- **Checks after fixes:** typecheck, lint, 178/178 tests, build: pass.
+- **Live Ask (run 2026-11-02, dev server, dishwasher guide step 1):** "Do I need to rinse the plates first?" → HTTP 200, 7.7 s, `covered:true`, quote = the creator's step-1 instruction + tip verbatim. "What temperature should the water be?" → HTTP 200, 5.6 s, `covered:false` (shows the fixed "doesn't cover that" message).

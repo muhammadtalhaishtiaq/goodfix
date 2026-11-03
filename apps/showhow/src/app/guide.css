@@ -13,7 +13,7 @@
 .gv .btn-line:hover:not(:disabled), .sd .btn-line:hover:not(:disabled) { background: var(--surface) }
 .gv .btn-signal { background: var(--signal-ink); color: #fff }
 .gv .btn:disabled, .sd .btn:disabled { opacity: .4; cursor: not-allowed }
-.gv .gv-small { min-height: 36px; padding: 6px 10px }
+.gv .gv-small { min-height: 44px; padding: 6px 12px }
 
 /* tags */
 .gv-tag { display: inline-block; padding: 4px 6px; border-radius: var(--r1); background: rgba(17,17,16,.85); color: #fff }
@@ -168,3 +168,5 @@
 .sd .v-card.unc h3 { color: var(--unclear) }
 .sd .checks { display: grid; gap: 6px; margin: 0; padding-left: 20px; font-size: 15px }
 @media (max-width: 767px) { .sd .verdict, .sd .review { grid-template-columns: 1fr } }
+
+.gv #st-title:focus { outline: none }

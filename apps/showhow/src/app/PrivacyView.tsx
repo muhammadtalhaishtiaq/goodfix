@@ -10,6 +10,11 @@ export function PrivacyView() {
         <li>The photo is shrunk on your device, sent once to our server and on to Meta’s Muse Spark and SAM 3.1 to compare it with the creator’s step.</li>
         <li><b>It is not stored</b> by us, and we ask Meta not to keep it (<code>store: false</code>). It is not logged.</li>
       </ul>
+      <h2>If you ask about a step</h2>
+      <ul>
+        <li>Your typed question goes to our server and on to Meta’s Muse Spark (<code>store: false</code>), which only picks which of the creator’s steps answer it.</li>
+        <li>You see the creator’s own words from those steps, never AI-written advice. <b>Your question is not stored or logged.</b></li>
+      </ul>
       <h2>If you create a guide from a video</h2>
       <ul>
         <li>Your original video never leaves your device; a smaller 720p copy is uploaded.</li>

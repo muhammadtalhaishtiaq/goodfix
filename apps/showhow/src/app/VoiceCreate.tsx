@@ -94,7 +94,7 @@ export function VoiceCreate() {
   return (
     <div className="narrow">
       <h1>Talk it through</h1>
-      <p className="sub">No video? Explain the fix out loud, step by step. Showhow checks it’s a clear, safe how-to, writes the steps in your words, and illustrates each one.</p>
+      <p className="sub">No video? Explain the fix out loud, step by step. Showhow checks it’s a clear how-to and not a blocked topic, writes the steps in your words, and illustrates each one.</p>
       <CreateTabs active="voice" />
 
       {phase.name === 'form' && (
@@ -118,7 +118,7 @@ export function VoiceCreate() {
 
           <HowWeCheck source="voice" />
           <WhoKeepsWhat rows={[
-            { who: 'Showhow', what: <>Checks the recording in memory. <b>Nothing is stored unless it passes</b> the safety check; the recording itself is never stored.</>, keeps: 'Checks' },
+            { who: 'Showhow', what: <>Checks the recording in memory. <b>Nothing is stored unless it passes</b> both checks; the recording itself is never stored.</>, keeps: 'Checks' },
             { who: 'Meta Voice Transcribe, Muse Spark, Muse Image', what: 'Turn your words into checked steps and illustrations. Sent with Meta’s response storage turned off; Meta’s terms apply.', keeps: 'Processes' },
             { who: 'Once you publish', what: 'The steps and illustrations are public.', keeps: 'Public' },
           ]} />

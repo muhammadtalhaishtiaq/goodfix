@@ -43,7 +43,7 @@ export function HowWeCheck({ source }: { source: 'video' | 'voice' }) {
       <ol>
         <li><b>Your words become text</b> with Meta Voice Transcribe.</li>
         <li><b>Hard topic rules</b> (our own code, not AI) block weapons, violence, self-harm, drugs, gas or mains-electrical work, fire, medical procedures, vehicle brakes, hacking, illegal acts, adult content, hate or harassment, and personal details like phone numbers, emails or card numbers.</li>
-        <li><b>Meta Muse Spark reviews it</b>: is it safe for a public audience, and is it really a how-to? If the check can’t run, the {source === 'video' ? 'guide is blocked' : 'recording is blocked'}. We never guess.</li>
+        <li><b>Meta Muse Spark reviews it</b>: is it suitable for a public audience, and is it really a how-to? If the check can’t run, the {source === 'video' ? 'guide is blocked' : 'recording is blocked'}. We never guess.</li>
         {source === 'video' && <li><b>The frames are checked too</b>: one still per step is reviewed for anything unsuitable to publish (nudity, weapons, ID or bank cards…).</li>}
         <li>Only then are steps written, always in <b>your own words</b>, and you review everything before publishing.</li>
       </ol>

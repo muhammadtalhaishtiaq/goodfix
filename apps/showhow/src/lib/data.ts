@@ -45,7 +45,7 @@ export async function fetchGuide(id: string): Promise<Guide | undefined> {
 export async function checkStep(req: CheckRequest): Promise<CheckResult> {
   if (!supabase || req.guideId.startsWith('fixture-')) {
     await new Promise(r => setTimeout(r, 1200))
-    return { mode: 'stuck', fixture: true, outline: null, verdict: { status: 'match', differences: [], message: 'TEST FIXTURE: no model was called, so this is not a real comparison.' } }
+    return { mode: 'stuck', fixture: true, outline: null, verdict: { status: 'unclear', differences: [], message: 'TEST FIXTURE: no model was called, so this is not a real comparison.' } }
   }
   const photo = await resizePhoto(req.photo)
   return api<CheckResult>('check', { guideId: req.guideId, stepIdx: req.stepIdx, mode: req.mode, photo, question: req.question })
