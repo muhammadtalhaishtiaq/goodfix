@@ -314,3 +314,9 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 - T21 shipped (`4374361`, `fc2b27e`, `c2a3322`): field alignment, spinning stages, "nothing is sent until…" note, failed-stage ticks + `We heard: “…”` quote, review panel centred.
 - T22 code + tests (route tests: object edits the base from the brief, scene draws fresh with the setting, SAM outline saved, no `-ai-focus.jpg`, no SAM match → no outline, cap before any drawing). Not yet live: needs the schema columns first; applying them from this session was refused by the permission classifier, so Talha runs `node scripts/apply-schema.ts`.
 - T23 checked in headless Chrome (local dev, synthetic files): `silent.wav` → "only 3 seconds" + "barely hear any speech", button stays disabled; `good.wav` 0:28 and `t8.wav` 0:33 pass; videos `t8.mp4`, `synthetic.mov`, `bad.mp4` pass header checks. Tests 194/194, typecheck + lint clean.
+
+## 2026-11-03 — Repo public, CI green
+
+- Every CI run before `dccf9a2` failed in the `secrets` job: gitleaks' only finding in 86 commits was a fake `ci-canary-*` value in `.github/workflows/ci.yml` (line 22). The `showhow` job also passed in a clean clone without env files (195 tests, build, bundle scan, audit). Fixed with `.gitleaks.toml` (default rules + allowlist for `ci-canary-[a-z]+-[0-9a-f]{8}` only); local full-history scan: no leaks.
+- Repo `muhammadtalhaishtiaq/goodfix` made public by Talha (verified: github.com page 200). CI on `dccf9a2`: `showhow` success, `secrets` success (GitHub API).
+- README rewritten with live screenshots (gallery, workbench, phone, create), a 6-step GIF of a published voice guide built from a synthetic test narration (labelled in the README), and a Mermaid flow; LICENSE → MIT (Talha), Expo notice kept for `archive/`.
