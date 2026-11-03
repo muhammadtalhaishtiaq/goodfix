@@ -13,7 +13,7 @@ function pickExample(guides: Guide[]): Example | null {
   }
   for (const guide of guides.filter(g => g.kind === 'voice')) {
     const s = guide.steps.find(s => s.imageUrl)
-    if (s?.imageUrl) return { guide, idx: s.idx, src: s.imageUrl.replace(/-ai\.jpg$/, '-ai-focus.jpg'), ai: true, outline: null }
+    if (s?.imageUrl) return { guide, idx: s.idx, src: s.imageUrl, ai: true, outline: s.outline }
   }
   return null
 }
@@ -40,7 +40,7 @@ export function GalleryView() {
         {ex && (
           <a className="example-link" href={`#/guide/${ex.guide.id}/${ex.idx + 1}`}>
             <div className={ex.ai ? 'example ai' : 'example'}>
-              <img src={ex.src} alt={`Example: step ${ex.idx + 1} of “${ex.guide.title}”, key part ${ex.ai ? 'circled' : 'outlined'}`} />
+              <img src={ex.src} alt={`Example: step ${ex.idx + 1} of “${ex.guide.title}”, key part ${ex.outline ? 'outlined' : 'shown'}`} />
               {ex.outline && <OutlineOverlay outline={ex.outline} label={ex.guide.steps[ex.idx]?.keyPart ?? ''} />}
               <span className={ex.ai ? 'mono tag tag-ai' : 'mono tag'}>{ex.ai ? 'Illustration by AI' : `${ex.guide.creatorName}’s video · step ${ex.idx + 1}`}</span>
             </div>

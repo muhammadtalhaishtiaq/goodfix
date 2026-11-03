@@ -52,12 +52,13 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
   const { data: g, error } = await db.from('guides').insert({
     title: body.title || gate.title, category: body.category === 'auto' ? gate.category : body.category,
     auto_title: !body.title, auto_category: body.category === 'auto', creator_name: body.creatorName, kind: 'voice', status: 'ready',
-    image_style: body.style, subject: gate.subject, turns, duration_s: turns[turns.length - 1].endMs / 1000,
+    image_style: body.style, subject: gate.subject, image_mode: result.pictureMode ?? 'object', image_setting: result.setting ?? null,
+    turns, duration_s: turns[turns.length - 1].endMs / 1000,
   }).select('id').single()
   if (error || !g) throw new Error('guide insert failed')
   const { error: e2 } = await db.from('steps').insert(result.steps.map(s => ({
     guide_id: g.id, idx: s.idx, title: s.title, instruction: s.instruction, tip_quote: s.tipQuote ?? null,
-    start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun,
+    start_s: s.startS, end_s: s.endS, key_part: s.keyPart, sam_noun: s.samNoun, picture: s.picture ?? null,
   })))
   if (e2) { await db.from('guides').delete().eq('id', g.id); throw new Error('steps insert failed') }
   const title = body.title || gate.title

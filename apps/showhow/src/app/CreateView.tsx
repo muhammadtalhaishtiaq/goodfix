@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StageTicks } from '../components/StageTicks'
@@ -10,7 +10,8 @@ import { MAX_INPUT_BYTES } from '../lib/shrink-limits'
 import type { DraftStep } from '../lib/steps'
 import { mediaUrl, uploadSigned } from '../lib/supabase'
 import type { Outline } from '../lib/types'
-import { CreateTabs } from './VoiceCreate'
+import { videoProblems } from '../lib/precheck'
+import { CreateTabs, LocalCheck, type Local } from './VoiceCreate'
 
 type Upload = { path: string; token: string }
 type Created = { id: string; uploads: { video: Upload; audio: Upload } }
@@ -45,6 +46,8 @@ export function CreateView() {
   const [creatorName, setCreatorName] = useState('')
   const [code, setCode] = useState(readCode)
   const [file, setFile] = useState<File | null>(null)
+  const [local, setLocal] = useState<Local>({ state: 'none', problems: [] })
+  const latest = useRef<File | null>(null)
   const [consent, setConsent] = useState(false)
   const [adult, setAdult] = useState(false)
   const [enhance, setEnhance] = useState(false)
@@ -53,7 +56,25 @@ export function CreateView() {
   useEffect(() => { import('../lib/shrink').then(m => m.canShrinkHere()).then(setCanShrink, () => setCanShrink(false)) }, [])
 
   const tooBig = !!file && file.size > MAX_INPUT_BYTES
-  const ready = !!file && !tooBig && creatorName.trim() && code.trim() && consent && adult && canShrink
+  const ready = !!file && local.state === 'ok' && creatorName.trim() && code.trim() && consent && adult && canShrink
+
+  // Instant checks on this device (nothing is sent): reads only the file header.
+  async function pickFile(f: File | null) {
+    setFile(f)
+    latest.current = f
+    if (!f) return setLocal({ state: 'none', problems: [] })
+    setLocal({ state: 'checking', problems: [] })
+    let next: Local
+    try {
+      const { probeVideo } = await import('../lib/shrink')
+      const v = await probeVideo(f)
+      const problems = videoProblems({ bytes: f.size, ...v })
+      next = { state: problems.length ? 'bad' : 'ok', durationS: v.durationS, problems }
+    } catch {
+      next = { state: 'bad', problems: ['We couldn’t read this file. Try an MP4 or MOV video.'] }
+    }
+    if (latest.current === f) setLocal(next)
+  }
   const key = () => code.trim()
 
   async function start() {
@@ -143,8 +164,9 @@ export function CreateView() {
             <b className="big">{file ? file.name : 'Choose a video'}</b>
             <span className="muted">{file ? `${(file.size / 1e6).toFixed(0)} MB${tooBig ? ' · too large (max 500 MB)' : ''}` : 'Up to 3 minutes and 500 MB. Talk while you work: your words become the steps.'}</span>
             <span className="btn btn-ink" aria-hidden="true">{file ? 'Choose another' : 'Choose file'}</span>
-            <input type="file" accept="video/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+            <input type="file" accept="video/*" onChange={e => pickFile(e.target.files?.[0] ?? null)} />
           </label>
+          <LocalCheck local={local} what="video" />
           {canShrink === false && <p className="note warn-note">This browser can’t prepare video on your device. Please use desktop Chrome or Edge.</p>}
 
           <GuideFields title={title} setTitle={setTitle} category={category} setCategory={setCategory} creatorName={creatorName} setCreatorName={setCreatorName} code={code} setCode={setCode} source="video" />

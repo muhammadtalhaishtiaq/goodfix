@@ -5,6 +5,7 @@ import {
   Mp4OutputFormat, Output, Quality, WavOutputFormat,
 } from 'mediabunny'
 
+import { MAX_VOICE_SECONDS } from './precheck.js'
 import { MAX_INPUT_BYTES, MAX_SECONDS } from './shrink-limits.js'
 
 export { MAX_INPUT_BYTES, MAX_SECONDS }
@@ -30,6 +31,13 @@ export async function canShrinkHere(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// Reads only the container header (fast): length and which tracks exist, for the instant checks.
+export async function probeVideo(file: File): Promise<{ durationS: number; hasVideo: boolean; hasAudio: boolean }> {
+  const input = new Input({ source: new BlobSource(file), formats: ALL_FORMATS })
+  const [durationS, video, audio] = await Promise.all([input.computeDuration(), input.getPrimaryVideoTrack(), input.getPrimaryAudioTrack()])
+  return { durationS, hasVideo: !!video, hasAudio: !!audio }
 }
 
 export type Shrunk = { mp4: Blob; wav: Blob; durationS: number; width: number; height: number; ms: number }
@@ -64,8 +72,6 @@ export async function shrinkVideo(file: File, onProgress: (p: number) => void): 
   if (mp4.size > 48e6) throw new Error('The prepared video is still over 48 MB. Try a shorter clip.')
   return { mp4, wav: new Blob([wavOut.target.buffer!], { type: 'audio/wav' }), durationS, ...box, ms: Math.round(performance.now() - t0) }
 }
-
-export const MAX_VOICE_SECONDS = 120
 
 // Any recording (MediaRecorder WebM/Opus, phone M4A, WAV…) → 16 kHz mono 16-bit WAV for Voice Transcribe.
 // 2 minutes ≈ 3.8 MB, which fits one request as a raw body (base64 JSON would not).

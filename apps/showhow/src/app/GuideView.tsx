@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StuckDialog } from '../components/StuckDialog'
 import { checkStep } from '../lib/data'
-import type { Guide, Step } from '../lib/types'
+import type { Guide, Outline, Step } from '../lib/types'
 import './guide.css'
 
 const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -86,7 +86,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
 
         <div className="gv-center">
           {guide.kind === 'voice'
-            ? <AiImage url={step.imageUrl} label="Illustration by AI" showPart={showPart} onTogglePart={() => setShowPart(v => !v)} arrows={arrows} />
+            ? <AiImage url={step.imageUrl} label="Illustration by AI" outline={step.outline} keyPart={step.keyPart} showPart={showPart} onTogglePart={() => setShowPart(v => !v)} arrows={arrows} />
             : <VideoOrEnhanced guide={guide} step={step} showPart={showPart} onTogglePart={() => setShowPart(v => !v)} arrows={arrows} />}
           {guide.kind === 'video' && <div className="gv-timeline" aria-label="Full video">
             <span className="mono muted">Video</span>
@@ -135,14 +135,20 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
 type MediaProps = { showPart: boolean; onTogglePart: () => void; arrows: ReactNode }
 
 // F11: the picture keeps its own shape; the box shrink-wraps it, so outlines line up exactly.
-function AiImage({ url, label, showPart, onTogglePart, arrows, extra }: MediaProps & { url?: string; label: string; extra?: ReactNode }) {
+// Voice illustrations pass `outline` (SAM's box on the picture, or null). Enhanced video stills have none
+// and keep their older AI-drawn circle image (-ai-focus.jpg).
+function AiImage({ url, label, outline, keyPart = '', showPart, onTogglePart, arrows, extra }: MediaProps & { url?: string; label: string; outline?: Outline | null; keyPart?: string; extra?: ReactNode }) {
+  const sam = outline !== undefined
   return (
     <div className="gv-media ai">
-      {url ? <img src={showPart ? focusUrl(url) : url} alt="" /> : <div className="gv-ph">No illustration for this step</div>}
+      {url ? <img src={showPart && !sam ? focusUrl(url) : url} alt="" /> : <div className="gv-ph">No illustration for this step</div>}
+      {url && showPart && outline && <OutlineOverlay outline={outline} label={keyPart} />}
       <span className="mono gv-tag gv-tag-ai">{label}</span>
       {arrows}
       <div className="gv-ctrls">
-        {url && <button className={`gv-sq ${showPart ? 'on' : ''}`} onClick={onTogglePart} aria-pressed={showPart}>AI circle</button>}
+        {url && (sam
+          ? <button className={`gv-sq ${showPart && outline ? 'on' : ''}`} onClick={onTogglePart} aria-pressed={showPart} disabled={!outline}>{outline ? 'Show part' : 'No outline for this step'}</button>
+          : <button className={`gv-sq ${showPart ? 'on' : ''}`} onClick={onTogglePart} aria-pressed={showPart}>AI circle</button>)}
         {extra}
       </div>
     </div>

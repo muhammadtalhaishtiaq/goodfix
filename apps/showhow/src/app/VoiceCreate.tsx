@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StageTicks } from '../components/StageTicks'
 import { api, apiStream } from '../lib/api'
 import { GuideFields, HowWeCheck, ReviewMetaEditor, WhoKeepsWhat, type CategoryChoice, type Duplicate, type ReviewMeta } from '../components/CreateFields'
 import type { Category } from '../lib/categories'
 import type { DraftStep } from '../lib/steps'
+import type { Outline } from '../lib/types'
 import { STYLE_IDS, STYLES, type StyleId } from '../lib/styles'
+import { speechRatio, voiceProblems, wavSamples } from '../lib/precheck'
 import { mediaUrl } from '../lib/supabase'
 import { Published } from './CreateView'
 
+// Instant checks on this device as soon as a recording exists; nothing is sent (see lib/precheck.ts).
+export type Local = { state: 'none' | 'checking' | 'ok' | 'bad'; wav?: Blob; durationS?: number; problems: string[] }
+
 type ImgState = 'waiting' | 'drawing' | 'ok' | 'failed'
-type ReviewStep = DraftStep & { img: ImgState; keep: boolean; v: number }
+type ReviewStep = DraftStep & { img: ImgState; keep: boolean; v: number; outline: Outline | null }
 type Phase =
   | { name: 'form' }
   | { name: 'checking'; stages: string[] }
@@ -32,24 +38,43 @@ export function VoiceCreate() {
   const [code, setCode] = useState(readCode)
   const [style, setStyle] = useState<StyleId>('flat')
   const [audio, setAudio] = useState<Blob | null>(null)
+  const [local, setLocal] = useState<Local>({ state: 'none', problems: [] })
+  const latest = useRef<Blob | null>(null)
   const [consent, setConsent] = useState(false)
   const [adult, setAdult] = useState(false)
   const key = () => code.trim()
-  const ready = audio && creatorName.trim() && key() && consent && adult
+  const ready = audio && local.state === 'ok' && creatorName.trim() && key() && consent && adult
+
+  async function takeAudio(b: Blob | null) {
+    setAudio(b)
+    latest.current = b
+    if (!b) return setLocal({ state: 'none', problems: [] })
+    setLocal({ state: 'checking', problems: [] })
+    let next: Local
+    try {
+      const { toWav16k } = await import('../lib/shrink')
+      const { wav, durationS } = await toWav16k(b)
+      const problems = voiceProblems({ durationS, wavBytes: wav.size, speech: speechRatio(wavSamples(await wav.arrayBuffer())) })
+      next = { state: problems.length ? 'bad' : 'ok', wav, durationS, problems }
+    } catch (e) {
+      next = { state: 'bad', problems: [message(e)] }
+    }
+    if (latest.current === b) setLocal(next) // a newer recording replaced this one: drop the stale result
+  }
 
   async function start() {
     if (!audio) return
     try { sessionStorage.setItem(CODE_KEY, key()) } catch { /* private mode: fine */ }
+    const wav = local.wav
+    if (!wav) return
     setPhase({ name: 'checking', stages: [] })
     try {
-      const { toWav16k } = await import('../lib/shrink')
-      const { wav } = await toWav16k(audio)
       const out = await apiStream<{ id: string; steps: DraftStep[]; missing: string[]; title: string; category: Category; duplicate: Duplicate | null }>(
         'voice-guides', { file: wav, meta: { title: title.trim(), category, creatorName: creatorName.trim(), style, consent, adult } }, key(),
         e => setPhase(p => (p.name === 'checking' ? { ...p, stages: [...p.stages, e.stage] } : p)),
       )
       // Steps exist now: show them straight away and draw the pictures in the background (F9).
-      setPhase({ name: 'review', guideId: out.id, base: 'drawing', meta: { title: out.title, category: out.category, missing: out.missing, duplicate: out.duplicate }, steps: out.steps.map(s => ({ ...s, img: 'waiting', keep: true, v: 0 })) })
+      setPhase({ name: 'review', guideId: out.id, base: 'drawing', meta: { title: out.title, category: out.category, missing: out.missing, duplicate: out.duplicate }, steps: out.steps.map(s => ({ ...s, img: 'waiting', keep: true, v: 0, outline: null })) })
       void drawAll(out.id, out.steps.map(s => s.idx))
     } catch (e) {
       const m = message(e)
@@ -73,8 +98,8 @@ export function VoiceCreate() {
     await Promise.all(idxs.map(async idx => {
       setStep(idx, { img: 'drawing' })
       try {
-        const r = await api<{ ok: boolean }>('voice-images', { guideId, idx }, key())
-        setStep(idx, { img: r.ok ? 'ok' : 'failed', keep: r.ok, v: Date.now() })
+        const r = await api<{ ok: boolean; outline: Outline | null }>('voice-images', { guideId, idx }, key())
+        setStep(idx, { img: r.ok ? 'ok' : 'failed', keep: r.ok, v: Date.now(), outline: r.outline })
       } catch {
         setStep(idx, { img: 'failed', keep: false })
       }
@@ -99,7 +124,8 @@ export function VoiceCreate() {
 
       {phase.name === 'form' && (
         <div className="cform">
-          <Recorder onAudio={setAudio} />
+          <Recorder onAudio={takeAudio} />
+          <LocalCheck local={local} what="recording" />
 
           <fieldset className="styles">
             <legend><b>Illustration style</b> <span className="hint">Every image is labelled “Illustration by AI”</span></legend>
@@ -154,7 +180,7 @@ export function VoiceCreate() {
           <p className="note">Passed our topic check and reads as a clear how-to. AI can be wrong: review each step while the pictures are drawn, then publish.</p>
           <ReviewMetaEditor meta={phase.meta} onChange={meta => setPhase(p => (p.name === 'review' ? { ...p, meta } : p))} />
           <p className="mono muted" aria-live="polite">
-            {phase.base === 'drawing' ? `Drawing the base picture in “${STYLES[style].label}”…`
+            {phase.base === 'drawing' ? `Getting the “${STYLES[style].label}” illustrations started…`
               : phase.base === 'failed' ? 'The illustrations couldn’t be drawn right now. You can publish text-only steps or redraw.'
               : `${phase.steps.filter(s => s.img === 'ok').length} of ${phase.steps.length} illustrations ready`}
           </p>
@@ -163,7 +189,7 @@ export function VoiceCreate() {
               <li key={s.idx} className="rc">
                 <div className="rimg ai">
                   {s.img === 'ok' && s.keep
-                    ? <img src={`${mediaUrl(`${phase.guideId}/${s.idx}-ai-focus.jpg`)}?v=${s.v}`} alt={`Illustration of step ${s.idx + 1}`} />
+                    ? <><img src={`${mediaUrl(`${phase.guideId}/${s.idx}-ai.jpg`)}?v=${s.v}`} alt={`Illustration of step ${s.idx + 1}`} />{s.outline && <OutlineOverlay outline={s.outline} label={s.keyPart} />}</>
                     : s.img === 'waiting' || s.img === 'drawing'
                       ? <span className="shim">{s.img === 'drawing' ? 'Drawing…' : 'Waiting for the base picture…'}</span>
                       : <span className="ph">No illustration</span>}
@@ -191,6 +217,20 @@ export function VoiceCreate() {
           <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={phase.retry ?? (() => setPhase({ name: 'form' }))}>Try again</button></div>
         </div>
       )}
+    </div>
+  )
+}
+
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`
+
+export function LocalCheck({ local, what }: { local: Local; what: 'recording' | 'video' }) {
+  if (local.state === 'none') return null
+  if (local.state === 'checking') return <p className="working" aria-live="polite"><span className="spin" aria-hidden="true" /> Checking the {what} on this device (nothing is sent)…</p>
+  if (local.state === 'ok') return <p className="note ok-note" aria-live="polite"><span>✓ {local.durationS ? `${mmss(local.durationS)} long. ` : ''}Looks good on this device. The topic and safety checks run when you press the button.</span></p>
+  return (
+    <div className="note warn-note stack" role="alert">
+      <span><b>Fix this before you continue:</b></span>
+      <ul>{local.problems.map(p => <li key={p}>{p}</li>)}</ul>
     </div>
   )
 }

@@ -52,6 +52,10 @@ alter table public.guides add column if not exists auto_title boolean not null d
 alter table public.guides add column if not exists auto_category boolean not null default false;
 alter table public.guides add column if not exists frames_ok boolean not null default false;
 alter table public.steps add column if not exists image_path text;
+-- 2026-11-03: voice illustrations. Spark's picture brief per step; 'object' = edit one base, 'scene' = fresh per step.
+alter table public.guides add column if not exists image_mode text check (image_mode in ('object', 'scene'));
+alter table public.guides add column if not exists image_setting text;
+alter table public.steps add column if not exists picture text;
 
 -- Daily counters for spend/abuse caps. No policies: invisible to the public.
 create table if not exists public.usage (

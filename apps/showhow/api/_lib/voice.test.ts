@@ -4,7 +4,7 @@ import { fakeDb, settle } from './fake-db'
 let db = fakeDb()
 let capOk = true
 let nextId = 1
-const meta = { transcribe: vi.fn(), sparkJson: vi.fn(), generateImage: vi.fn(), editImage: vi.fn() }
+const meta = { transcribe: vi.fn(), sparkJson: vi.fn(), generateImage: vi.fn(), editImage: vi.fn(), samText: vi.fn() }
 vi.mock('./db', () => ({
   serverDb: () => ({
     ...db,
@@ -51,6 +51,13 @@ describe('POST /api/voice-guides', () => {
     expect(db.tables.guides[0]).toMatchObject({ kind: 'voice', status: 'ready', image_style: 'flat', subject: review.subject, duration_s: 12 })
     expect(db.tables.steps.map(s => s.title)).toEqual(['Release the tank', 'Refill the tank'])
     expect(meta.sparkJson.mock.calls.map(c => c[1])).toEqual(['review', 'steps'])
+  })
+  test('picture mode, setting and per-step picture briefs are saved for the illustrations', async () => {
+    const scene = { picture_mode: 'scene', setting: 'a sunny kitchen', steps: steps.steps.map((s, i) => ({ ...s, picture: i ? 'hands holding a full tank' : '' })) }
+    meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? review : scene))
+    expect((await send()).status).toBe(200)
+    expect(db.tables.guides[0]).toMatchObject({ image_mode: 'scene', image_setting: 'a sunny kitchen' })
+    expect(db.tables.steps.map(s => s.picture)).toEqual([null, 'hands holding a full tank'])
   })
   test('blank title and "auto" category are filled from the review', async () => {
     meta.sparkJson.mockImplementation(async (_c: unknown, name: string) => (name === 'review' ? { ...review, category: 'Cleaning' } : steps))
@@ -106,38 +113,58 @@ describe('POST /api/voice-guides', () => {
   })
 })
 
-describe('POST /api/voice-images (base, then one call per step)', () => {
+describe('POST /api/voice-images (object: base + edits; scene: fresh per step; SAM outline)', () => {
   const ID = '8d0c1c3e-6a5f-4f7e-9b0a-2f6d1f5b7a11'
-  const seed = (kind = 'voice', withBase = false) => fakeDb({
-    guides: [{ id: ID, status: 'ready', attempts: 0, kind, subject: 'white air purifier', image_style: 'clay' }],
-    steps: [0, 1].map(idx => ({ guide_id: ID, idx, instruction: `do ${idx}`, key_part: ['Latch', 'Tank'][idx], image_path: null })),
+  const BOX = '<|box;x1=10;y1=20;x2=110;y2=220;w=1536;h=1024;c=0.9|>'
+  const seed = (kind = 'voice', withBase = false, mode: 'object' | 'scene' = 'object') => fakeDb({
+    guides: [{ id: ID, status: 'ready', attempts: 0, kind, subject: 'white air purifier', image_style: 'clay', image_mode: mode, image_setting: 'a bright kitchen' }],
+    steps: [0, 1].map(idx => ({ guide_id: ID, idx, instruction: `do ${idx}, not the other thing`, key_part: ['Latch', 'Tank'][idx], sam_noun: ['latch', 'tank'][idx], picture: `hands at the ${['latch', 'tank'][idx]}`, image_path: null, outline: null })),
     files: withBase ? { [`${ID}/base.jpg`]: new Blob(['base']) } : {},
   })
   const call = (idx?: number) => voiceImages(new Request('http://x', { method: 'POST', headers: { 'x-access-code': 'good' }, body: JSON.stringify({ guideId: ID, ...(idx === undefined ? {} : { idx }) }) }))
   beforeEach(() => {
     vi.stubEnv('CREATE_ACCESS_CODES', 'good'); db = seed(); capOk = true
-    meta.generateImage.mockReset().mockResolvedValue(Buffer.from('base'))
-    meta.editImage.mockReset().mockImplementation(async (ref: Buffer, prompt: string) => Buffer.from(prompt.includes('circle') ? `focus(${ref})` : `step(${ref})`))
+    meta.generateImage.mockReset().mockImplementation(async (p: string) => Buffer.from(p.startsWith('white') ? 'base' : 'fresh'))
+    meta.editImage.mockReset().mockImplementation(async (ref: Buffer) => Buffer.from(`step(${ref})`))
+    meta.samText.mockReset().mockResolvedValue(BOX)
   })
 
-  test('base mode draws one base image in the chosen style and lists the steps', async () => {
+  test('object mode: one base picture of the whole object in the chosen style', async () => {
     expect(await (await call()).json()).toEqual({ base: true, steps: [0, 1] })
-    expect(meta.generateImage.mock.calls[0][0]).toMatch(/white air purifier.*3D clay render/)
+    expect(meta.generateImage.mock.calls[0][0]).toMatch(/^white air purifier, the whole object.*3D clay render/)
     expect(await db.files[`${ID}/base.jpg`].text()).toBe('base')
     expect(db.tables.guides[0]).toMatchObject({ status: 'ready', attempts: 0 })
   })
-  test('each step is an edit OF THE BASE (not chained), then a highlight edit', async () => {
+  test('object mode: each step edits THE BASE from the picture brief; SAM outlines it; no AI-drawn circle', async () => {
     db = seed('voice', true)
-    expect(await (await call(1)).json()).toEqual({ idx: 1, ok: true })
+    expect(await (await call(1)).json()).toEqual({ idx: 1, ok: true, outline: { frameW: 1536, frameH: 1024, box: [10, 20, 100, 200], score: 0.9 } })
     expect(String(meta.editImage.mock.calls[0][0])).toBe('base')
+    expect(meta.editImage.mock.calls[0][1]).toContain('hands at the tank')
+    expect(meta.editImage.mock.calls[0][1]).not.toContain('not the other thing')
+    expect(meta.editImage).toHaveBeenCalledTimes(1)
+    expect(meta.samText.mock.calls[0]).toEqual([`https://storage.test/media/${ID}/1-ai.jpg`, 'tank'])
     expect(await db.files[`${ID}/1-ai.jpg`].text()).toBe('step(base)')
-    expect(await db.files[`${ID}/1-ai-focus.jpg`].text()).toBe('focus(step(base))')
-    expect(db.tables.steps.map(s => s.image_path)).toEqual([null, `${ID}/1-ai.jpg`])
+    expect(db.files[`${ID}/1-ai-focus.jpg`]).toBeUndefined()
+    expect(db.tables.steps[1]).toMatchObject({ image_path: `${ID}/1-ai.jpg`, outline: { box: [10, 20, 100, 200] } })
+  })
+  test('scene mode: no base; each step is drawn fresh in the shared setting', async () => {
+    db = seed('voice', false, 'scene')
+    expect(await (await call()).json()).toEqual({ base: false, steps: [0, 1] })
+    expect(meta.generateImage).not.toHaveBeenCalled()
+    expect(((await (await call(0)).json()) as { ok: boolean }).ok).toBe(true)
+    expect(meta.generateImage.mock.calls[0][0]).toMatch(/hands at the latch Setting: a bright kitchen\. Style: 3D clay/)
+    expect(meta.editImage).not.toHaveBeenCalled()
+  })
+  test('no SAM match → the picture is kept with no outline', async () => {
+    db = seed('voice', true)
+    meta.samText.mockResolvedValue('')
+    expect(await (await call(0)).json()).toEqual({ idx: 0, ok: true, outline: null })
+    expect(db.tables.steps[0].image_path).toBe(`${ID}/0-ai.jpg`)
   })
   test('a failed step just has no illustration', async () => {
     db = seed('voice', true)
     meta.editImage.mockRejectedValue(new Error('content_policy_violation'))
-    expect(await (await call(0)).json()).toEqual({ idx: 0, ok: false })
+    expect(await (await call(0)).json()).toEqual({ idx: 0, ok: false, outline: null })
     expect(db.tables.steps[0].image_path).toBeNull()
   })
   test('a step before the base exists → 409; base failure → 502 and the guide stays ready', async () => {
@@ -146,12 +173,14 @@ describe('POST /api/voice-images (base, then one call per step)', () => {
     expect((await call()).status).toBe(502)
     expect(db.tables.guides[0]).toMatchObject({ status: 'ready', attempts: 1 })
   })
-  test('video guides never get illustrations; the image cap applies to every call', async () => {
+  test('video guides never get illustrations; the image cap applies before any drawing', async () => {
     db = seed('video', true)
     expect((await call()).status).toBe(409)
     expect((await call(0)).status).toBe(409)
     db = seed('voice', true); capOk = false
     expect((await call(0)).status).toBe(429)
+    expect((await call()).status).toBe(429)
     expect(meta.generateImage).not.toHaveBeenCalled()
+    expect(meta.editImage).not.toHaveBeenCalled()
   })
 })

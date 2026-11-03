@@ -78,6 +78,9 @@ main { max-width: 1200px; margin: 0 auto; padding: var(--s6) 24px var(--s8) }
 .note { display: flex; gap: var(--s3); align-items: flex-start; margin: 0; padding: var(--s3) var(--s4); background: var(--surface-2); border-left: 4px solid var(--ink-3); color: var(--ink); font-size: 14px; line-height: 20px }
 .note:not(:has(svg)) { display: block }
 .warn-note { border-left-color: var(--differs) }
+.ok-note { border-left-color: var(--ok) }
+.note.stack { flex-direction: column; gap: 4px }
+.note ul { margin: 0; padding-left: 20px }
 .empty { margin: 0; padding: var(--s6) 0; color: var(--ink-2); border-top: 1px solid var(--rule) }
 
 /* forms */
