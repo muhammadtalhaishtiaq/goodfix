@@ -130,3 +130,10 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 - **Caps:** for every kind the per-IP counter is checked before the shared total. Ask and `/api/check` count their cap only after the guide/step (and keyframe) lookups, so refused requests spend nothing.
 - **Production:** Vercel project `goodfix` (Hobby), Root Directory `apps/showhow` (it was `.`, and the first two deploys built nothing), Node 22.x, Vite. Deploys come from Vercel's Git integration on push to `main`; the GitHub Actions deploy job stays as a fallback and skips without `VERCEL_*` secrets. Production access codes are long random ones kept outside the repo; dev codes are rejected there.
 - **Still open:** the dated public-exposure decision (Terms §10.1(i)) before the URL is shared outside the team and judges.
+
+## 2026-11-03 — Create checks stay behind the button; say so, and show why a check stopped
+
+- **No early server checks (Talha):** transcription, topic rules and the Muse Spark review still run only after the creator presses Check and build / Prepare and upload, with consent, 18+ and a code. Nothing goes to Meta on file pick. Dropped from the plan: the pre-check endpoint and signed pass token.
+- **More obvious:** a note above the button says nothing is sent until it is pressed and lists the checks in order; while checking, the running stage spins with a present-tense label ("Reviewing it…") and only says "passed" once done.
+- **Why it stopped:** on a block the ticks show the stage that stopped (✕ "…: stopped here"). Layer-1 blocks now quote the words around the match (`blockedMatch`), e.g. `We heard: “…call me on 0712…”`, shown only to the creator in the response, never logged or stored (logs keep status/ms only).
+- **Layout:** `.narrow .wide` panels are centred on the page with negative inline margins (they used to hang off the right of the 720 px column).

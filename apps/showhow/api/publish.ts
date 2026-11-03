@@ -6,7 +6,7 @@ import { CATEGORIES } from '../src/lib/categories.js'
 import { serverDb } from './_lib/db.js'
 import { HttpError, route } from './_lib/http.js'
 import { addReadAloud } from './_lib/read-aloud.js'
-import { blockedTopic } from '../src/lib/safety.js'
+import { blockedMatch, blockedMessage } from '../src/lib/safety.js'
 
 const Body = z.object({
   guideId: z.uuid(),
@@ -28,8 +28,8 @@ export const POST = route({ name: 'publish', body: Body, accessCode: true }, asy
   if (g.status !== 'ready') throw new HttpError(409, g.status === 'published' ? 'This guide is already published.' : 'This guide isn’t ready to publish yet.')
   if (g.kind === 'video' && !g.frames_ok) throw new HttpError(409, 'The video’s frames haven’t passed the content check yet.')
   const edited = [body.title ?? '', ...body.edits.map(e => `${e.title} ${e.instruction}`)].join(' ')
-  const topic = blockedTopic(edited) // creator edits can't sneak past the topic rules
-  if (topic) throw new HttpError(422, `This edit mentions a topic that isn’t allowed here (${topic}).`)
+  const hit = blockedMatch(edited) // creator edits can't sneak past the topic rules
+  if (hit) throw new HttpError(422, blockedMessage(hit, 'Your edit mentions a topic that'))
   for (const e of body.edits) {
     await db.from('steps').update({ title: e.title, instruction: e.instruction, ...(e.dropAiImage ? { image_path: null } : {}) })
       .eq('guide_id', id).eq('idx', e.idx)

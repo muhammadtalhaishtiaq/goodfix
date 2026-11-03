@@ -24,8 +24,22 @@ const BLOCKED: [topic: string, pattern: RegExp][] = [
 ]
 
 export function blockedTopic(text: string): string | null {
-  return BLOCKED.find(([, re]) => re.test(text))?.[0] ?? null
+  return blockedMatch(text)?.topic ?? null
 }
+
+// The topic plus a short quote around the words that tripped it, so the creator sees exactly what to change.
+export function blockedMatch(text: string): { topic: string; heard: string } | null {
+  for (const [topic, re] of BLOCKED) {
+    const m = re.exec(text)
+    if (!m) continue
+    const from = Math.max(0, m.index - 30), to = Math.min(text.length, m.index + m[0].length + 30)
+    return { topic, heard: `${from > 0 ? '…' : ''}${text.slice(from, to).trim()}${to < text.length ? '…' : ''}` }
+  }
+  return null
+}
+
+export const blockedMessage = (b: { topic: string; heard: string }, what = 'This topic') =>
+  `${what} isn’t allowed here (${b.topic}). We heard: “${b.heard}”.`
 
 export const ReviewSchema = z.object({
   is_howto: z.boolean(),

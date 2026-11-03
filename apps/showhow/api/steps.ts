@@ -3,7 +3,7 @@
 // index, then our own validation decides. Returns signed upload URLs for each step's keyframe.
 // Streams progress events (F9): transcribed → topic_rules → reviewed → steps → done/error.
 import { z } from 'zod'
-import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
+import { blockedMatch, blockedMessage, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { serverDb } from './_lib/db.js'
 import { findDuplicate } from './_lib/duplicates.js'
@@ -31,8 +31,8 @@ export const POST = route({ name: 'steps', body: Body, accessCode: true }, async
     emit('transcribed', { turns: turns.length })
     if (turns.length < 2) throw new HttpError(422, 'We couldn’t hear enough narration to build steps. Talk through each step as you do it.')
     const said = turns.map(t => t.transcript).join(' ')
-    const topic = blockedTopic(said) // layer 1: same hard rules as voice guides
-    if (topic) throw new HttpError(422, `This topic isn’t allowed here (${topic}).`)
+    const hit = blockedMatch(said) // layer 1: same hard rules as voice guides
+    if (hit) throw new HttpError(422, blockedMessage(hit))
     emit('topic_rules')
     let review: unknown = null // layer 2: same Muse Spark review as voice guides (F4); errors block
     try { review = await sparkJson([{ type: 'input_text', text: reviewPrompt(said) }], 'review', reviewJsonSchema, 45_000) } catch { /* fail closed */ }

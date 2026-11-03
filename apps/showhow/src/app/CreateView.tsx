@@ -29,7 +29,7 @@ type Phase =
   | ({ name: 'review'; steps: ReviewStep[]; buildMs: number; meta: ReviewMeta } & Ctx)
   | ({ name: 'publishing' } & Ctx)
   | { name: 'published'; path: string; title: string }
-  | ({ name: 'stageFailed'; message: string; retry: () => void } & Partial<Ctx>)
+  | ({ name: 'stageFailed'; message: string; retry: () => void; stages?: string[] } & Partial<Ctx>)
   | { name: 'error'; message: string }
 
 const CODE_KEY = 'showhow.accessCode'
@@ -82,7 +82,7 @@ export function CreateView() {
       built = await apiStream<Built>('steps', { json: { guideId: ctx.guideId } }, key(),
         e => setPhase(p => (p.name === 'building' ? { ...p, stages: [...p.stages, e.stage] } : p)))
     } catch (e) {
-      return setPhase({ name: 'stageFailed', ...ctx, message: message(e), retry: () => buildSteps(ctx) })
+      return setPhase(p => ({ name: 'stageFailed', ...ctx, message: message(e), retry: () => buildSteps(ctx), stages: p.name === 'building' ? p.stages : undefined }))
     }
     await outlineSteps(ctx, built, performance.now() - t0)
   }
@@ -161,6 +161,7 @@ export function CreateView() {
             <label className="check"><input type="checkbox" checked={enhance} onChange={e => setEnhance(e.target.checked)} /> Optional: also make a cleaner “Enhanced by AI” still of each step (Meta Muse Image). Learners can always switch back to your real video, and checks always use your real frames.</label>
           </div>
 
+          <p className="note"><span><b>Nothing is uploaded until you press Prepare and upload.</b> Then your narration is transcribed, checked against our topic rules, and reviewed by Meta Muse Spark before any steps are written. If a check fails, we stop and show you why.</span></p>
           <div className="actions"><span className="sp" /><button className="btn btn-ink" disabled={!ready} onClick={start}>Prepare and upload</button></div>
         </div>
       )}
@@ -177,9 +178,9 @@ export function CreateView() {
 
       {phase.name === 'building' && (
         <div className="panel">
-          <h2>Finding the steps in what you said</h2>
+          <h2>Checking your narration, then finding the steps</h2>
+          <p className="muted">Usually under a minute. Keep this tab open.</p>
           <StageTicks done={phase.stages} />
-          <p className="muted">Usually under a minute.</p>
         </div>
       )}
 
@@ -226,7 +227,8 @@ export function CreateView() {
 
       {phase.name === 'stageFailed' && (
         <div className="panel">
-          <p className="note warn-note">{phase.message}</p>
+          {phase.stages && <><h2>We stopped at this check</h2><StageTicks done={phase.stages} failed /></>}
+          <p className="note warn-note" role="alert">{phase.message}</p>
           <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={phase.retry}>Try again</button></div>
         </div>
       )}

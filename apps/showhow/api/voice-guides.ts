@@ -2,7 +2,7 @@
 // NOTHING is stored until both safety layers pass. Every failure (including model errors) blocks.
 // Streams progress events (F9): transcribed → topic_rules → reviewed → steps → done/error.
 import { z } from 'zod'
-import { blockedTopic, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
+import { blockedMatch, blockedMessage, gateReview, reviewJsonSchema, reviewPrompt } from '../src/lib/safety.js'
 import { stepsJsonSchema, stepsPrompt, validateSteps, type Turn } from '../src/lib/steps.js'
 import { STYLE_IDS } from '../src/lib/styles.js'
 import { enforceCaps } from './_lib/caps.js'
@@ -32,8 +32,8 @@ export const POST = route({ name: 'voice-guides', body: Meta, accessCode: true, 
   if (turns.length < 2 || text.length < 40) throw nothingSaved('We couldn’t hear enough to build a guide.')
   emit('transcribed', { turns: turns.length })
 
-  const topic = blockedTopic(text) // layer 1: hard rules
-  if (topic) throw nothingSaved(`This topic isn’t allowed here (${topic}).`)
+  const hit = blockedMatch(text) // layer 1: hard rules
+  if (hit) throw nothingSaved(blockedMessage(hit))
   emit('topic_rules')
 
   let review: unknown = null // layer 2: model review; an error leaves null, which gateReview blocks

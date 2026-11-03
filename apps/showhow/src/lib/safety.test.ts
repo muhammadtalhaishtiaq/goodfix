@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { blockedTopic, gateReview } from './safety'
+import { blockedMatch, blockedMessage, blockedTopic, gateReview } from './safety'
 
 describe('blockedTopic (layer 1, hard rules)', () => {
   test.each([
@@ -66,5 +66,17 @@ describe('gateReview (layer 2, fail closed)', () => {
     expect(gateReview('yes').pass).toBe(false)
     expect(gateReview({ ...ok, safety: 'probably fine' }).pass).toBe(false)
     expect(gateReview({ ...ok, is_howto: undefined }).pass).toBe(false)
+  })
+})
+
+describe('blockedMatch shows the creator what tripped the rule', () => {
+  test('quotes the words around the match', () => {
+    const hit = blockedMatch('First unplug it, then you can call me on 0712 345 6789 if you get stuck with the tank')
+    expect(hit?.topic).toBe('personal details')
+    expect(hit?.heard).toContain('0712 345 6789')
+    expect(hit && blockedMessage(hit)).toMatch(/^This topic isn’t allowed here \(personal details\)\. We heard: “…/)
+  })
+  test('everyday wording has no match', () => {
+    expect(blockedMatch('Kill the power at the switch before you clean it')).toBeNull()
   })
 })

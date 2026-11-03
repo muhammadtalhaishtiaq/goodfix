@@ -14,7 +14,7 @@ type ReviewStep = DraftStep & { img: ImgState; keep: boolean; v: number }
 type Phase =
   | { name: 'form' }
   | { name: 'checking'; stages: string[] }
-  | { name: 'blocked'; message: string }
+  | { name: 'blocked'; message: string; stages: string[] }
   | { name: 'review'; guideId: string; steps: ReviewStep[]; meta: ReviewMeta; base: 'drawing' | 'ok' | 'failed' }
   | { name: 'publishing' }
   | { name: 'published'; path: string; title: string }
@@ -53,7 +53,7 @@ export function VoiceCreate() {
       void drawAll(out.id, out.steps.map(s => s.idx))
     } catch (e) {
       const m = message(e)
-      setPhase(m.includes('Nothing was saved') ? { name: 'blocked', message: m } : { name: 'error', message: m })
+      setPhase(p => (m.includes('Nothing was saved') ? { name: 'blocked', message: m, stages: p.name === 'checking' ? p.stages : [] } : { name: 'error', message: m }))
     }
   }
 
@@ -126,6 +126,7 @@ export function VoiceCreate() {
             <label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I agree to this.</label>
             <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
           </div>
+          <p className="note"><span><b>Nothing is sent until you press Check and build.</b> Then, in order: your words are transcribed, checked against our topic rules, and reviewed by Meta Muse Spark. If any check fails, we stop, show you why, and save nothing.</span></p>
           <div className="actions"><span className="sp" /><button className="btn btn-ink" disabled={!ready} onClick={start}>Check and build</button></div>
         </div>
       )}
@@ -133,14 +134,16 @@ export function VoiceCreate() {
       {phase.name === 'checking' && (
         <div className="panel">
           <h2>Checking your recording</h2>
+          <p className="muted">Usually 30 to 90 seconds. Keep this tab open. Nothing is saved unless every check passes.</p>
           <StageTicks done={phase.stages} />
-          <p className="muted">Nothing is saved unless every check passes.</p>
         </div>
       )}
 
       {phase.name === 'blocked' && (
         <div className="panel">
-          <p className="note warn-note">{phase.message}</p>
+          <h2>We stopped at this check</h2>
+          <StageTicks done={phase.stages} failed />
+          <p className="note warn-note" role="alert">{phase.message}</p>
           <div className="actions"><span className="sp" /><button className="btn btn-ink" onClick={() => { setAudio(null); setPhase({ name: 'form' }) }}>Record again</button></div>
         </div>
       )}

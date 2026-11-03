@@ -117,7 +117,7 @@ textarea { min-height: 72px; padding: 10px 12px; line-height: 22px; resize: vert
 
 /* create + review */
 .narrow { max-width: 720px; margin: 0 auto; display: grid; gap: var(--s4) }
-.narrow .wide { width: min(1152px, calc(100vw - 48px)); justify-self: center }
+.narrow .wide { width: min(1152px, calc(100vw - 48px)); margin-inline: calc((100% - min(1152px, 100vw - 48px)) / 2) }
 .sub { font-size: 18px; line-height: 28px; color: var(--ink-2); margin: 0 }
 .create-tabs { margin-bottom: var(--s2); border-bottom: 1px solid var(--rule) }
 .cform, .panel { display: grid; gap: var(--s5) }
@@ -160,6 +160,7 @@ details.how p { margin: var(--s2) 0 0 }
 .ticks .k { font: 500 13px var(--mono); width: 14px; text-align: center }
 .ticks .spin { width: 14px; height: 14px }
 .ticks li.done .k { color: var(--ok) }
+.ticks li.fail { color: var(--differs); font-weight: 600 }
 .rgrid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5) }
 .rc { display: grid; gap: var(--s2); align-content: start }
 .rimg { aspect-ratio: 3/2 }
@@ -201,7 +202,7 @@ details.how p { margin: var(--s2) 0 0 }
   .ctable th, .ctable td { border: 0; padding: 2px 0 }
   .ctable tbody th { width: auto }
   .ctable td:first-of-type { grid-column: 1 / -1; grid-row: 2 }
-  .narrow .wide { width: 100% }
+  .narrow .wide { width: 100%; margin-inline: 0 }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
 
