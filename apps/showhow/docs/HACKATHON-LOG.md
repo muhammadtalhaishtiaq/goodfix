@@ -282,3 +282,9 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
   Still open from the review: T0 real-photo accuracy (demo's "differs" beat never seen live), nothing run on Vercel yet, contrast not measured, deadline may be **20:00 EST** not 21:00 ET (DST ended 2026-11-01; unofficial source — check the official page).
 - **Checks after fixes:** typecheck, lint, 178/178 tests, build: pass.
 - **Live Ask (run 2026-11-02, dev server, dishwasher guide step 1):** "Do I need to rinse the plates first?" → HTTP 200, 7.7 s, `covered:true`, quote = the creator's step-1 instruction + tip verbatim. "What temperature should the water be?" → HTTP 200, 5.6 s, `covered:false` (shows the fixed "doesn't cover that" message).
+
+## 2026-11-02 — T13 first production deploy (Vercel) + live smoke
+
+- Vercel project `goodfix` (Hobby). Root Directory was `.` (first two deploys built nothing) → set to `apps/showhow`, Node 22.x, Vite preset via `vercel api`. Env imported by Talha from `.env.local` in the dashboard; `IP_SALT` and two new long `CREATE_ACCESS_CODES` generated locally (codes in a private file outside the repo). No env file is in Git (`git ls-files` has none).
+- **Live smoke on https://goodfix-alpha.vercel.app (run 2026-11-02):** `/api/health` → 200 `{ok:true}`; CSP (with Google Fonts), `X-Frame-Options: DENY`, `Permissions-Policy` present; IBM Plex stylesheet linked; gallery and a voice guide render with real Supabase data (headless Chrome screenshots, checked by eye); old dev codes `123`/`112` → 401, new judges code accepted; `/api/ask` on "Fast pasta" step 2 → 200 in 8.1 s quoting the creator's step + tip.
+- **Open:** remove imported extras from Vercel env (`SUPABASE_PASSWORD`, `SUPABASE_ACCESS_TOKEN`, `VERCEL_OIDC_TOKEN`, `WIW_VERSION`) — agent writes to the secret store were blocked, Talha to do in the dashboard. Not yet run live: a create (video/voice), an I'm-stuck check, the CSP console check in a real browser.
