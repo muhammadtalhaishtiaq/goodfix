@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import type { AskAnswer } from '../lib/ask'
+import { NOT_COVERED, type AskAnswer } from '../lib/ask'
 import { askStep } from '../lib/data'
 import './ask.css'
 
@@ -34,20 +34,24 @@ function AskForm({ guideId, stepIdx }: { guideId: string; stepIdx: number }) {
         <button type="submit" className="ask-btn" disabled={!q || state.kind === 'loading'}>{state.kind === 'loading' ? 'Asking…' : 'Ask'}</button>
       </form>
       <div aria-live="polite">
-        {state.kind === 'answer' && (
-          <p className="ask-answer">
-            <span className="ask-mono">{state.a.covered ? `From this guide · step ${state.a.stepRefs.map(i => i + 1).join(', ')}` : 'Not in this guide'}</span>
-            {state.a.answer}
-          </p>
+        {state.kind === 'answer' && (state.a.covered
+          ? state.a.quotes.map(q => (
+            <blockquote className="ask-answer" key={q.step}>
+              <span className="ask-mono">The creator says · step {q.step + 1}</span>
+              <p>“{q.text}”</p>
+              {q.tip && <p className="ask-tip">Tip: “{q.tip}”</p>}
+            </blockquote>
+          ))
+          : <p className="ask-answer"><span className="ask-mono">Not in this guide</span>{guideId.startsWith('fixture-') ? 'TEST FIXTURE: no model was called.' : NOT_COVERED}</p>
         )}
         {state.kind === 'error' && (
-          <div className="ask-error" role="alert">
+          <div className="ask-error">
             <p>{state.message}</p>
             <button type="button" className="ask-btn ask-btn-line" onClick={() => ask()}>Try again</button>
           </div>
         )}
       </div>
-      <p className="ask-note">Answers come only from what the creator says in this guide.</p>
+      <p className="ask-note">Answers are the creator’s own words from this guide. Your question goes to Meta Muse Spark (storage off) to find the right step; Showhow doesn’t save it. 18+.</p>
     </section>
   )
 }

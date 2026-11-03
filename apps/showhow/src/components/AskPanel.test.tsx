@@ -16,12 +16,12 @@ async function ask(text = 'Do I rinse?') {
 }
 
 test('shows the answer labelled with the guide step it came from', async () => {
-  askStep.mockResolvedValue({ answer: 'No, just scrape.', covered: true, stepRefs: [0] })
+  askStep.mockResolvedValue({ covered: true, quotes: [{ step: 0, text: 'No, just scrape.', tip: null }] })
   render(<AskPanel guideId={ID} stepIdx={0} />)
   await ask()
   expect(askStep).toHaveBeenCalledWith(ID, 0, 'Do I rinse?')
-  expect(await screen.findByText('No, just scrape.')).toBeDefined()
-  expect(screen.getByText('From this guide · step 1')).toBeDefined()
+  expect(await screen.findByText('“No, just scrape.”')).toBeDefined()
+  expect(screen.getByText('The creator says · step 1')).toBeDefined()
 })
 
 test('Ask is disabled until a question is typed', () => {
@@ -31,21 +31,26 @@ test('Ask is disabled until a question is typed', () => {
 
 test('an error shows the plain message and a retry that resends', async () => {
   askStep.mockRejectedValueOnce(new Error('We couldn’t get an answer just now. Please try again.'))
-  askStep.mockResolvedValueOnce({ answer: 'The creator’s guide doesn’t cover that.', covered: false, stepRefs: [] })
+  askStep.mockResolvedValueOnce({ covered: false, quotes: [] })
   render(<AskPanel guideId={ID} stepIdx={2} />)
   await ask()
-  expect(await screen.findByRole('alert')).toBeDefined()
+  expect(await screen.findByText(/couldn’t get an answer/)).toBeDefined()
   await userEvent.setup().click(screen.getByRole('button', { name: /try again/i }))
   expect(await screen.findByText('Not in this guide')).toBeDefined()
   expect(askStep).toHaveBeenCalledTimes(2)
 })
 
 test('moving to another step clears the question and answer', async () => {
-  askStep.mockResolvedValue({ answer: 'No, just scrape.', covered: true, stepRefs: [0] })
+  askStep.mockResolvedValue({ covered: true, quotes: [{ step: 0, text: 'No, just scrape.', tip: null }] })
   const { rerender } = render(<AskPanel guideId={ID} stepIdx={0} />)
   await ask()
-  await screen.findByText('No, just scrape.')
+  await screen.findByText('“No, just scrape.”')
   rerender(<AskPanel guideId={ID} stepIdx={1} />)
-  expect(screen.queryByText('No, just scrape.')).toBeNull()
+  expect(screen.queryByText('“No, just scrape.”')).toBeNull()
   expect((screen.getByLabelText(/your question/i) as HTMLInputElement).value).toBe('')
+})
+
+test('says where the question goes', () => {
+  render(<AskPanel guideId={ID} stepIdx={0} />)
+  expect(screen.getByText(/goes to Meta Muse Spark/)).toBeDefined()
 })

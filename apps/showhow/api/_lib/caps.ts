@@ -12,9 +12,10 @@ const LIMITS = {
   build: { total: 40, perIp: 12 },    // video or voice guides built (a creator filming 3–4 guides with retries fits)
 } as const
 
+// Per-IP first: a visitor already over their own limit must not keep spending the shared total.
 export async function enforceCaps(rpc: Rpc, kind: keyof typeof LIMITS, ipHash: string) {
   const limits = LIMITS[kind]
-  for (const [counter, limit] of [[kind, limits.total], [`${kind}-ip:${ipHash}`, limits.perIp]] as const) {
+  for (const [counter, limit] of [[`${kind}-ip:${ipHash}`, limits.perIp], [kind, limits.total]] as const) {
     const { data, error } = await rpc('bump_usage', { p_kind: counter, p_limit: limit })
     if (error) throw new HttpError(503, 'We couldn’t check today’s usage, so nothing was sent. Please try again shortly.')
     if (data !== true) throw new HttpError(429, 'Today’s demo limit is reached. Viewing guides still works.')

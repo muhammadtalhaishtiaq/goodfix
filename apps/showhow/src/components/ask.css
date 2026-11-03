@@ -12,3 +12,6 @@
 .ask-error { display: grid; gap: var(--s2, 8px); background: var(--unclear-soft, #E7EAEE); border-left: 4px solid var(--unclear, #3F4A5A); padding: var(--s3, 12px) }
 .ask-error p { margin: 0 }
 .ask-note { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-3, #65625B) }
+.ask-answer p { margin: 0 }
+.ask-answer + .ask-answer { margin-top: var(--s2, 8px) }
+.ask-tip { margin-top: 4px !important; color: var(--ink-2, #3B3A36) }

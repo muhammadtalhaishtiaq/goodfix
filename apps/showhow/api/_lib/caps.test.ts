@@ -9,13 +9,18 @@ describe('enforceCaps', () => {
   test('passes when every counter is under its limit', async () => {
     const r = rpc({})
     await expect(enforceCaps(r, 'check', 'abc')).resolves.toBeUndefined()
-    expect(r.mock.calls.map(c => c[1].p_kind)).toEqual(['check', 'check-ip:abc'])
+    expect(r.mock.calls.map(c => c[1].p_kind)).toEqual(['check-ip:abc', 'check'])
   })
   test('429 with a plain message when the daily total is used up', async () => {
     await expect(enforceCaps(rpc({ check: false }), 'check', 'abc')).rejects.toMatchObject({ status: 429 })
   })
   test('429 when one visitor hits their own limit', async () => {
     await expect(enforceCaps(rpc({ 'check-ip': false }), 'check', 'abc')).rejects.toBeInstanceOf(HttpError)
+  })
+  test('a visitor over their own limit never touches the shared daily total', async () => {
+    const r = rpc({ 'check-ip': false })
+    await expect(enforceCaps(r, 'check', 'abc')).rejects.toMatchObject({ status: 429 })
+    expect(r.mock.calls.map(c => c[1].p_kind)).toEqual(['check-ip:abc'])
   })
   test('fails closed if the counter itself errors', async () => {
     const broken = vi.fn(async () => ({ data: null, error: { message: 'db down' } }))

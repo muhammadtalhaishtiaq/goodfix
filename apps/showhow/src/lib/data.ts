@@ -55,7 +55,7 @@ export async function checkStep(req: CheckRequest): Promise<CheckResult> {
 export async function askStep(guideId: string, stepIdx: number, question: string): Promise<AskAnswer> {
   if (!supabase || guideId.startsWith('fixture-')) {
     await new Promise(r => setTimeout(r, 800))
-    return { answer: 'TEST FIXTURE: no model was called, so this is not a real answer.', covered: false, stepRefs: [] }
+    return { covered: false, quotes: [] } // fixture: no model is called
   }
   return api<AskAnswer>('ask', { guideId, stepIdx, question })
 }
