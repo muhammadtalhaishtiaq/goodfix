@@ -2,6 +2,7 @@
 // Fixtures are used only when no database is configured (offline UI work), and are labelled.
 import { FIXTURE_GUIDES } from '../fixtures/guides.js'
 import { api } from './api.js'
+import type { AskAnswer } from './ask.js'
 import { resizePhoto } from './image.js'
 import { mediaUrl, supabase } from './supabase.js'
 import type { CheckRequest, CheckResult, Guide, Outline } from './types.js'
@@ -48,4 +49,13 @@ export async function checkStep(req: CheckRequest): Promise<CheckResult> {
   }
   const photo = await resizePhoto(req.photo)
   return api<CheckResult>('check', { guideId: req.guideId, stepIdx: req.stepIdx, mode: req.mode, photo, question: req.question })
+}
+
+// "Ask about this step" (F13+): answered only from the guide's own steps; the question is not stored.
+export async function askStep(guideId: string, stepIdx: number, question: string): Promise<AskAnswer> {
+  if (!supabase || guideId.startsWith('fixture-')) {
+    await new Promise(r => setTimeout(r, 800))
+    return { answer: 'TEST FIXTURE: no model was called, so this is not a real answer.', covered: false, stepRefs: [] }
+  }
+  return api<AskAnswer>('ask', { guideId, stepIdx, question })
 }
