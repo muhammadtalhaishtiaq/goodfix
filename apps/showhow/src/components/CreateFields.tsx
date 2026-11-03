@@ -28,9 +28,9 @@ export function GuideFields({ title, setTitle, category, setCategory, creatorNam
       <label className="fl">Your name <span className="hint">Shown on the guide</span>
         <input className="txt" value={creatorName} maxLength={60} onChange={e => setCreatorName(e.target.value)} />
       </label>
-      <label className="fl">Access code
-        <span id="code-help" className="hint">Creating guides needs a code, because every guide uses paid AI credits and becomes public. Watching guides and “I’m stuck” checks don’t need one. Hackathon judges: your code is in our submission notes.</span>
+      <label className="fl">Access code <span className="hint">Judges: see the submission notes</span>
         <input className="txt" type="password" autoComplete="off" value={code} onChange={e => setCode(e.target.value)} aria-describedby="code-help" />
+        <span id="code-help" className="hint">Creating guides needs a code, because every guide uses paid AI credits and becomes public. Watching guides and “I’m stuck” checks don’t need one.</span>
       </label>
     </div>
   )
