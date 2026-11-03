@@ -1,8 +1,8 @@
-// Real progress (F9): each line ticks when the server reports that stage; the next one spins.
+// Real progress (F9): each line ticks when the server reports that stage; the next one shows it is running.
 const LABELS: Record<string, string> = {
-  transcribed: 'Heard you: Meta Voice Transcribe',
+  transcribed: 'Heard you',
   topic_rules: 'Topic rules passed',
-  reviewed: 'Meta Muse Spark review passed',
+  reviewed: 'Review passed',
   steps: 'Steps written in your words',
 }
 
@@ -12,7 +12,7 @@ export function StageTicks({ done, order = Object.keys(LABELS) }: { done: string
     <ol className="ticks" aria-live="polite">
       {order.map(s => (
         <li key={s} className={done.includes(s) ? 'done' : s === current ? 'run' : ''}>
-          <span className="tick" aria-hidden="true">{done.includes(s) ? '✓' : ''}</span>{LABELS[s] ?? s}
+          <span className="k" aria-hidden="true">{done.includes(s) ? '✓' : s === current ? '…' : '·'}</span>{LABELS[s] ?? s}
         </li>
       ))}
     </ol>

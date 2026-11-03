@@ -1,11 +1,9 @@
-import { Icon } from '../components/Icon'
-
 export function PrivacyView() {
   return (
-    <div className="c-wrap prose">
-      <a className="back" href="#/"><Icon name="back" /> Gallery</a>
-      <h1>Privacy, in plain words</h1>
-      <p className="lead">Showhow is a hackathon prototype. Here is exactly what happens to what you share.</p>
+    <div className="narrow prose">
+      <a className="back" href="#/">← All guides</a>
+      <h1>Privacy and how it works</h1>
+      <p className="sub">Showhow is a hackathon prototype. Here is exactly what happens to what you share.</p>
       <h2>If you’re stuck and send a photo</h2>
       <ul>
         <li>You see exactly what will be sent before anything leaves your device, and you approve each photo.</li>
