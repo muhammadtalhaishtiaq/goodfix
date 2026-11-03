@@ -298,3 +298,12 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 - **Contrast (computed from `src/index.css` tokens):** text pairs `--ink-3` on paper 5.48, on surface 6.08; `--ink-2` 8.90; white on `--signal-ink` (I'm stuck) 5.18; verdict colours on paper: ok 6.31, differs 6.58, unclear 8.09; `--signal-ink` text on paper 4.66. `--signal` (#FF5A1F) is outline-only, never text.
 - Still open for T14: drill items that need a real create (3-strike credit guard, too-little narration, SAM no-match) and a phone check with real data.
 - **Phone check (run 2026-11-02, Chrome DevTools phone emulation 390×844, dev server with real data):** dishwasher guide step 2: `scrollWidth` = 390 (no horizontal overflow, no element past the edge); "All steps", progress segments, own-aspect AI image with "AI circle", sticky Help · Back · Next bar all present. Help label now mentions Ask (`07efe64`). The live site refuses iframes (`X-Frame-Options: DENY`), as intended.
+
+## 2026-11-02 — T14 live build drill (production) + T15 history scan
+
+- **Voice-guide drills on https://goodfix-alpha.vercel.app (run 2026-11-02, curl, production access code; synthetic TTS clips, TEST FIXTURE audio):**
+  - 3 s of silence → 422 "We couldn’t hear enough to build a guide. Nothing was saved." (3 s)
+  - mains-electrical clip → layer 1 hard rule → 422 "This topic isn’t allowed here (mains electrical). Nothing was saved." (4 s)
+  - router clip that reads out a phone number → layer 2 Muse Spark review → 422 blocked, "Nothing was saved." (28 s)
+  - normal air-purifier tank clip (28 s audio) → transcribed (5 turns) → topic rules → review → 3 steps → done in **84 s** on Vercel (under the 300 s function limit). Guide `08bf5bc5…` titled "(temporary) drill", status ready, never published (invisible to the public by RLS); removed by the 24 h draft cleanup.
+- **History scan (run 2026-11-02):** pattern scan of all 80 commits on all branches (`git log --all -p`) for Supabase secret/JWT/PAT shapes, OpenAI/Anthropic/AWS/GitHub/Slack tokens, Meta `LLM|…` keys, private keys and long `key=`/`token=` assignments → **0 hits**. Only env files ever committed: `apps/showhow/.env.example` (placeholders, read) and `archive/vault-native/.env.example` (not read; archive is off limits). The pinned gitleaks binary could not be run locally (download blocked); CI runs gitleaks 8.30.1 on full history on every push — check the Actions tab before making the repo public.
