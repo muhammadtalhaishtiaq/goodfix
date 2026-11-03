@@ -1,7 +1,7 @@
 import { isValidOutline, outlinePath } from '../lib/geometry'
 import type { Outline } from '../lib/types'
 
-// Sits on top of media rendered with object-fit: contain, so `meet` lines the frames up.
+// Sits on top of media whose box shrink-wraps the picture (F11, own aspect); `meet` also lines the frames up if letterboxed.
 export function OutlineOverlay({ outline, label }: { outline: Outline; label: string }) {
   if (!isValidOutline(outline)) return null
   return (

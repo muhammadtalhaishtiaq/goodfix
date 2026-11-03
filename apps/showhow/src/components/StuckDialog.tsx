@@ -66,7 +66,7 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
   }
 
   return (
-    <div className="backdrop" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="backdrop sd" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
         <div className="d-head">
           <h2 id="dlg-title" ref={headRef} tabIndex={-1}>{titles[phase]}</h2>
@@ -102,18 +102,21 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
                 <figure className="rv"><div className="im">{step.keyframeUrl ? <img src={step.keyframeUrl} alt="" /> : <span className="ph">Creator frame</span>}</div>
                   <figcaption><b>Reference</b> · {mode === 'where' ? 'all step frames' : `${guide.creatorName}’s step ${stepIdx + 1}`}</figcaption></figure>
               </div>
-              {question.trim() && <p className="note"><Icon name="mic" /><span><b>Your question:</b> {question.trim()}</span></p>}
-              <ul className="recip">
-                <li><Icon name="server" /><span><b>Showhow server</b>: passes it on, keeps nothing</span><span className="tag">receives</span></li>
-                <li><Icon name="eye" /><span><b>Meta Muse Spark</b>: compares your photo with {mode === 'where' ? 'each step' : `step ${stepIdx + 1}`}</span><span className="tag">processes</span></li>
-                <li><Icon name="frame" /><span><b>Meta SAM 3.1</b>: outlines the part that differs</span><span className="tag">processes</span></li>
-              </ul>
-              <p className="note"><Icon name="shield" /><span>Showhow doesn’t store or log it; it goes to Meta with response storage turned off (Meta’s terms apply). A new photo needs a new OK.</span></p>
+              {question.trim() && <p className="note"><span><b>Your question:</b> {question.trim()}</span></p>}
+              <table className="sd-who">
+                <thead><tr><th>Who</th><th>What happens</th><th>Keeps it?</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Showhow server</th><td>Passes it on</td><td><span className="mono">No</span></td></tr>
+                  <tr><th scope="row">Meta Muse Spark</th><td>Compares your photo with {mode === 'where' ? 'each step' : `step ${stepIdx + 1}`}</td><td><span className="mono">store: off</span></td></tr>
+                  <tr><th scope="row">Meta SAM 3.1</th><td>Outlines the part that differs</td><td><span className="mono">store: off</span></td></tr>
+                </tbody>
+              </table>
+              <p className="note"><span>Showhow doesn’t store or log it; it goes to Meta with response storage turned off (Meta’s terms apply). A new photo needs a new OK.</span></p>
               <label className="check"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> I’m 18 or older.</label>
             </div>
             <div className="d-foot">
-              <button className="btn btn-ghost" onClick={() => { setPhoto(null); setPhase('choose') }}>Change photo</button>
-              <button className="btn btn-primary" onClick={send} disabled={!adult}><Icon name="check" /> Send for check</button>
+              <button className="btn btn-line" onClick={() => { setPhoto(null); setPhase('choose') }}>Change photo</button>
+              <button className="btn btn-ink" onClick={send} disabled={!adult}>Send for check</button>
             </div>
           </>
         )}
@@ -127,14 +130,14 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
         {phase === 'error' && (
           <>
             <div className="d-body"><p>{errorText || 'Nothing came back, so we won’t guess.'} Your photo wasn’t stored.</p></div>
-            <div className="d-foot"><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={() => setPhase('review')}>Try again</button></div>
+            <div className="d-foot"><button className="btn btn-line" onClick={onClose}>Close</button><button className="btn btn-ink" onClick={() => setPhase('review')}>Try again</button></div>
           </>
         )}
 
         {phase === 'result' && result && photo && (
           <>
             <div className="d-body">
-              {result.fixture && <p className="fixture-tag">TEST FIXTURE · no model was called</p>}
+              {result.fixture && <p className="mono sd-fixture">TEST FIXTURE · no model was called</p>}
               <div className="verdict">
                 <div className="v-photo">
                   <img src={photo.url} alt="Your photo" />
@@ -146,8 +149,8 @@ export function StuckDialog({ guide, stepIdx, mode, check, onClose, onGoToStep }
               </div>
             </div>
             <div className="d-foot">
-              <button className="btn btn-ghost" onClick={() => { setPhoto(null); setPhase('choose') }}><Icon name="camera" /> New photo</button>
-              <button className="btn btn-primary" onClick={onClose}>Back to the step</button>
+              <button className="btn btn-line" onClick={() => { setPhoto(null); setPhase('choose') }}><Icon name="camera" /> New photo</button>
+              <button className="btn btn-ink" onClick={onClose}>Back to the step</button>
             </div>
           </>
         )}
@@ -161,26 +164,26 @@ function ResultCard({ result, guide, onGo }: { result: CheckResult; guide: Guide
     const s = guide.steps[result.stepIdx]
     return (
       <div className="v-card ok">
-        <h3><Icon name="locate" /> You’re on step {result.stepIdx + 1}</h3>
+        <h3>You’re on step {result.stepIdx + 1}</h3>
         <p><b>{s?.title}</b></p>
         <p>{result.reason}</p>
-        <button className="btn btn-primary" onClick={() => onGo(result.stepIdx)}>Go to step {result.stepIdx + 1} <Icon name="right" /></button>
+        <button className="btn btn-ink" onClick={() => onGo(result.stepIdx)}>Go to step {result.stepIdx + 1}</button>
       </div>
     )
   }
   const { verdict, outline } = result
   if (verdict.status === 'unclear') {
-    return <div className="v-card warn"><h3><Icon name="camera" /> Photo unclear</h3><p>{verdict.message}</p><p>Send a closer, well-lit photo of this step.</p></div>
+    return <div className="v-card unc"><h3>Photo unclear</h3><p>{verdict.message}</p><p>Send a closer, well-lit photo of this step.</p></div>
   }
   if (verdict.status === 'match') {
-    return <div className="v-card ok"><h3><Icon name="check" /> Looks like the creator’s step</h3><p>{verdict.message}</p></div>
+    return <div className="v-card ok"><h3>Looks like the creator’s step</h3><p>{verdict.message}</p></div>
   }
   const pinpointed = !!outline && isValidOutline(outline)
   return (
-    <div className="v-card warn">
-      <h3><Icon name="alert" /> Something’s different</h3>
+    <div className="v-card diff">
+      <h3>Something’s different</h3>
       <p>{verdict.message}</p>
-      <ul className="checks">{verdict.differences.map(d => <li key={d.part}><Icon name="alert" /><span><b>{d.part}</b>: {d.note}</span></li>)}</ul>
+      <ul className="checks">{verdict.differences.map(d => <li key={d.part}><b>{d.part}</b>: {d.note}</li>)}</ul>
       {!pinpointed && <p className="muted">We couldn’t pinpoint it on your photo, so nothing is outlined.</p>}
     </div>
   )
