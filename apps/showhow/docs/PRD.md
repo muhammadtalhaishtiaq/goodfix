@@ -59,8 +59,8 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 **Ask about this step** (`POST /api/ask {guideId, stepIdx, question}`, T20, decision 2026-11-02)
 1. Public, no access code; published guides only (video or voice). The question (≤300 chars) is typed text; no photo or audio.
-2. Server: daily `ask` cap (total + per IP, fail closed, before any model call) → `blockedTopic` on the question (hit → refused, no model call) → Muse Spark with a fixed prompt, this guide's steps and the question as delimited data, schema `{covered, answer, step_refs[]}` → zod → `blockedTopic` on the answer (hit → "not covered").
-3. The answer may only restate what the creator said in the steps; uncovered → "This guide doesn't cover that." No new steps, no safety, medical or electrical advice. Invalid output, timeout or error → honest message + retry, never a guessed answer.
+2. Server, in this order: `blockedTopic` on the question (hit → 422, no cap counted, no model call) → `enforceCaps('ask')` (400 total / 30 per IP, fail closed, 429) → published guide + step exist (else 404) → **one** Muse Spark call (45 s; fixed prompt, this guide's steps and the question as delimited data, schema `{answer, covered, stepRefs}`; error/timeout → 504, unusable output → 502) → `gateAnswer`: not covered, no valid step ref, or a blocked topic in the answer → the fixed message "The creator’s guide doesn’t cover that, so we can’t answer it here.".
+3. The answer may only restate what the creator said in the steps; uncovered → the fixed message above. No new steps, no safety, medical or electrical advice. Invalid output, timeout or error → honest message + retry, never a guessed answer.
 4. Nothing is stored; the log line carries only the allow-listed route fields.
 
 **Creator build** (client-driven, so each server call stays short)

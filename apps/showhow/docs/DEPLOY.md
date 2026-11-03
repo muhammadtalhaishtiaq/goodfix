@@ -34,7 +34,7 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 
 ## 3. Supabase
 
-- [ ] `supabase/schema.sql` applied, including the 2026-11-01 additions (`auto_title`, `auto_category`, `frames_ok`, `claimed_at`, `similar_guides` + `pg_trgm`). T20 Ask is expected to need no schema change (its cap uses the `usage` counters); confirm when T20 lands.
+- [ ] `supabase/schema.sql` applied, including the 2026-11-01 additions (`auto_title`, `auto_category`, `frames_ok`, `claimed_at`, `similar_guides` + `pg_trgm`). T20 Ask needs no schema change (its cap uses the `usage` counters).
 - [ ] `node scripts/check-db.ts` passes (RLS: anon reads published guides only; drafts and `usage` hidden).
 - [ ] Bucket `media`: public read, 50 MB/file, mp4/wav/jpeg/mpeg only.
 - [ ] Test guides and fixtures removed from the published gallery (or clearly labelled `TEST FIXTURE`) before judging.

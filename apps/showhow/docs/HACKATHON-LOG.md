@@ -262,3 +262,8 @@ Independent `hackathon-red-team` review of the actual code (12 findings). All ad
 
 - Talha approved `design/ui-v2-mockup.html` (commit 5cb1ba7) as the UI reference, superseding `design/showhow-prototype.html`, and approved "Ask about this step" (decision 2026-11-02). F11–F13 and F13+ marked in progress; T19 refreshed, T20 added in `TASKS.md`.
 - Docs only: PRD/ARCHITECTURE specify `/api/ask` and the 3-column workbench; new `DEPLOY.md` (T13 checklist) and `DEMO-SCRIPT.md` (draft). No code, deploy or recording happened in this step. A red-team review of the demo script is still to run (with T14).
+
+## 2026-11-02 — T20 Ask: live smoke run
+
+- Reported by the build agent (coordinator message, 2026-11-02): `POST /api/ask` on the dishwasher guide, step 1 → HTTP 200 in ~8.2 s; the answer came from the creator's own words in the step. Built as: `blockedTopic(question)` (422, no cap counted) → `enforceCaps('ask')` 400 total / 30 per IP → published guide + step (404) → one Spark call, 45 s (504 error, 502 unusable output) → `gateAnswer` → fixed "The creator’s guide doesn’t cover that, so we can’t answer it here." for not covered / no valid step ref / blocked topic. Schema `{answer, covered, stepRefs}`; no DB schema change.
+- Still to log for T20 Verify: an uncovered question on the live route and the route-test list.

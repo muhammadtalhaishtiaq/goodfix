@@ -26,7 +26,7 @@ Video guides that check your work, plus voice guides with AI illustrations. Spec
 ## Remaining work
 
 1. **T19** restyle to the approved mockup (F11 media shape, F12 Prev/Next, F13 3-column workbench). In progress.
-2. **T20** Ask about this step. In progress.
+2. **T20** Ask about this step: route built, live smoke 2026-11-02 (HTTP 200, ~8.2 s); remaining Verify items in TASKS.
 3. **T0 / T0b / T12** need Talha's footage: air purifier, dishwasher, coffee machine videos + staged right/wrong/blurry photos.
 4. **T13** push + deploy: needs Talha's OK, a Vercel account and GitHub `production` secrets ([`DEPLOY.md`](apps/showhow/docs/DEPLOY.md)); public-exposure decision before sharing the URL.
 5. **T14** failure drill on the live URL, accessibility/phone pass, draft demo + red-team review.
