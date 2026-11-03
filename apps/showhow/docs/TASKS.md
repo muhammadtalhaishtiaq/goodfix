@@ -89,7 +89,7 @@ flowchart LR
 ## Day 4 additions (Talha's live test, 2026-11-03)
 
 - [x] **T21 Create polish.** Form fields line up across columns; running check spins with a present-tense label; note "nothing is sent until you press…"; blocked screen shows the stage that stopped and quotes the words that tripped layer 1 (`blockedMatch`); wide review panel centred. *(Done 2026-11-03, tests 182.)*
-- [ ] **T22 Better voice illustrations.** Picture briefs + `object`/`scene` modes + SAM outline instead of AI circle + style prompts (DECISIONS 2026-11-03). Code + tests done locally (194). **Needs:** `node scripts/apply-schema.ts` (adds `guides.image_mode`, `guides.image_setting`, `steps.picture`) **before** push. **Verify:** re-run the "reading" voice guide and an object guide on production; before/after sheets in HACKATHON-LOG.
+- [ ] **T22 Better voice illustrations.** Picture briefs + `object`/`scene` modes + SAM outline instead of AI circle + style prompts (DECISIONS 2026-11-03). Code + tests done locally (194). Schema columns applied 2026-11-03 to project `tbruclocjvvlxvwdbqnu` (the one the live bundle uses) via `node scripts/apply-schema.ts`, at Talha's request. **Verify:** re-run the "reading" voice guide and an object guide on production; before/after sheets in HACKATHON-LOG.
 - [x] **T23 Instant device checks.** Voice: length, size, speech level after local conversion; video: tracks, size, length from the header. Nothing sent. *(Done 2026-11-03; headless Chrome: silent.wav → 2 problems; good.wav, t8.wav, t8.mp4, synthetic.mov, bad.mp4 → pass.)*
 - [ ] **T24 (decide)** Page width 1200 → 1320 px: screenshots first.
 
