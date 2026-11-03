@@ -57,7 +57,7 @@ export function GalleryView() {
       <div className="filters">
         <input className="search" type="search" aria-label="Search guides" value={q} onChange={e => setQ(e.target.value)} placeholder="Search guides: bookcase, printer…" />
         <div className="cats" role="group" aria-label="Category">
-          {['All', ...CATEGORIES].map(c => <button key={c} className="tab" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
+          {['All', ...CATEGORIES.filter(c => all?.some(g => g.category === c))].map(c => <button key={c} className="tab" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
         </div>
       </div>
 
