@@ -1,0 +1,14 @@
+/* "Ask about this step" (F13+). Token names from design/ui-v2-mockup.html; fallbacks keep it readable before index.css adopts them. */
+.ask-panel { display: grid; gap: var(--s2, 8px); border-top: 1px solid var(--rule, #D4D1C8); padding-top: var(--s3, 12px) }
+.ask-panel h3 { font: 600 16px/20px var(--sans, system-ui, sans-serif); margin: 0 }
+.ask { display: grid; gap: var(--s2, 8px) }
+.ask input { min-height: 44px; border: 1.5px solid var(--rule-strong, #8C887F); border-radius: var(--r1, 4px); padding: 0 12px; background: var(--surface, #FFFFFF); color: var(--ink, #161614); font: inherit }
+.ask input:focus-visible, .ask-btn:focus-visible { outline: 2px solid var(--focus, #1D4ED8); outline-offset: 2px }
+.ask-btn { min-height: 44px; padding: 12px 20px; border-radius: var(--r1, 4px); border: 1.5px solid transparent; background: var(--ink, #161614); color: var(--on-ink, #FFFFFF); font: 600 16px/20px var(--sans, system-ui, sans-serif); cursor: pointer }
+.ask-btn:disabled { opacity: .5; cursor: not-allowed }
+.ask-btn-line { background: transparent; color: var(--ink, #161614); border-color: var(--rule-strong, #8C887F) }
+.ask-answer { margin: 0; background: var(--surface-2, #EAE8E2); border-left: 4px solid var(--ink-3, #65625B); padding: var(--s3, 12px); font-size: 15px; line-height: 22px; color: var(--ink, #161614) }
+.ask-mono { display: block; margin-bottom: 4px; color: var(--ink-3, #65625B); font: 500 13px/16px var(--mono, ui-monospace, monospace); letter-spacing: .04em; text-transform: uppercase }
+.ask-error { display: grid; gap: var(--s2, 8px); background: var(--unclear-soft, #E7EAEE); border-left: 4px solid var(--unclear, #3F4A5A); padding: var(--s3, 12px) }
+.ask-error p { margin: 0 }
+.ask-note { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-3, #65625B) }
