@@ -1,6 +1,6 @@
 # Demo script (3:00)
 
-**Written:** 2026-11-02 · **Status:** draft; nothing recorded yet. Record on the **deployed** build (T13) with the UI v2 restyle (T19). Every claim must match what the live build did on camera (T15 Verify).
+**Written:** 2026-11-02 · **Status:** draft; nothing recorded yet. Record on the **deployed** build (https://goodfix-alpha.vercel.app, T13 done 2026-11-02) with the UI v2 restyle (T19). Every claim must match what the live build did on camera (T15 Verify).
 
 **Rules on camera:** real model calls only. Anything that isn't live is labelled on screen (`TEST FIXTURE`, or a lower-third "recorded earlier on the live build, 2026-11-0x"). Cut waiting with a visible "⏩ 40 s" jump-cut tag, never hide that time passed. No access codes, keys, `.env.local` or Vercel/Supabase dashboards in any frame. Learner photos shown are staged by Talha.
 
@@ -12,7 +12,7 @@
 | 0:50–1:10 | Published guide in the **3-column workbench**: steps left, looping clip centre with "Show part", Prev/Next, help panel right (read aloud, creator tip, I'm stuck, Ask). Press → to change step | "A learner follows one step at a time: the creator's own clip, the part outlined, everything on one screen." | **Live** |
 | 1:10–1:45 | Phone: "I'm stuck" → staged *wrong* photo → payload preview (photo, reference frame, question, recipients) → Send → verdict **differs** with the SAM box **on the learner's photo** | "Stuck? Send one photo. You see exactly what's sent, and nothing is stored. Muse Spark compares it with the creator's step, and SAM outlines what's different, on *your* photo." | **Live** (T0 staged photos; only if T0 passed for this step) |
 | 1:45–2:10 | Create → "Talk it through" → record ≤2 min → style picker → steps fill in with illustrations, each tagged **Illustration by AI** (dashed edge) → published voice guide | "No video? Just talk it through. Muse Image illustrates every step from one base picture, so the object stays the same. Always labelled as AI, never used as evidence." | **Live** recording; illustrations may be **recorded earlier on the live build** (label it) |
-| 2:10–2:25 | Voice guide help panel → **Ask**: "Do I need to rinse the plates first?" → answer quoting the step; then an off-guide question → "The creator’s guide doesn’t cover that, so we can’t answer it here." | "Ask a question and it answers only from the creator's own steps, or says plainly it doesn't know." | **Live** (T20) |
+| 2:10–2:25 | Voice guide help panel → **Ask**: "Do I need to rinse the plates first?" → the creator's own words appear as a quote labelled "The creator says · step N" (instruction + tip, no AI-written answer); then an off-guide question → "The creator’s guide doesn’t cover that, so we can’t answer it here." | "Ask a question and it shows you the creator's own words from the step that answers it. The AI only finds the step; it never writes the answer. If the guide doesn't cover it, it says so." | **Live** (T20; covered + uncovered ran on dev 2026-11-02, covered on production) |
 | 2:25–2:40 | Voice Create with a staged harmful recording → **blocked** with the reason, nothing saved | "Nothing is saved until a two-layer check passes: hard topic rules, then a Muse Spark review. If it can't check, it refuses." | **Live** (staged harmful script) |
 | 2:40–2:50 | Honest failure: blurry photo → **unclear**, "take a closer, well-lit photo"; or a step with no outline → "couldn't pinpoint it" | "When it can't tell, it says so. No guessed outlines, no made-up answers." | **Live** |
 | 2:50–3:00 | Back to the hands at the appliance; end card: live URL, repo, "Built 2026-10-27 → 11-04 for the Meta Global AI Developer Hackathon" | "Real know-how, checked against your work. Showhow." | Card |
@@ -34,7 +34,9 @@ Show for 1–2 s each or list in the README/submission notes:
 
 ## Before recording
 
-- [ ] T13 deployed and smoke-checked ([`DEPLOY.md`](DEPLOY.md)); T19 and T20 verified.
+- [x] T13 deployed and smoke-checked ([`DEPLOY.md`](DEPLOY.md), 2026-11-02); T20 verified (2026-11-02).
+- [ ] T19 verified (1024/390 px, video guide + stuck dialog; contrast computed 2026-11-02).
+- [ ] A video create, a voice create and an I'm-stuck check run once on the live URL.
 - [ ] T0 passed for the step used at 1:10 (right → match, wrong → differs + box, blurry → unclear).
 - [ ] Staged harmful recording script approved by Talha (mild, clearly off-limits, e.g. a blocked topic; nothing graphic).
 - [ ] Browser zoom/screen size fixed (1440×900 desktop, a real phone for the check).

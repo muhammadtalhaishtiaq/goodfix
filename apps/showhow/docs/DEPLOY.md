@@ -1,6 +1,6 @@
 # Deploy checklist (T13)
 
-**Written:** 2026-11-02 · **Status:** not deployed. Nothing below has been run on Vercel yet.
+**Written:** 2026-11-02 · **Status:** deployed 2026-11-02 at https://goodfix-alpha.vercel.app (Vercel project `goodfix`). Deploys come from **Vercel's Git integration** on push to `main`; the GitHub Actions deploy job has no `VERCEL_*` secrets and skips. Boxes ticked only where `HACKATHON-LOG.md` (2026-11-02) records it.
 Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml), [`ci.yml`](../../../.github/workflows/ci.yml), [`cleanup.yml`](../../../.github/workflows/cleanup.yml), [`vercel.json`](../vercel.json), ARCHITECTURE §10/§13.
 
 🔒 = needs Talha's explicit OK before doing it. Names only here; **never write a value into this file, Git, logs, chat or screenshots.**
@@ -14,10 +14,10 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 
 ## 2. Vercel project 🔒
 
-- [ ] Talha creates/links a Vercel Hobby project for this repo.
-- [ ] Framework comes from `vercel.json` (`vite`, `npm run build`, `dist`, `api/*.ts` `maxDuration: 300`).
-- [ ] **Root Directory:** the workflow runs the CLI *inside* `apps/showhow/`. Confirm the project setting matches that (if Root Directory is also set to `apps/showhow`, the CLI may look for `apps/showhow/apps/showhow`). Check on the first deploy.
-- [ ] Vercel env vars, **Production** environment (`vercel pull --environment=production` reads these; `VITE_*` must be present at build time):
+- [x] Talha created the Vercel Hobby project `goodfix`, linked to this repo (2026-11-02).
+- [x] Framework comes from `vercel.json` (`vite`, `npm run build`, `dist`, `api/*.ts` `maxDuration: 300`).
+- [x] **Root Directory = `apps/showhow`**, Node 22.x, Vite preset (fixed 2026-11-02: it was `.`, and the first two deploys built nothing). Note for the fallback GitHub job: it runs the CLI *inside* `apps/showhow/`, so with this setting it may look for `apps/showhow/apps/showhow`; check before using it.
+- [x] Vercel env vars, **Production** environment (2026-11-02; final set should be exactly these seven: `CREATE_ACCESS_CODES`, `IP_SALT`, `META_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_URL`, `WIT_TOKEN`; the imported extras `SUPABASE_PASSWORD`, `SUPABASE_ACCESS_TOKEN`, `VERCEL_OIDC_TOKEN`, `WIW_VERSION` were removed by Talha and production redeployed, 2026-11-02) (`vercel pull --environment=production` reads these; `VITE_*` must be present at build time):
 
 | Name | Kind | Note |
 |---|---|---|
@@ -29,7 +29,7 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 | `IP_SALT` | secret | **Required on Vercel** (`api/_lib/http.ts` throws without it). Long random |
 | `WIT_TOKEN` | secret | Read aloud at publish (best effort) |
 
-- [ ] **Access codes:** fresh, long random production codes (e.g. `openssl rand -base64 24`, one per person: Talha, judges). No dev codes (short test codes from `.env.local`) in production. The judges' code goes only in the private submission notes. 🔒
+- [x] **Access codes** (2026-11-02; kept in a private file outside the repo; dev codes → 401 on production): fresh, long random production codes (e.g. `openssl rand -base64 24`, one per person: Talha, judges). No dev codes (short test codes from `.env.local`) in production. The judges' code goes only in the private submission notes. 🔒
 - [ ] Never set `SUPABASE_ACCESS_TOKEN` on Vercel (local `apply-schema` only); revoke it once the schema is final.
 
 ## 3. Supabase
@@ -42,7 +42,7 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 
 ## 4. GitHub 🔒
 
-- [ ] Push to `main` (asks first, per CLAUDE.md). CI must be green before Deploy runs.
+- [x] Push to `main` (2026-11-02; Vercel's Git integration deploys from it). CI status on GitHub not yet logged.
 - [ ] Environment **`production`** (both `deploy.yml` and `cleanup.yml` use it) with these secrets:
 
 | Secret | Used by |
@@ -59,20 +59,20 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 
 ## 5. Deploy
 
-- [ ] Deploy runs after CI on `main` (or `workflow_dispatch`): `vercel pull` → `vercel build --prod` → bundle scan on `.vercel/output/static` → `vercel deploy --prebuilt --prod`. 🔒
+- [ ] *(Not used: Vercel's Git integration deploys instead; this job skips without secrets.)* Deploy runs after CI on `main` (or `workflow_dispatch`): `vercel pull` → `vercel build --prod` → bundle scan on `.vercel/output/static` → `vercel deploy --prebuilt --prod`. 🔒
 - [ ] Fallback: `vercel deploy --prod` from `apps/showhow/` on Talha's machine. 🔒
 
 ## 6. Smoke checks on the live URL (log each in `HACKATHON-LOG.md` with the date)
 
-- [ ] `GET /api/health` → `{ok:true}`.
-- [ ] Response headers include the CSP, `X-Frame-Options: DENY`, `Permissions-Policy` (`curl -sI <url>/`).
-- [ ] Gallery loads published guides from Supabase; a guide plays its step segment; images load from `*.supabase.co`.
-- [ ] IBM Plex renders and DevTools shows **no CSP violations** (stylesheet from `fonts.googleapis.com`, files from `fonts.gstatic.com`).
+- [x] `GET /api/health` → `{ok:true}` (2026-11-02).
+- [x] Response headers include the CSP, `X-Frame-Options: DENY`, `Permissions-Policy` (`curl -sI <url>/`) (2026-11-02).
+- [x] *(2026-11-02: gallery + a voice guide with real data, headless Chrome; a video guide's segment not yet seen live.)* Gallery loads published guides from Supabase; a guide plays its step segment; images load from `*.supabase.co`.
+- [ ] *(2026-11-02: headless Chrome console on production showed no CSP violations on gallery, a voice guide, Create, voice Create, Privacy. Not covered: the shrink worker during a real upload, and a check in Talha's own browser.)* IBM Plex renders and DevTools shows **no CSP violations** (stylesheet from `fonts.googleapis.com`, files from `fonts.gstatic.com`).
 - [ ] One "I'm stuck" check with a staged photo: preview → Send → verdict (+ box if `differs`); camera permission prompt works.
-- [ ] One Ask on a published guide (T20): a covered question answers from the steps; an uncovered one says so.
-- [ ] Create with a production access code: wrong code → 401 message; one video guide end to end (confirms `/api/steps` duration and the Spark `video_url` fetch on Vercel); one voice guide end to end.
+- [x] One Ask on a published guide (T20): covered → the creator's step quoted (production 2026-11-02, 8.1 s and 8.6 s). The uncovered case ran on dev 2026-11-02, not yet on production.
+- [ ] *(2026-11-02: dev codes → 401 and the new judges code accepted; no create run yet.)* Create with a production access code: wrong code → 401 message; one video guide end to end (confirms `/api/steps` duration and the Spark `video_url` fetch on Vercel); one voice guide end to end.
 - [ ] Bundle scan in the deploy log is clean.
-- [ ] Then T14: failure drill (ARCHITECTURE §12) on the live URL.
+- [ ] Then T14: failure drill (ARCHITECTURE §12) on the live URL. *(Partly run 2026-11-02 with curl: 422/404/400/413/401/405 paths all honest, no model called. Still to do: the drill items that need a real create.)*
 
 ## 7. Rollback
 

@@ -28,7 +28,7 @@
 | Model | Role |
 |---|---|
 | Muse Voice Transcribe | Creator narration → transcript turns with timestamps (these set step start/end); voice-guide recordings → text |
-| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps; learner question + this guide's steps → grounded answer (Ask) |
+| Muse Spark | Video + transcript → step boundaries, titles, key part names; learner photo vs creator keyframe → structured verdict; photo → which step; voice transcript → safety/quality review, category, steps; learner question + this guide's steps → which steps cover it (Ask; the learner sees only the creator's own step text) |
 | SAM 3.1 | Outlines the named key part on each step keyframe and the differing part on the learner's photo |
 | Muse Image | Voice guides: one illustration per step in the creator's chosen style ("Illustration by AI"). Video guides (optional): enhanced version of each real keyframe ("Enhanced by AI"). Highlight edits circle the key part. |
 
@@ -39,7 +39,7 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 **In (demo build):**
 - Gallery: browse, search, category filter, guide cards. Seeded with 3–4 real guides we film and build **through our own pipeline**.
 - Guide viewer as a **3-column workbench** (T19, approved 2026-11-02): ≥1200 px = step list left · centre frame (looping step segment of the creator video or illustration, at its own aspect ratio, never cropped) with "Show part", Prev/Next on and under the frame, instruction, segment bar · help panel right (read aloud, creator tip quote, I'm stuck, Ask). Tablet = step strip + 2 columns. Phone = 1 column, sticky Prev · n of N · Next bar, help in a bottom sheet. ←/→ keys change steps.
-- **Ask about this step** (T20): a typed question answered only from this guide's steps; on video and voice guides.
+- **Ask about this step** (T20): a typed question answered by quoting this guide's own steps (no model prose); on video and voice guides.
 - **I'm stuck** check: photo → payload preview and consent → verdict + outline. Fresh consent per photo.
 - **Voice guides** (T17, after the core loop): record/upload ≤2 min audio → two-layer safety and quality gate → steps → Muse Image illustrations in one of 6 styles (realistic photo, line art, flat colour, blueprint, watercolour, 3D clay) with stored sample previews → review → publish. The "I'm stuck" photo check is **off** for voice guides (no real reference frame).
 - **AI-enhanced step images for video guides** (T18, optional checkbox at upload): each step's real keyframe → Muse Image edit (same scene, cleaner light, sharper) + highlight edit. Labelled "Enhanced by AI" with a "View original frame" toggle. The creator approves each one. **The "I'm stuck" check always compares against the real frame, never the enhanced one.**
@@ -59,9 +59,9 @@ Add-on (Meta-owned, not a hackathon Model API model): Wit.ai text-to-speech for 
 
 **Ask about this step** (`POST /api/ask {guideId, stepIdx, question}`, T20, decision 2026-11-02)
 1. Public, no access code; published guides only (video or voice). The question (≤300 chars) is typed text; no photo or audio.
-2. Server, in this order: `blockedTopic` on the question (hit → 422, no cap counted, no model call) → `enforceCaps('ask')` (400 total / 30 per IP, fail closed, 429) → published guide + step exist (else 404) → **one** Muse Spark call (45 s; fixed prompt, this guide's steps and the question as delimited data, schema `{answer, covered, stepRefs}`; error/timeout → 504, unusable output → 502) → `gateAnswer`: not covered, no valid step ref, or a blocked topic in the answer → the fixed message "The creator’s guide doesn’t cover that, so we can’t answer it here.".
-3. The answer may only restate what the creator said in the steps; uncovered → the fixed message above. No new steps, no safety, medical or electrical advice. Invalid output, timeout or error → honest message + retry, never a guessed answer.
-4. Nothing is stored; the log line carries only the allow-listed route fields.
+2. Server, in this order (as built after the 2026-11-02 red-team review): `blockedTopic` on the question (hit → 422, no cap counted, no model call) → published guide + step exist (else 404) → `enforceCaps('ask')` (400 total / 30 per IP, per-IP counter first, fail closed, 429; after the lookups so random ids can't spend it) → **one** Muse Spark call (45 s; fixed prompt, this guide's steps and the question as delimited data, schema `{covered, stepRefs}`; error/timeout → 504, unusable output → 502) → `gateAnswer`.
+3. **The learner never sees model prose.** Spark only says whether the guide covers the question and which steps (at most 2). The learner sees those steps' own `instruction` and `tip_quote`, read from the DB, as quotes labelled "The creator says · step N". Not covered or no valid step ref → the fixed message "The creator’s guide doesn’t cover that, so we can’t answer it here.". So Ask can't add steps or advice, and an injected instruction in the question can only change which of the creator's steps are quoted (route test). Invalid output, timeout or error → honest message + retry.
+4. A disclosure line sits under the panel (the question goes to Muse Spark with storage off; Showhow doesn't save it; 18+), and the Privacy page has a section "If you ask about a step". Nothing is stored; the log line carries only the allow-listed route fields.
 
 **Creator build** (client-driven, so each server call stays short)
 1. Browser checks the file (video, ≤500 MB, ≤3 min) and checks encoder support at runtime (`canEncode`, not a browser-name guess). It then shrinks the video with Mediabunny/WebCodecs to H.264 720p MP4 at ~1 Mbps (~23 MB for 3 min, hard cap 48 MB) and extracts a 16 kHz mono WAV.
@@ -169,12 +169,12 @@ export function gateVerdict(verdict: ModelVerdict, outline: Outline | null) {
 7. (T17) A spoken how-to becomes an illustrated guide whose step images show the same object; a staged harmful or gibberish recording is blocked with a reason and nothing appears in the database or Storage.
 8. (T18) With "Enhance with AI" ticked, each step shows a cleaner image of the same real scene, with the original frame one tap away; checks still use the real frame.
 9. (T19) At 1440×900 the current step's frame, instruction, Prev/Next and help panel are visible without scrolling; no guide image is cropped or letterboxed.
-10. (T20) Ask answers a covered question with the guide's own step text and says plainly when the guide doesn't cover a question; a blocked-topic question is refused before any model call.
+10. (T20) Ask answers a covered question by quoting the guide's own step text (never model prose) and says plainly when the guide doesn't cover a question; a blocked-topic question is refused before any model call.
 
 ## 11. Open questions (resolved on day 1 unless noted)
 
 1. Still unknown after the docs review (2026-10-30): Muse Spark video duration/size limits and frame sampling; how SAM's mask maps onto the frame; whether Meta offers a spend-limit control (until confirmed, the app's own caps are the only guaranteed limit).
-2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit: `/api/steps` measured 28.6 s locally (2026-11-01); confirm in production (T13).
+2. Real Spark/SAM/Transcribe latency against Vercel Hobby's 300 s function limit: `/api/steps` measured 28.6 s locally (2026-11-01). Production is deployed (2026-11-02, T13) but no create has run there yet; confirm with the first live create.
 3. Whether to host on a code-gated public URL: ask Meta in Discord #office-hours (draft question in `HACKATHON-LOG.md`, 2026-10-30).
 4. **Seed guides (decided 2026-10-31):** change an air purifier's water, run a dishwasher, clean a coffee machine (appliance cleaning only; no food or drink-safety claims). Talha films these, plus staged right/wrong/blurry photos for 1–2 steps each.
 5. Final product name.

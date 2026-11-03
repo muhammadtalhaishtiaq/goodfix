@@ -17,7 +17,7 @@ Three ways to **create** a guide, one way to **follow** it:
 | **Voice guide** | ≤2 min of speech, no video | AI illustration per step in a chosen style, highlight circle on the key part | T17 |
 | **Learner** | Follows steps; optionally sends one photo when stuck | Verdict (match / differs / unclear) + box on *their* photo (video guides only) | T5–T6 |
 
-Extras: read a step aloud (Wit.ai, T16), "Ask about this step" (typed question answered only from the guide's steps, video and voice guides, T20), "Where am I?" (T7).
+Extras: read a step aloud (Wit.ai, T16), "Ask about this step" (typed question; the learner sees only the creator's own step text quoted, never model prose; video and voice guides, T20), "Where am I?" (T7).
 
 **Viewer layout (T19, UI v2 approved 2026-11-02, `design/ui-v2-mockup.html`):** ≥1200 px a 3-column workbench: steps · frame (own aspect ratio, never cropped) + instruction + Prev/Next · help panel (read aloud, creator tip, I'm stuck, Ask). Tablet: step strip + 2 columns. Phone: 1 column, sticky Prev · n of N · Next bar, help in a bottom sheet. ←/→ change steps.
 
@@ -164,8 +164,8 @@ Long routes (`/api/steps`, `/api/voice-guides`) stream NDJSON progress events vi
 | `/api/steps` `{guideId}` | access code | status gate | Only from `draft`/`failed` with `attempts < 3` (`claimGuide`). Transcribe once (save `turns`, delete WAV) → Spark (public `video_url` + numbered turns) → `validateSteps` → replace steps → `ready` → signed upload URLs for each `{idx}.jpg` + capture time. Measured live: 28.6 s | T9 ✅ |
 | `/api/outlines` `{guideId}` | access code | status gate | From `ready`, video only. For each uploaded keyframe (`storage.list`): SAM with `sam_noun` (fallback: last word of `key_part`) → `bestOutline` → save `keyframe_path` + `outline`. Failure returns the guide to `ready` | T10 ✅ |
 | `/api/publish` `{guideId, edits[{idx,title,instruction,dropAiImage?}]}` | access code | — | From `ready` only, once. Applies text edits (never times/geometry), optionally drops a rejected AI image, makes read-aloud MP3s from the **final** text (Wit.ai, best effort, T16), then `published`. Returns the share path + read-aloud results | T11 ✅ T16 ✅ |
-| `/api/check` `{guideId, stepIdx, mode:'stuck', photo: base64 JPEG data URL ≤1.5 MB, question?≤300}` | — (public) | `check` | Published video guides only. Load the step's **real keyframe** (never `image_path`) → Spark verdict (`/v1/responses`, 60 s) → zod (invalid → 502) → SAM on the photo if `differs` (SAM failure → verdict without box) → gate. Model error/timeout → 504. Photo held in memory only | T5 ✅ |
-| `/api/ask` `{guideId, stepIdx, question ≤300}` | — (public) | `ask` | In this order: `blockedTopic(question)` → 422 (no cap counted, no model call) → `enforceCaps('ask')` 400 total / 30 per IP (429) → published guide (video or voice) + step, else 404 → one Spark call (`/v1/responses`, 45 s, fixed prompt, the guide's steps + question as delimited data, `json_schema` `{answer, covered, stepRefs}`; error/timeout → 504, unusable output → 502) → `gateAnswer`: not covered / no valid step ref / blocked topic in the answer → fixed "The creator’s guide doesn’t cover that, so we can’t answer it here.". Nothing stored; no schema change | T20 (built 2026-11-02) |
+| `/api/check` `{guideId, stepIdx, mode:'stuck', photo: base64 JPEG data URL ≤1.5 MB, question?≤300}` | — (public) | `check` | Published video guides only. Load the step's **real keyframe** (never `image_path`) → Spark verdict (`/v1/responses`, 60 s) → zod (invalid → 502) → SAM on the photo if `differs` (SAM failure → verdict without box) → gate. Model error/timeout → 504. The `check` cap is counted only after the published-guide / video / keyframe checks, so refused requests spend nothing (fixed 2026-11-02). Photo held in memory only | T5 ✅ |
+| `/api/ask` `{guideId, stepIdx, question ≤300}` | — (public) | `ask` | In this order: `blockedTopic(question)` → 422 (no cap counted, no model call) → published guide (video or voice) + step, else 404 → `enforceCaps('ask')` 400 total / 30 per IP, per-IP counter first (429; counted only after the lookups, so random ids can't spend it) → one Spark call (`/v1/responses`, 45 s, fixed prompt, the guide's steps + question as delimited data, `json_schema` `{covered, stepRefs}`; error/timeout → 504, unusable output → 502) → `gateAnswer`: covered with a valid step ref → the cited steps' own `instruction` + `tip_quote` from the DB (at most 2), shown as quotes labelled "The creator says · step N"; otherwise the fixed "The creator’s guide doesn’t cover that, so we can’t answer it here.". **No model prose is ever shown.** Returns `{covered, quotes[{step, text, tip}]}`. Nothing stored; no schema change | T20 ✅ (2026-11-02) |
 | `/api/voice-guides` raw `audio/wav` body (≤4.2 MB ≈ 2 min; base64 JSON would exceed 4.5 MB); title/category/name/style/consent/adult as URI-encoded JSON in `x-meta` | access code | `build` | ✅ T17. Transcribe → safety gate (2 layers, fail closed) → steps → **only now** insert draft | T17 |
 | `/api/voice-images` `{guideId[, idx]}` | access code | status gate (base) + `image` cap | Base mode (claimed): base image → `base.jpg`. Step mode (parallel, unclaimed, guide must be `ready`): edit of the base → highlight → `{idx}-ai.jpg` + `-ai-focus.jpg` (F9). Previously: ✅ T17. Base image from `subject` + style → per-step edit **of the base** → highlight edit → `{idx}-ai.jpg` + `-ai-focus.jpg` (a step that fails stays text-only; all fail → 502). Measured live: 44 s for 3 steps |
 | `/api/enhance` `{guideId, idx}` | access code | `image` cap | One step per call, parallel (F9). Previously: ✅ T18. Video only. Per real keyframe: Muse Image edit with `size = sizeLike(jpegSize(frame))` so the shape matches (no reframing) → highlight edit → `{idx}-ai.jpg` / `-ai-focus.jpg`; the real keyframe is never touched. Per-step failure tolerated; all fail → 502 (guide stays `ready`). Live: 27–32 s for 3 steps |
@@ -268,16 +268,17 @@ sequenceDiagram
   participant M as Meta
   L->>B: types a question in the help panel (≤300 chars) · Ask
   B->>A: guideId + stepIdx + question
-  A->>A: blockedTopic(question) → 422 (no cap counted)
-  A->>A: enforceCaps('ask') → 429 · published guide + step → 404
+  A->>A: blockedTopic(question) → 422 (no cap counted, no model call)
+  A->>A: published guide + step → 404 (no cap counted)
+  A->>A: enforceCaps('ask'): per-IP counter, then shared total → 429
   A->>M: one Muse Spark call, 45 s (fixed prompt + this guide's steps + question as delimited data)
-  A->>A: zod {answer, covered, stepRefs} (unusable → 502; error/timeout → 504)
-  A->>A: gateAnswer: not covered / no valid step ref / blocked topic → fixed message
-  A-->>B: answer + step refs, or the fixed "doesn't cover that" message
-  B->>L: answer with the step(s) it came from · errors: honest message + Retry
+  A->>A: zod {covered, stepRefs} (unusable → 502; error/timeout → 504)
+  A->>A: gateAnswer: covered + valid refs → the cited steps' own instruction + tip_quote from the DB (≤2); else the fixed message
+  A-->>B: {covered, quotes[{step, text, tip}]} (no model prose)
+  B->>L: quotes labelled "The creator says · step N", or "The creator’s guide doesn’t cover that…" · errors: honest message + Retry
 ```
 
-Nothing from Ask is stored. It works on voice guides too, giving them an interactive helper without a photo check.
+A disclosure line sits under the panel and the Privacy page has "If you ask about a step". Nothing from Ask is stored. It works on voice guides too, giving them an interactive helper without a photo check.
 
 ## 8. Meta model calls (all verified live; request shapes in `api/_lib/meta.ts` and the spike scripts)
 
@@ -287,7 +288,7 @@ Nothing from Ask is stored. It works on voice guides too, giving them an interac
 | Steps | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | video (URL or data URL) + numbered turns → steps by turn index | 150 s (120 s for voice) | 2026-10-30, 15.6 s (data URL) |
 | Verdict | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` (one Spark endpoint everywhere; the spike used `/v1/chat/completions`) | 2 images + step text → `{status, differences[{part, sam_noun, note}], message}` | 60 s | 2026-10-30, 5–9.5 s |
 | Voice review | `POST /v1/responses` · `muse-spark-1.3` | transcript → `{is_howto, complete, safety, category, subject, missing[], reason}` | 45 s | T17 |
-| Ask | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | the guide's steps + question (delimited) → `{answer, covered, stepRefs}` | 45 s | 2026-11-02, HTTP 200 in ~8.2 s (dishwasher guide, step 1) |
+| Ask | `POST /v1/responses` · `muse-spark-1.3`, `text.format: json_schema` | the guide's steps + question (delimited) → `{covered, stepRefs}` only; the learner sees the cited steps' DB text | 45 s | 2026-11-02 dev: covered 7.7 s, uncovered 5.6 s; production: covered 8.1 s and 8.6 s |
 | Segment | `POST /v1/responses` · `sam-3.1`, `metadata.include_confidence: "true"` | image + one simple noun → `<\|box;x1;y1;x2;y2;w;h;c\|>` tokens | 60 s | 2026-10-30, ~1 s |
 | Illustrate | `POST /v1/images/generations` · `muse-image-1.0` | prompt (+ style) → JPEG, $0.01 | 90 s | 2026-10-31, 10–21 s |
 | Edit / highlight | `POST /v1/images/edits` · `muse-image-1.0`, `images[{image_url}]` | reference + instruction → JPEG, $0.01 | 90 s | 2026-10-31, 8–18 s |
@@ -301,7 +302,7 @@ All Meta calls send `store: false` (Meta stores by default). Prompts are fixed i
 |---|---|
 | Two-layer content check on BOTH creation paths: hard topic rules (incl. adult, hate/harassment, personal details) + Muse Spark review, fail closed; video keyframes get a frame review and publish requires `frames_ok` | `safety.ts`, `/api/steps`, `/api/voice-guides`, `/api/outlines`, `/api/publish` (tested) |
 | Hard topic rules apply to video narration, voice recordings, creator edits at publish, and the check's own answer | `blockedTopic` in `/api/steps`, `/api/voice-guides`, `/api/publish`, `/api/check` (tested) |
-| Ask answers only from this guide's steps; topic rules on the question and the answer; uncovered → says so | `/api/ask`: `blockedTopic(question)` + prompt + zod + `gateAnswer` (T20) |
+| Ask shows only the creator's own step text (instruction + tip from the DB, ≤2 steps), never model prose; topic rules on the question; uncovered → fixed message | `/api/ask`: `blockedTopic(question)` + prompt + zod `{covered, stepRefs}` + `gateAnswer` (tested, incl. an injected-instruction question) |
 | The learner's question is passed as delimited data, never as instructions | `verdictPrompt` (tested) |
 | Instructions come from the creator's words; tips must be verbatim quotes | `stepsPrompt` + `validateSteps` (tested) |
 | Step times come from Transcribe timestamps, not the model | `validateSteps` |
@@ -335,14 +336,14 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Data | Stored? |
 |---|---|
 | Learner photo + question | Never. In memory for one request; sent to Meta with `store:false` |
-| Ask question + answer (T20) | Never. In memory for one request; `store:false` |
+| Ask question (T20) | Never. In memory for one request; `store:false`. The shown answer is the guide's own published step text |
 | Voice-guide recording | Never. In memory; transcript kept only as step text if the gate passes |
 | Creator video | Storage, public, life of the guide (creator consented) |
 | Creator WAV | Storage until transcription, then deleted |
 | IP address | Never raw; salted hash inside a daily `usage` counter key |
 | Logs | Route, status, ms, model, request ID only |
 
-**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `image` (voice-images, enhance): 60 total / 20 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6; `ask` (T20): 400 total / 30 per IP), counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
+**Abuse and cost:** daily caps (`check`: 300 total / 40 per IP; `image` (voice-images, enhance): 60 total / 20 per IP; `build`: 40 total / 12 per IP, raised 2026-11-01 after a day of testing hit 6; `ask` (T20): 400 total / 30 per IP). For every kind the per-IP counter is checked first, then the shared total, so a visitor over their own limit can't keep spending the shared budget (fixed after the 2026-11-02 red-team review). Counted in Postgres so they hold across serverless instances, failing closed. Guide creation needs an access code. Meta documents no spend-limit control, so these caps are the guaranteed limit.
 
 **Meta Terms:** fixed prompts, allowlisted models, no prompt passthrough (an Integrated Product, not a gateway, §10.1(i)); Standard models only, never Contributor mode; 18+ confirmation on create and on the first check. Public exposure needs a dated decision (Discord question pending).
 
@@ -375,9 +376,11 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Meta timeout / 429 / 5xx | "The checker didn't answer. Try again." Nothing guessed |
 | Voice guide blocked | The reason (unsafe topic / not a how-to / unreadable check); nothing saved; Record again |
 | Voice guide possibly missing a step | Built anyway; review shows "The AI thinks you may have skipped: …" |
-| Ask: the guide doesn't cover the question (or the answer hit a topic rule) | Fixed message: "The creator’s guide doesn’t cover that, so we can’t answer it here." Nothing guessed |
-| Ask: blocked-topic question | 422 refusal; no cap counted, no model call |
-| Ask: Meta timeout / invalid output | "Couldn't get an answer. Try again." + Retry |
+| Ask: the guide doesn't cover the question (or no valid step ref) | Fixed message: "The creator’s guide doesn’t cover that, so we can’t answer it here." Nothing guessed |
+| Ask: blocked-topic question | 422 "We can only answer questions about what this guide covers, and that topic isn’t one we can help with."; no cap counted, no model call |
+| Ask: unknown guide or step | 404; no cap counted |
+| Ask: Meta timeout / error | 504 "We couldn’t get an answer just now. Nothing was saved. Please try again." + Retry |
+| Ask: unusable model output | 502 "We got an answer we couldn’t use. Nothing was saved. Please try again." + Retry |
 | Muse Image fails or is policy-blocked | Step shows text only, "No illustration"; Regenerate |
 
 ## 13. Environments
@@ -386,7 +389,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 |---|---|---|
 | **Local** | `npm run dev`: Vite UI + a dev-only plugin serving `api/<name>.ts` with the same Request/Response handlers as Vercel; `.env.local` loaded server-side only | `.env.local` (git-ignored) |
 | **CI** | GitHub Actions on push/PR: `npm ci` → lint → typecheck → test → build → bundle scan (fake canaries) → `npm audit`; separate full-history gitleaks job. Actions pinned to commit SHAs, read-only token | None (fake canaries only) |
-| **Production** (T13, needs Talha's OK) | Vercel Hobby (static `dist/` + `api/` functions, `vercel.json` sets `maxDuration`); Supabase free; keep-alive through judging (2026-11-05 → 11-09) | Vercel env vars, server-only |
+| **Production** (T13, deployed 2026-11-02) | https://goodfix-alpha.vercel.app · Vercel Hobby project `goodfix`, Root Directory `apps/showhow`, Node 22.x, Vite (static `dist/` + `api/` functions, `vercel.json` sets `maxDuration`). Deploys come from Vercel's Git integration on push to `main` (the GitHub Actions deploy job has no `VERCEL_*` secrets and skips). Supabase free; keep-alive through judging (2026-11-05 → 11-09) | Vercel env vars: `CREATE_ACCESS_CODES`, `IP_SALT`, `META_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_URL`, `WIT_TOKEN` |
 
 ## 14. Test map
 
@@ -403,6 +406,7 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 | Model accuracy | `scripts/spike-check.ts` (staged photos), `spike-pipeline.ts` (real video), logged |
 | `/api/guides`, `/api/steps`, `/api/outlines`, `/api/publish` (fake DB + mocked Meta) | `api/_lib/guides.test.ts` (5), `steps.test.ts` (7), `outlines.test.ts` (4), `publish.test.ts` (3) |
 | `/api/check` (fake DB + mocked Meta) | `api/_lib/check.test.ts` (9): real-keyframe-only (T18 rule), differs + box, ambiguous → no box, unclear → no SAM, malformed → 502, timeout → 504, cap → 429 before any model call, refusals, input limits |
+| `/api/ask` (fake DB + mocked Spark) | `api/_lib/ask.test.ts`: quotes the creator's own steps, not covered → fixed message, blocked question → 422 before model/cap, malformed → 502, error → 504, injected instructions stay data, missing guide → 404 before any cap, cap → 429 before the model, unpublished/missing step → 404, body validation; `src/components/AskPanel.test.tsx` |
 | Voice gate + routes | `src/lib/safety.test.ts` (25: 14 blocked phrasings, 6 everyday phrasings allowed, fail-closed review), `api/_lib/voice.test.ts` (14: nothing saved on any block, base-anchored edits, per-step failure, 415/413/400/401/429) |
 
 ## 15. Known risks and open questions
@@ -412,4 +416,4 @@ Never `VITE_`-prefix a secret. `scripts/scan-bundle.ts` fails the build if any s
 3. AI image content can be wrong even when consistent (e.g. tank still attached while filling); creator review + regenerate.
 4. Check accuracy on real staged photos is unmeasured until T0.
 5. Hosting terms: Discord answer pending; build stays behind access codes until then.
-6. Unproven until logged (must not appear in the demo before then): Vercel `maxDuration` in production (local `/api/steps` took 28.6 s, well under 300 s); real-photo check accuracy. ~~Spark reading a Supabase public `video_url`~~ verified 2026-11-01.
+6. Unproven until logged (must not appear in the demo before then): a create (video or voice), an I'm-stuck check and CSP during a real upload on the live URL (deployed 2026-11-02; smoke-checked: health, headers, gallery, a voice guide, Ask, a curl failure drill, headless CSP on 5 pages); Vercel `maxDuration` in production (local `/api/steps` took 28.6 s, well under 300 s); real-photo check accuracy. ~~Spark reading a Supabase public `video_url`~~ verified 2026-11-01.
