@@ -154,3 +154,9 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 ## 2026-11-03 — Picture briefs become a shot list
 
 - Talha: the briefs were too thin. `picture` is now 3–4 sentences (~60–100 words): shot size + camera angle; every object with colour, material and size; the key part (named as `key_part`, so SAM can find it) large near the centre with what the hands do; background + light matching `setting`. Over-long briefs are trimmed to 700 characters, never rejected (a long brief must not fail the guide). Applies to new voice guides only; existing drafts keep their briefs (Redraw reuses them).
+
+## 2026-11-03 — Public exposure (closes the Terms §10.1(i) question for judging)
+
+- **Decision (Talha asked Claude to choose):** the repo is public and the live URL is shared with judges and in the submission. The Discord #office-hours question was never answered, so we rely on the design: Showhow is an integrated product, not a model gateway. Fixed prompts and allowlisted models (no prompt passthrough), the Meta key is server-only, every call uses `store: false`, daily caps on every model route, 18+ confirmation, and guide creation (all Muse Image and build spend) needs an access code. Viewing, "I'm stuck" and Ask stay open with caps.
+- **If Meta says otherwise:** put "I'm stuck" and Ask behind the access code (same check the create routes use) and log it here.
+- **Repo hygiene before going public:** full-history gitleaks scan clean after allowlisting the fake `ci-canary-*` CI values (`.gitleaks.toml`); LICENSE now MIT in Talha's name with the Expo notice kept for `archive/`.

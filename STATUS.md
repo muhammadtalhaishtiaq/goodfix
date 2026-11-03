@@ -36,4 +36,4 @@ Video guides that check your work, plus voice guides with AI illustrations. Spec
 ## Blockers
 
 - Real footage and staged photos (Talha) block T0, T0b, T12 and the demo's check segment.
-- Hosting-terms question (Meta Terms §10.1(i)) still unanswered in Discord; access codes stay on, and a dated public-exposure decision is needed before sharing the URL widely.
+- Public exposure decided 2026-11-03 (DECISIONS): repo public, URL shared with judges; access codes stay on for creating.

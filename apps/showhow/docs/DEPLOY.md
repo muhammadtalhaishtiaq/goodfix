@@ -10,7 +10,7 @@ Sources: [`.github/workflows/deploy.yml`](../../../.github/workflows/deploy.yml)
 - [ ] Local gates green in `apps/showhow/`: `npm ci && npm run lint && npm run typecheck && npm test && npm run build && node scripts/scan-bundle.ts`.
 - [ ] Production rehearsal: `npm run preview` with the `vercel.json` headers; no CSP violations on `/`, a guide, `/create`, `/create/voice`, `/privacy` (repeat after T19 adds IBM Plex from Google Fonts).
 - [ ] Git history reviewed for secrets (gitleaks runs in CI on the full history; it also contains older Vault commits).
-- [ ] Dated public-exposure decision written in `DECISIONS.md` **before the URL is shared** (Terms §10.1(i) question still pending in Discord). 🔒
+- [x] Dated public-exposure decision written in `DECISIONS.md` (2026-11-03).
 
 ## 2. Vercel project 🔒
 

@@ -1,0 +1,8 @@
+# Default gitleaks rules, plus one allowlist: the fake "ci-canary-*" values in .github/workflows/ci.yml.
+# They exist so scripts/scan-bundle.ts can prove no server secret reaches the browser bundle.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake CI canary values (not secrets)"
+regexes = ['''ci-canary-[a-z]+-[0-9a-f]{8}''']
