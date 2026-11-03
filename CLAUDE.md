@@ -2,7 +2,7 @@
 
 Showhow (working title) turns a creator's narrated how-to video, or just a spoken explanation (voice guides, T17), into a step-by-step guide that can check your work: Voice Transcribe → Muse Spark splits steps → SAM 3.1 outlines the key part. Learners follow along and, only when stuck, send one photo; Muse Spark compares it with the creator's step and SAM 3.1 outlines what differs on their photo. *"YouTube can't see you're stuck. This can."*
 
-- **Code and docs:** `apps/showhow/` only. Specs in `apps/showhow/docs/`; HTML prototypes in `apps/showhow/design/` (`showhow-prototype.html` is the UI reference).
+- **Code and docs:** `apps/showhow/` only. Specs in `apps/showhow/docs/`; HTML mockups in `apps/showhow/design/` (`ui-v2-mockup.html` is the UI reference, approved 2026-11-02; `showhow-prototype.html` is kept for history).
 - **Archive:** `archive/` holds the retired Vault Expo/React Native app. Do not read or modify it (blocked in `.claude/settings.json`) unless Talha explicitly asks.
 - **Deadline:** **2026-11-04 21:00 ET.** Submission = public repo + 3-minute demo video + live product; new work from 2026-10-27–2026-11-04 must be identifiable.
 
@@ -58,7 +58,7 @@ At every substantive milestone, run the `adversarial-hackathon-review` skill (it
 
 ## Code style
 
-- React 19 + TypeScript + Vite + plain CSS using the prototype's tokens. Hash routing; no UI framework.
+- React 19 + TypeScript + Vite + plain CSS using the UI v2 "Workshop manual" tokens (`docs/UI-AUDIT.md`). Hash routing; no UI framework.
 - Named function components and exports; pure logic in `src/lib/` (no React); zod at every boundary.
 - 2-space indent, no semicolons, single quotes — match `src/main.tsx`.
 

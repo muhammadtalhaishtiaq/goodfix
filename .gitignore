@@ -20,3 +20,4 @@ npm-debug.*
 
 # Claude Code local-only settings
 .claude/settings.local.json
+.claude/worktrees/
