@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AskPanel } from '../components/AskPanel'
+import { ChatPanel } from '../components/ChatPanel'
 import { Icon } from '../components/Icon'
 import { OutlineOverlay } from '../components/OutlineOverlay'
 import { StuckDialog } from '../components/StuckDialog'
@@ -15,7 +15,7 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
   const [showPart, setShowPart] = useState(true)
   const [stepsOpen, setStepsOpen] = useState(false) // phone only: the step list is behind "All steps"
   const [dialog, setDialog] = useState<'stuck' | 'where' | null>(null)
-  const helpRef = useRef<HTMLElement>(null)
+  const [helpOpen, setHelpOpen] = useState(false) // phone/tablet: help + chat open as a full-screen sheet
   const n = guide.steps.length
   const step = guide.steps[stepIdx]
   const first = stepIdx === 0
@@ -30,6 +30,13 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
   const titleRef = useRef<HTMLHeadingElement>(null)
   const firstRender = useRef(true)
   useEffect(() => { if (firstRender.current) firstRender.current = false; else titleRef.current?.focus({ preventScroll: true }) }, [stepIdx])
+
+  useEffect(() => {
+    if (!helpOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setHelpOpen(false) }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [helpOpen])
 
   // F12: ←/→ change step, except while typing or with the photo dialog open.
   useEffect(() => {
@@ -106,7 +113,8 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
           </div>
         </div>
 
-        <aside className="gv-help" ref={helpRef} aria-label="Help with this step">
+        <aside className={`gv-help ${helpOpen ? 'open' : ''}`} aria-label="Help with this step">
+          <div className="gv-sheet-head"><b>Help · step {stepIdx + 1}</b><button className="icon-btn" onClick={() => setHelpOpen(false)} aria-label="Close help"><Icon name="x" /></button></div>
           {step.audioUrl && <section><h3>Listen</h3><ReadAloud key={step.audioUrl} url={step.audioUrl} /></section>}
           {step.tipQuote && <section><h3>Creator’s tip</h3>
             <p className="gv-quote">“{step.tipQuote}”<span className="mono">{guide.kind === 'video' ? `${guide.creatorName}, in the video` : 'In their words'} · transcribed</span></p></section>}
@@ -115,14 +123,14 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
             <p>Snap your work. It’s compared with {guide.creatorName}’s real frame for step {stepIdx + 1}.</p>
             <button className="btn btn-signal" onClick={() => setDialog('stuck')}><Icon name="camera" /> I’m stuck</button>
           </div>}
-          <AskPanel guideId={guide.id} stepIdx={stepIdx} />
+          <ChatPanel key={guide.id} guideId={guide.id} guideTitle={guide.title} stepIdx={stepIdx} />
           {guide.kind === 'voice' && <section><p className="muted gv-note">The photo check (“I’m stuck”) is for video guides, which have real frames to compare with.</p></section>}
         </aside>
       </div>
 
       <div className="gv-pbar">
-        <button className="btn btn-line" onClick={() => helpRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-          {canCheck ? 'Help: I’m stuck · ask' : 'Help: listen · ask'}
+        <button className="btn btn-line" onClick={() => setHelpOpen(true)}>
+          {canCheck ? 'Help: I’m stuck · chat' : 'Help: listen · chat'}
         </button>
         <div className="row">{backNext}</div>
       </div>
@@ -180,7 +188,7 @@ function ReadAloud({ url }: { url: string }) {
 // Plays only [startS, endS) of the guide's single video, on a loop.
 function StepPlayer({ guide, step, showPart, onTogglePart, arrows, extra }: MediaProps & { guide: Guide; step: Step; extra?: ReactNode }) {
   const ref = useRef<HTMLVideoElement>(null)
-  const [playing, setPlaying] = useState(true)
+  const [playing, setPlaying] = useState(false) // clips start paused; the learner presses play (2026-11-03)
 
   useEffect(() => {
     const v = ref.current

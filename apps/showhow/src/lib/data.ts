@@ -1,8 +1,8 @@
 // Guide data. Published guides come from Supabase (anon key, RLS: published only).
 // Fixtures are used only when no database is configured (offline UI work), and are labelled.
 import { FIXTURE_GUIDES } from '../fixtures/guides.js'
-import { api } from './api.js'
-import type { AskAnswer } from './ask.js'
+import { api, apiRaw } from './api.js'
+import type { ChatMsg, ChatReply } from './chat.js'
 import { resizePhoto } from './image.js'
 import { mediaUrl, supabase } from './supabase.js'
 import type { CheckRequest, CheckResult, Guide, Outline } from './types.js'
@@ -52,10 +52,15 @@ export async function checkStep(req: CheckRequest): Promise<CheckResult> {
 }
 
 // "Ask about this step" (F13+): answered only from the guide's own steps; the question is not stored.
-export async function askStep(guideId: string, stepIdx: number, question: string): Promise<AskAnswer> {
+export async function chatStep(guideId: string, stepIdx: number, messages: ChatMsg[], speak = false): Promise<ChatReply & { audio?: string }> {
   if (!supabase || guideId.startsWith('fixture-')) {
     await new Promise(r => setTimeout(r, 800))
-    return { covered: false, quotes: [] } // fixture: no model is called
+    return { covered: false, answer: '', steps: [], tip: 'TEST FIXTURE: no model was called.' }
   }
-  return api<AskAnswer>('ask', { guideId, stepIdx, question })
+  return api('chat', { guideId, stepIdx, messages, speak })
+}
+
+// A spoken chat question → text (Voice Transcribe). The audio is sent once and never stored.
+export async function listenQuestion(guideId: string, wav: Blob): Promise<string> {
+  return (await apiRaw<{ text: string }>('listen', wav, { guideId })).text
 }
