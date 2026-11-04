@@ -1,7 +1,9 @@
 // Browser-only image helpers: keyframes from the local video, and learner-photo resizing.
-const once = (el: EventTarget, ev: string) => new Promise<void>((ok, bad) => {
-  el.addEventListener(ev, () => ok(), { once: true })
-  el.addEventListener('error', () => bad(new Error('Couldn’t read this media.')), { once: true })
+// Never wait forever: some phone browsers simply never fire media events on a hidden <video>.
+const once = (el: EventTarget, ev: string, ms = 15_000) => new Promise<void>((ok, bad) => {
+  const t = setTimeout(() => bad(new Error('This browser didn’t load the video frame. Try again, or use desktop Chrome.')), ms)
+  el.addEventListener(ev, () => { clearTimeout(t); ok() }, { once: true })
+  el.addEventListener('error', () => { clearTimeout(t); bad(new Error('Couldn’t read this media.')) }, { once: true })
 })
 
 const toJpeg = (c: HTMLCanvasElement, q = 0.85) =>
@@ -15,7 +17,7 @@ function canvasFor(w: number, h: number, maxSide: number) {
   return c
 }
 
-// Grab the frame at `atS` seconds from a (local, already shrunk) video as a JPEG.
+// Fallback frame grab via <video> (lib/shrink.ts frameAt is tried first).
 export async function captureFrame(videoUrl: string, atS: number, maxSide = 1280): Promise<Blob> {
   const v = document.createElement('video')
   v.muted = true

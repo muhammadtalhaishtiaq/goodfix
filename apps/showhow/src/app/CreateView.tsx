@@ -114,7 +114,7 @@ export function CreateView() {
     try {
       for (const [i, k] of built.keyframeUploads.entries()) {
         setPhase({ name: 'framing', ...ctx, done: i, total })
-        const jpg = await captureFrame(ctx.mp4Url, k.atS)
+        const jpg = await grabFrame(ctx.mp4Url, k.atS)
         await uploadSigned(k.path, k.token, jpg)
         frames[k.idx] = URL.createObjectURL(jpg)
       }
@@ -263,6 +263,16 @@ export function CreateView() {
       )}
     </div>
   )
+}
+
+// WebCodecs first (works wherever the shrink worked, incl. phones); the <video> route only as a fallback.
+async function grabFrame(mp4Url: string, atS: number): Promise<Blob> {
+  try {
+    const [{ frameAt }, mp4] = await Promise.all([import('../lib/shrink'), fetch(mp4Url).then(r => r.blob())])
+    return await frameAt(mp4, atS)
+  } catch {
+    return captureFrame(mp4Url, atS)
+  }
 }
 
 function Working({ text }: { text: string }) {

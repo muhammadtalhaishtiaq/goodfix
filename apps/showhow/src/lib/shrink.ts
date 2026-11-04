@@ -1,7 +1,7 @@
 // On-device shrink: phone video (≤500 MB, ≤3 min) → H.264 ≤720p MP4 under 48 MB + 16 kHz mono WAV.
 // The original never leaves the device. See ARCHITECTURE §4.
 import {
-  ALL_FORMATS, BlobSource, BufferTarget, canEncodeAudio, canEncodeVideo, Conversion, Input,
+  ALL_FORMATS, BlobSource, BufferTarget, CanvasSink, canEncodeAudio, canEncodeVideo, Conversion, Input,
   Mp4OutputFormat, Output, Quality, WavOutputFormat,
 } from 'mediabunny'
 
@@ -38,6 +38,22 @@ export async function probeVideo(file: File): Promise<{ durationS: number; hasVi
   const input = new Input({ source: new BlobSource(file), formats: ALL_FORMATS })
   const [durationS, video, audio] = await Promise.all([input.computeDuration(), input.getPrimaryVideoTrack(), input.getPrimaryAudioTrack()])
   return { durationS, hasVideo: !!video, hasAudio: !!audio }
+}
+
+// One frame of the shrunk MP4 as a JPEG, decoded with WebCodecs (the same path the shrink just used).
+// Phones often never load frames into a hidden <video>, so this avoids <video> entirely (2026-11-03).
+export async function frameAt(mp4: Blob, atS: number, maxSide = 1280): Promise<Blob> {
+  const input = new Input({ source: new BlobSource(mp4), formats: ALL_FORMATS })
+  const track = await input.getPrimaryVideoTrack()
+  if (!track) throw new Error('This file has no video track.')
+  const [w, h] = [await track.getDisplayWidth(), await track.getDisplayHeight()]
+  const sink = new CanvasSink(track, w >= h ? { width: Math.min(maxSide, w) } : { height: Math.min(maxSide, h) })
+  const start = await track.getFirstTimestamp()
+  const frame = (await sink.getCanvas(Math.max(atS, start))) ?? (await sink.getCanvas(start))
+  if (!frame) throw new Error('Couldn’t read a frame from the video.')
+  const c = frame.canvas
+  if ('convertToBlob' in c) return c.convertToBlob({ type: 'image/jpeg', quality: 0.85 })
+  return new Promise<Blob>((ok, bad) => c.toBlob(b => (b ? ok(b) : bad(new Error('Couldn’t encode the image.'))), 'image/jpeg', 0.85))
 }
 
 export type Shrunk = { mp4: Blob; wav: Blob; durationS: number; width: number; height: number; ms: number }
