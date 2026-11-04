@@ -172,3 +172,7 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 ## 2026-11-03 — Guide page: chat-only right column (mockup approved)
 
 - Talha approved `design/chat-mockup.html`: the right column (400 px, viewport-tall) is only the chat; the log scrolls inside it; the input is a textarea that grows to 6 lines (Enter sends, Shift+Enter new line) with Speak · Talk mode · Send under it; Copy / Save in the chat header. Read aloud, the creator's tip and "I'm stuck" move under the step text. Phone: "Chat about this step" opens a full-screen sheet.
+
+## 2026-11-03 — Easy judge access
+
+- Talha wants testers in fast. The access code stays (it caps who can spend Muse Image/build credits), but production also accepts a simple shared code that Talha sets in Vercel `CREATE_ACCESS_CODES` (comma-separated list), and a **judge link** `/?code=<code>#/create` pre-fills it for that tab and removes it from the address bar. The code is not pre-filled for ordinary visitors. Daily caps still bound spend.
