@@ -6,7 +6,7 @@ Showhow turns a creator's narrated how-to video, or just a spoken explanation, i
 
 **Live:** https://goodfix-alpha.vercel.app · **Demo video:** *link added at submission* · Built for the Meta Global AI Developer Hackathon (2026-10-27 → 2026-11-04)
 
-Watching guides, "I'm stuck" and Ask are open to everyone (18+). Creating a guide needs an access code, because every guide spends paid model credits; judges' codes are in the submission notes.
+Watching guides, "I'm stuck" and the step chat are open to everyone (18+). Creating a guide uses the demo access code **`Meta2026`**, already filled in on the Create page ([judge link](https://goodfix-alpha.vercel.app/?code=Meta2026#/create)); daily caps protect the credits.
 
 <p align="center">
   <img src="docs/media/gallery.jpg" alt="Showhow gallery: Follow along. Get unstuck." width="860">
