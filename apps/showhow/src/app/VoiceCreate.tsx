@@ -286,7 +286,7 @@ function Recorder({ onAudio }: { onAudio: (b: Blob | null) => void }) {
           ? <button className="btn btn-signal" onClick={() => rec.current?.stop()}><Icon name="pause" /> Stop ({seconds}s / 120s)</button>
           : <button className="btn btn-ink" onClick={startRec}><Icon name="mic" /> {state === 'done' ? 'Record again' : 'Start recording'}</button>}
         <span className="muted">or</span>
-        <label className="btn btn-line file-btn">Upload audio<input type="file" accept="audio/*" onChange={e => { const f = e.target.files?.[0]; if (f) take(f) }} /></label>
+        <label className="btn btn-line file-btn">Upload audio<input type="file" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.webm" onChange={e => { const f = e.target.files?.[0]; if (f) take(f) }} /></label>
       </div>
       {state === 'done' && url && <audio controls src={url} className="rec-audio" />}
       <p className="muted">Up to 2 minutes. Say each step in order, naming the parts: “First, press the latch on the side…”</p>

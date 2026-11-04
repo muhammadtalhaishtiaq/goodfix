@@ -164,7 +164,7 @@ export function CreateView() {
             <b className="big">{file ? file.name : 'Choose a video'}</b>
             <span className="muted">{file ? `${(file.size / 1e6).toFixed(0)} MB${tooBig ? ' · too large (max 500 MB)' : ''}` : 'Up to 3 minutes and 500 MB. Talk while you work: your words become the steps.'}</span>
             <span className="btn btn-ink" aria-hidden="true">{file ? 'Choose another' : 'Choose file'}</span>
-            <input type="file" accept="video/*" onChange={e => pickFile(e.target.files?.[0] ?? null)} />
+            <input type="file" accept="video/*,.mov,.mp4,.m4v,.webm" onChange={e => pickFile(e.target.files?.[0] ?? null)} />
           </label>
           <LocalCheck local={local} what="video" />
           {canShrink === false && <p className="note warn-note">This browser can’t prepare video on your device. Please use desktop Chrome or Edge.</p>}
