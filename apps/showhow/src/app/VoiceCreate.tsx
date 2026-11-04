@@ -27,7 +27,9 @@ type Phase =
   | { name: 'error'; message: string; retry?: () => void }
 
 const CODE_KEY = 'showhow.accessCode'
-const readCode = () => { try { return sessionStorage.getItem(CODE_KEY) ?? '' } catch { return '' } }
+// Public demo code, pre-filled for every visitor (Talha, 2026-11-03); a code typed or set by a judge link wins.
+const DEMO_CODE = 'Meta2026'
+const readCode = () => { try { return sessionStorage.getItem(CODE_KEY) || DEMO_CODE } catch { return DEMO_CODE } }
 const message = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.')
 
 export function VoiceCreate() {
