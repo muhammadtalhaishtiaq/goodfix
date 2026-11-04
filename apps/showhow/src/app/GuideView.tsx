@@ -111,26 +111,26 @@ export function GuideView({ guide, stepIdx }: { guide: Guide; stepIdx: number })
             </div>
             <div className="gv-pn">{backNext}</div>
           </div>
+          {(step.audioUrl || step.tipQuote || canCheck) && <div className="gv-extras">
+            {step.audioUrl && <ReadAloud key={step.audioUrl} url={step.audioUrl} />}
+            {step.tipQuote && <p className="gv-quote">“{step.tipQuote}”<span className="mono">Creator’s tip · {guide.kind === 'video' ? `${guide.creatorName}, in the video` : 'in their words'}</span></p>}
+            {canCheck && <div className="gv-stuck">
+              <h3>Stuck on this step?</h3>
+              <p>Snap your work. It’s compared with {guide.creatorName}’s real frame for step {stepIdx + 1}.</p>
+              <button className="btn btn-signal" onClick={() => setDialog('stuck')}><Icon name="camera" /> I’m stuck</button>
+            </div>}
+          </div>}
         </div>
 
-        <aside className={`gv-help ${helpOpen ? 'open' : ''}`} aria-label="Help with this step">
-          <div className="gv-sheet-head"><b>Help · step {stepIdx + 1}</b><button className="icon-btn" onClick={() => setHelpOpen(false)} aria-label="Close help"><Icon name="x" /></button></div>
-          {step.audioUrl && <section><h3>Listen</h3><ReadAloud key={step.audioUrl} url={step.audioUrl} /></section>}
-          {step.tipQuote && <section><h3>Creator’s tip</h3>
-            <p className="gv-quote">“{step.tipQuote}”<span className="mono">{guide.kind === 'video' ? `${guide.creatorName}, in the video` : 'In their words'} · transcribed</span></p></section>}
-          {canCheck && <div className="gv-stuck">
-            <h3>Stuck on this step?</h3>
-            <p>Snap your work. It’s compared with {guide.creatorName}’s real frame for step {stepIdx + 1}.</p>
-            <button className="btn btn-signal" onClick={() => setDialog('stuck')}><Icon name="camera" /> I’m stuck</button>
-          </div>}
+        <aside className={`gv-help ${helpOpen ? 'open' : ''}`} aria-label="Chat about this guide">
+          <div className="gv-sheet-head"><b>Chat · step {stepIdx + 1}</b><button className="icon-btn" onClick={() => setHelpOpen(false)} aria-label="Close chat"><Icon name="x" /></button></div>
           <ChatPanel key={guide.id} guideId={guide.id} guideTitle={guide.title} stepIdx={stepIdx} />
-          {guide.kind === 'voice' && <section><p className="muted gv-note">The photo check (“I’m stuck”) is for video guides, which have real frames to compare with.</p></section>}
         </aside>
       </div>
 
       <div className="gv-pbar">
         <button className="btn btn-line" onClick={() => setHelpOpen(true)}>
-          {canCheck ? 'Help: I’m stuck · chat' : 'Help: listen · chat'}
+          Chat about this step
         </button>
         <div className="row">{backNext}</div>
       </div>

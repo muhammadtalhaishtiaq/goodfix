@@ -39,7 +39,7 @@ test('the conversation continues across steps and sends its history; Copy / Save
     { role: 'user', text: 'which way?' }, { role: 'assistant', text: 'Twist it left.' }, { role: 'user', text: 'and then?' },
   ], false])
   expect(screen.getByRole('button', { name: 'Copy' })).toBeDefined()
-  expect(screen.getByRole('button', { name: 'Save as text' })).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Save' })).toBeDefined()
 })
 
 test('an error is honest and Try again resends the same question once', async () => {

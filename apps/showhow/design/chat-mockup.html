@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat layout mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mockup only (2026-11-03): proposed guide page with a chat-only right column. Tokens copied from ui-v2-mockup.html. */
+:root{
+  --paper:#F4F3EF; --surface:#FFFFFF; --surface-2:#EAE8E2; --rule:#D4D1C8; --rule-strong:#8C887F;
+  --ink:#161614; --ink-2:#45433E; --ink-3:#65625B; --on-ink:#FFFFFF;
+  --signal:#FF5A1F; --signal-ink:#C2410C; --signal-soft:#FCE9DE; --differs:#9A3412;
+  --ok:#17663A; --unclear:#3F4A5A; --focus:#1D4ED8;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --r1:4px; --r2:8px;
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box} body{margin:0;background:#D9D6CE;font:400 16px/24px var(--sans);color:var(--ink)}
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--ink);color:#fff;font:500 13px var(--mono)}
+.bar b{font:600 14px var(--sans)} .bar button{font:600 13px var(--sans);padding:6px 12px;border-radius:4px;border:1px solid #888;background:transparent;color:#fff;cursor:pointer}
+.bar button[aria-pressed=true]{background:#fff;color:var(--ink)}
+.stage{display:flex;gap:32px;align-items:flex-start;justify-content:center;padding:24px 16px;flex-wrap:wrap}
+.cap{font:500 12px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);margin:0 0 8px}
+.mono{font:500 12px/16px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+/* desktop frame: 1440×900 shown at 0.72 scale */
+.desk-wrap{width:1037px;height:648px;overflow:hidden;border-radius:8px;box-shadow:0 20px 60px -20px rgba(0,0,0,.4)}
+.desk{width:1440px;height:900px;transform:scale(.72);transform-origin:0 0;background:var(--paper);overflow:hidden}
+.top{height:64px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;padding:0 144px}
+.logo{display:flex;gap:10px;align-items:center;font:700 22px var(--cond)} .logo i{width:28px;height:28px;border-radius:5px;background:var(--ink);position:relative}
+.logo i::after{content:"";position:absolute;left:8px;top:6px;width:7px;height:12px;border:solid var(--signal);border-width:0 3px 3px 0;transform:rotate(40deg)}
+.nav{display:flex;gap:24px;font-weight:600;color:var(--ink-2)}
+.page{padding:20px 144px 0}
+.crumb{font:500 13px var(--mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+h1{font:700 38px/44px var(--cond);margin:6px 0 18px}
+.bench{display:grid;grid-template-columns:200px minmax(0,1fr) 400px;gap:24px;align-items:start}
+.steps{border-top:2px solid var(--ink)} .steps p{margin:10px 0 6px}
+.srow{display:grid;grid-template-columns:28px 1fr;padding:10px 8px;border-top:1px solid var(--rule);border-left:4px solid transparent;font-size:15px;line-height:21px}
+.srow.on{border-left-color:var(--ink);font-weight:600}
+.media{position:relative;border-radius:8px;overflow:hidden;border:1.5px dashed var(--ink)}
+.media img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover}
+.tag{position:absolute;left:10px;top:10px;background:#fff;border:1.5px dashed var(--ink);padding:3px 6px;font:500 12px var(--mono);text-transform:uppercase}
+.nav2{display:grid;grid-template-columns:auto 1fr auto;gap:14px;margin-top:14px;align-items:start}
+.big{font:700 44px/44px var(--cond)} h2{font:700 26px/30px var(--cond);margin:0} .lead{margin:6px 0 0;font-size:18px;line-height:27px}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;min-height:44px;padding:10px 18px;border-radius:4px;font:600 15px var(--sans);border:1.5px solid var(--rule-strong);background:transparent;color:var(--ink)}
+.btn.ink{background:var(--ink);color:#fff;border-color:var(--ink)} .btn.sig{background:var(--signal-ink);color:#fff;border-color:var(--signal-ink)}
+/* NEW: extras row under the step text */
+.extras{display:flex;gap:16px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);flex-wrap:wrap}
+.quote{flex:1 1 240px;margin:0;border-left:3px solid var(--ink);padding-left:12px;font-size:16px;line-height:24px}
+.quote .mono{display:block;margin-top:4px}
+.new{outline:3px solid var(--focus);outline-offset:4px;border-radius:4px;position:relative}
+.new::before{content:attr(data-new);position:absolute;top:-28px;right:0;background:var(--focus);color:#fff;font:600 12px var(--sans);padding:2px 8px;border-radius:3px;white-space:nowrap}
+/* NEW: chat-only right column */
+.chat{display:flex;flex-direction:column;gap:10px;height:640px}
+.chead{display:flex;justify-content:space-between;align-items:center}
+.chead h3{margin:0;font:600 18px var(--sans)} .chead a{font:600 14px var(--sans);color:var(--ink);margin-left:12px}
+.log{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.me{align-self:flex-end;max-width:85%;background:var(--ink);color:#fff;padding:9px 13px;border-radius:12px 12px 2px 12px;font-size:15px;line-height:22px}
+.bot{align-self:flex-start;max-width:92%;background:var(--surface-2);border-left:4px solid var(--ink-3);padding:9px 13px;border-radius:2px 12px 12px 2px;font-size:15px;line-height:22px;display:grid;gap:4px}
+.bot p{margin:0} .tip{margin-top:4px;padding:6px 10px;border:1.5px dashed var(--rule-strong);border-radius:4px;background:var(--paper)}
+.divider{align-self:center;font:500 12px var(--mono);color:var(--ink-3);text-transform:uppercase}
+.compose{display:grid;gap:8px}
+.compose textarea{width:100%;min-height:76px;resize:none;border:1.5px solid var(--rule-strong);border-radius:4px;padding:10px 12px;font:400 16px/24px var(--sans);background:var(--surface);color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center} .row .send{margin-left:auto}
+.talk{display:flex;gap:8px;align-items:center;font-size:14px} .talk i{width:20px;height:20px;border:1.5px solid var(--ink);border-radius:3px;display:inline-block}
+.talk.on i{background:var(--ink)} .status{font:500 12px var(--mono);color:var(--signal-ink);text-transform:uppercase}
+.note{margin:0;font-size:13px;line-height:18px;color:var(--ink-3)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--signal-ink);display:inline-block;animation:p 1s infinite} @keyframes p{50%{opacity:.3}}
+/* phone frame */
+.phone{width:390px;height:844px;border-radius:28px;overflow:hidden;background:var(--paper);box-shadow:0 20px 60px -20px rgba(0,0,0,.4);position:relative;border:8px solid #111}
+.phone .top{padding:0 16px;height:56px} .phone .logo{font-size:20px}
+.ppage{padding:12px 16px} .ppage h1{font-size:26px;line-height:30px;margin:4px 0 10px}
+.pbar{position:absolute;left:0;right:0;bottom:0;padding:10px 16px 16px;background:var(--paper);border-top:1px solid var(--rule);display:grid;gap:8px}
+.pbar .row .btn{flex:1}
+.sheet{position:absolute;inset:0;background:var(--paper);display:flex;flex-direction:column;padding:0 16px 16px}
+.sheet .sh{display:flex;justify-content:space-between;align-items:center;height:56px;border-bottom:1px solid var(--rule);margin:0 -16px 12px;padding:0 16px}
+.sheet .chat{height:auto;flex:1;min-height:0}
+.x{width:40px;height:40px;border:1.5px solid var(--rule-strong);border-radius:4px;display:grid;place-items:center;font-size:20px}
+.legend{max-width:1037px;margin:0 auto;padding:0 16px 32px;font-size:15px;line-height:23px;color:var(--ink-2)}
+.legend li{margin:4px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>Chat layout · mockup</b><span>State:</span>
+  <button data-s="convo" aria-pressed="true">Conversation</button>
+  <button data-s="typing" aria-pressed="false">Long question typed</button>
+  <button data-s="talk" aria-pressed="false">Talk mode on</button>
+  <span>· Phone:</span>
+  <button data-p="page" aria-pressed="false">Guide</button>
+  <button data-p="sheet" aria-pressed="true">Chat sheet open</button>
+</div>
+
+<div class="stage">
+  <div>
+    <p class="cap">Desktop · 1440 × 900 (shown at 72%)</p>
+    <div class="desk-wrap"><div class="desk">
+      <div class="top"><span class="logo"><i></i>Showhow</span><span class="nav"><span>Guides</span><span>Create</span></span></div>
+      <div class="page">
+        <span class="crumb">← All guides · talked through by Tal · illustrated by AI · 6 steps</span>
+        <h1>Freshen a Smelly Rug With Baking Soda</h1>
+        <div class="bench">
+          <div class="steps"><p class="mono">Step 4 / 6</p>
+            <div class="srow"><span>1</span>Clear everything off rug</div><div class="srow"><span>2</span>Vacuum up loose debris</div>
+            <div class="srow"><span>3</span>Treat smelly patch lightly</div><div class="srow on"><span>4</span>Sprinkle baking soda evenly</div>
+            <div class="srow"><span>5</span>Brush in and wait</div><div class="srow"><span>6</span>Vacuum up all powder</div>
+          </div>
+          <div>
+            <div class="media"><img src="../public/styles/flat.jpg" alt=""><span class="tag">Illustration by AI</span></div>
+            <div class="nav2"><span class="big">4</span>
+              <div><h2>Sprinkle baking soda evenly</h2><p class="lead">Sprinkle baking soda over the whole rug in a thin even white layer, like dusting sugar on a cake.</p></div>
+              <div class="row"><span class="btn">Back</span><span class="btn ink">Next step</span></div>
+            </div>
+            <div class="extras new" data-new="Moved here: read aloud · creator tip · I'm stuck">
+              <span class="btn">▶ Read aloud</span>
+              <p class="quote">“A kitchen sieve spreads it really nicely.”<span class="mono">Creator’s tip · in their words</span></p>
+            </div>
+          </div>
+          <div class="chat new" data-new="Right column = chat only">
+            <div class="chead"><h3>Chat about this guide <span class="mono">· step 4</span></h3><span><a>Copy</a><a>Save</a></span></div>
+            <div class="log">
+              <div class="me">Hey, I have a dog and he keeps lying on this rug. Is there anything I should do differently before I sprinkle the baking soda?</div>
+              <div class="bot"><span class="mono">Not in this guide</span><p>The creator’s guide doesn’t cover pets.</p>
+                <div class="tip"><span class="mono">AI suggestion · not from the creator</span><p>Keep your dog off the rug while the baking soda sits, and vacuum it all up before letting them back on.</p></div></div>
+              <div class="divider">Now on step 5</div>
+              <div class="me">How long do I leave it?</div>
+              <div class="bot"><span class="mono">From the creator · step 5</span><p>Work it in with a soft brush, then leave it for at least 15 minutes, but honestly overnight is best. Open a window while you wait.</p></div>
+            </div>
+            <div class="compose">
+              <textarea class="ta" placeholder="Type a question… (Enter to send, Shift+Enter for a new line)"></textarea>
+              <div class="row"><span class="btn mic">🎙 Speak</span><span class="talk"><i></i>Talk mode</span><span class="status" hidden><span class="dot"></span> Listening… stops when you pause</span><span class="btn ink send">Send</span></div>
+            </div>
+            <p class="note">Nothing is saved: the chat is gone when you refresh (use Copy or Save). Questions go to Meta with storage off. 18+.</p>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <div>
+    <p class="cap">Phone · 390 × 844</p>
+    <div class="phone">
+      <div class="top"><span class="logo"><i></i>Showhow</span><span class="nav"><span>Guides</span><span>Create</span></span></div>
+      <div class="ppage">
+        <span class="mono">Step 4 / 6</span>
+        <h1>Freshen a Smelly Rug With Baking Soda</h1>
+        <div class="media"><img src="../public/styles/flat.jpg" alt=""><span class="tag">Illustration by AI</span></div>
+        <h2 style="margin-top:12px">4 · Sprinkle baking soda evenly</h2>
+        <p class="lead" style="font-size:16px;line-height:24px">Sprinkle baking soda over the whole rug in a thin even white layer…</p>
+        <div class="extras" style="margin-top:8px;padding-top:8px"><span class="btn">▶ Read aloud</span></div>
+      </div>
+      <div class="pbar"><span class="btn">💬 Chat about this step</span><div class="row"><span class="btn">Back</span><span class="btn ink">Next step</span></div></div>
+      <div class="sheet">
+        <div class="sh"><b>Chat · step 4</b><span class="x">×</span></div>
+        <div class="chat">
+          <div class="chead"><span class="mono">Conversation</span><span><a>Copy</a><a>Save</a></span></div>
+          <div class="log">
+            <div class="me">How long do I leave it?</div>
+            <div class="bot"><span class="mono">From the creator · step 5</span><p>Leave it at least 15 minutes, but overnight is best. Open a window while you wait.</p></div>
+            <div class="me">Can I use cornstarch instead?</div>
+            <div class="bot"><span class="mono">Not in this guide</span><p>The creator’s guide doesn’t cover that.</p><div class="tip"><span class="mono">AI suggestion · not from the creator</span><p>Cornstarch is also used on rugs; try a light dusting on a hidden corner first.</p></div></div>
+          </div>
+          <div class="compose">
+            <textarea class="ta" placeholder="Type a question…"></textarea>
+            <div class="row"><span class="btn mic">🎙 Speak</span><span class="talk"><i></i>Talk</span><span class="btn ink send">Send</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ul class="legend">
+  <li><b>Right column is the chat only</b>, 400 px wide and as tall as the screen; the conversation scrolls inside it, the page never has to.</li>
+  <li><b>Typing box grows</b> up to 6 lines, so long questions stay readable. Enter sends, Shift+Enter adds a line.</li>
+  <li><b>Speak</b> (one question by voice) and <b>Talk mode</b> (answers read aloud, then it listens again) sit under the box with Send. Copy / Save are in the chat header.</li>
+  <li><b>Read aloud, the creator’s tip and “I’m stuck”</b> move under the step text, next to what they belong to.</li>
+  <li><b>Phone:</b> the bottom button “Chat about this step” opens the chat as a full-screen sheet; × closes it.</li>
+</ul>
+
+<script>
+const long = 'Hey, my rug is wool and it smells like wet dog after the rain. Should I still use the vinegar spray in step 3, and do I need to wait for it to dry before the baking soda goes on?'
+document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b))
+  const s = b.dataset.s
+  document.querySelectorAll('.ta').forEach(t => { t.value = s === 'typing' ? long : ''; t.style.height = s === 'typing' ? '124px' : '' })
+  document.querySelectorAll('.talk').forEach(t => t.classList.toggle('on', s === 'talk'))
+  document.querySelectorAll('.status').forEach(t => t.hidden = s !== 'talk')
+  document.querySelectorAll('.mic').forEach(m => { m.textContent = s === 'talk' ? '■ Stop' : '🎙 Speak'; m.classList.toggle('sig', s === 'talk') })
+})
+document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-p]').forEach(x => x.setAttribute('aria-pressed', x === b))
+  document.querySelector('.sheet').hidden = b.dataset.p !== 'sheet'
+})
+</script>
+</body>
+</html>

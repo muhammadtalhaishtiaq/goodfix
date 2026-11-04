@@ -168,3 +168,7 @@ From the 2026-11-02 red-team review and the first deploy (evidence in `HACKATHON
 - **Voice agent:** mic → on-device 16 kHz WAV (auto-stops ~1.3 s after you stop talking, max 30 s) → `/api/listen` (Voice Transcribe, published guides only, ≤1.1 MB) → chat; "Talk mode" reads replies aloud (Wit.ai, our reply text only) and listens again.
 - **Placement (Talha):** right help column on desktop, with the log scrolling inside a column that fits the viewport; phone: "Help" opens a full-screen sheet. Clips now start paused. Ask cap raised to 1500/day, 200 per IP (chat + listen share it). `/api/ask` and its panel removed.
 - Verified on local dev against the live DB + Meta: uncovered "cornstarch?" → not covered + labelled tip; covered "how long?" → creator's words, step 5; spoken question transcribed exactly in 1.5 s; reply with 56 KB read-aloud MP3. Tests 190.
+
+## 2026-11-03 — Guide page: chat-only right column (mockup approved)
+
+- Talha approved `design/chat-mockup.html`: the right column (400 px, viewport-tall) is only the chat; the log scrolls inside it; the input is a textarea that grows to 6 lines (Enter sends, Shift+Enter new line) with Speak · Talk mode · Send under it; Copy / Save in the chat header. Read aloud, the creator's tip and "I'm stuck" move under the step text. Phone: "Chat about this step" opens a full-screen sheet.

@@ -17,6 +17,8 @@ export function ChatPanel({ guideId, guideTitle, stepIdx }: { guideId: string; g
   const [talk, setTalk] = useState(false) // talk mode: answers are read aloud, then it listens again
   const [copied, setCopied] = useState(false)
   const logRef = useRef<HTMLOListElement>(null)
+  const boxRef = useRef<HTMLTextAreaElement>(null)
+  const grow = () => { const b = boxRef.current; if (b) { b.style.height = 'auto'; b.style.height = `${Math.min(b.scrollHeight, 168)}px` } }
   const stepSeen = useRef(stepIdx)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const talkRef = useRef(talk) // read when an answer finishes playing, after renders
@@ -41,6 +43,7 @@ export function ChatPanel({ guideId, guideTitle, stepIdx }: { guideId: string; g
     const next: Entry[] = [...log, { kind: 'user', text: question }]
     setLog(next)
     setText('')
+    requestAnimationFrame(grow)
     setError(null)
     setBusy('thinking')
     try {
@@ -105,8 +108,8 @@ export function ChatPanel({ guideId, guideTitle, stepIdx }: { guideId: string; g
   return (
     <section className="chat">
       <div className="chat-head">
-        <h3>Chat about this guide</h3>
-        <span className="chat-mono">Step {stepIdx + 1}</span>
+        <h3>Chat about this guide <span className="chat-mono">· step {stepIdx + 1}</span></h3>
+        {log.length > 0 && <span className="chat-keep"><button type="button" onClick={copy}>{copied ? 'Copied' : 'Copy'}</button><button type="button" onClick={save}>Save</button></span>}
       </div>
       <ol className="chat-log" ref={logRef} aria-live="polite">
         {!log.length && <li className="chat-empty">Ask anything about this step, by typing or talking. Answers come from the creator’s guide; anything extra is marked as an AI suggestion.</li>}
@@ -119,17 +122,18 @@ export function ChatPanel({ guideId, guideTitle, stepIdx }: { guideId: string; g
       </ol>
       {error && <div className="chat-error" role="alert"><p>{error.message}</p><button type="button" className="chat-btn chat-btn-line" onClick={error.retry}>Try again</button></div>}
       <form className="chat-form" onSubmit={submit}>
-        <input value={text} onChange={e => setText(e.target.value)} maxLength={400} placeholder="Type a question" aria-label="Your question" disabled={voiceOn} />
-        {voiceOn
-          ? <button type="button" className="chat-btn chat-btn-signal" onClick={stopVoice} aria-label="Stop"><Icon name="pause" /></button>
-          : <button type="button" className="chat-btn chat-btn-line" onClick={() => void listen()} aria-label="Ask by voice" disabled={busy === 'thinking'}><Icon name="mic" /></button>}
-        <button type="submit" className="chat-btn" disabled={!text.trim() || busy !== 'idle'}>Send</button>
+        <textarea ref={boxRef} rows={2} value={text} maxLength={400} placeholder="Type a question… (Enter to send, Shift+Enter for a new line)" aria-label="Your question" disabled={voiceOn}
+          onChange={e => { setText(e.target.value); grow() }}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(text) } }} />
+        <div className="chat-tools">
+          {voiceOn
+            ? <button type="button" className="chat-btn chat-btn-signal" onClick={stopVoice}><Icon name="pause" /> Stop</button>
+            : <button type="button" className="chat-btn chat-btn-line" onClick={() => void listen()} disabled={busy === 'thinking'}><Icon name="mic" /> Speak</button>}
+          <label className="chat-talk" title="Reads answers aloud, then listens for your next question"><input type="checkbox" checked={talk} onChange={e => setTalk(e.target.checked)} /> Talk mode</label>
+          {status && <span className="chat-mono chat-status" aria-live="polite">{status}</span>}
+          <button type="submit" className="chat-btn chat-send" disabled={!text.trim() || busy !== 'idle'}>Send</button>
+        </div>
       </form>
-      <div className="chat-tools">
-        <label className="chat-talk" title="Reads answers aloud, then listens for your next question"><input type="checkbox" checked={talk} onChange={e => setTalk(e.target.checked)} /> Talk mode</label>
-        {status && <span className="chat-mono" aria-live="polite">{status}</span>}
-        {log.length > 0 && <span className="chat-keep"><button type="button" onClick={copy}>{copied ? 'Copied' : 'Copy'}</button><button type="button" onClick={save}>Save as text</button></span>}
-      </div>
       <p className="chat-note">Nothing is saved: the chat is gone when you refresh (use Copy or Save). Questions go to Meta with storage off. 18+.</p>
     </section>
   )

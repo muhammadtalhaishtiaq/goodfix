@@ -27,7 +27,7 @@
 .gv .gv-title { font: 700 36px/40px var(--cond); margin-bottom: var(--s5) }
 
 /* F13 workbench: steps | picture + instruction | help */
-.gv-bench { display: grid; grid-template-columns: 240px minmax(0, 1fr) 300px; gap: var(--s5); align-items: start }
+.gv-bench { display: grid; grid-template-columns: 200px minmax(0, 1fr) 400px; gap: var(--s5); align-items: start }
 .gv-steps { position: sticky; top: 88px; border-top: 2px solid var(--ink) }
 .gv-prog { display: flex; justify-content: space-between; align-items: center; padding: var(--s3) 0 }
 .gv-track { height: 4px; background: var(--surface-2); margin-bottom: var(--s2) }
@@ -80,10 +80,13 @@
 .gv-pn { display: flex; gap: var(--s2) }
 
 /* help column */
-.gv-help { display: flex; flex-direction: column; gap: var(--s5); position: sticky; top: 88px; max-height: calc(100vh - 104px); overflow-y: auto }
-.gv-help > * { flex: none }
-.gv-help > .chat { flex: 1 1 auto; min-height: 300px } /* the chat takes the rest of the column; its log scrolls inside */
+.gv-help { display: flex; flex-direction: column; position: sticky; top: 88px; height: calc(100vh - 236px); min-height: 480px } /* fits under the guide title on first load: the input is always on screen */
+.gv-help > .chat { flex: 1 1 auto; border-top: 0; padding-top: 0 } /* the column is the chat; its log scrolls inside */
 .gv-help .chat-log { max-height: none }
+/* read aloud, creator's tip and I'm stuck sit under the step text */
+.gv-extras { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: flex-start; margin-top: var(--s5); padding-top: var(--s4); border-top: 1px solid var(--rule) }
+.gv-extras .gv-quote { flex: 1 1 260px; margin: 0 }
+.gv-extras .gv-stuck { flex: 1 1 100% }
 .gv-sheet-head { display: none }
 .gv-help section { border-top: 1px solid var(--rule); padding-top: var(--s3) }
 .gv .gv-help h3 { font: 600 16px/20px var(--sans); margin-bottom: var(--s2) }
@@ -99,7 +102,7 @@
 .gv-phead, .gv-pbar { display: none }
 @media (max-width: 1023px) {
   .gv-bench { grid-template-columns: minmax(0, 1fr) }
-  .gv-help { display: none }
+  .gv-help { display: none; height: auto; min-height: 0 }
   .gv-help.open { display: flex; position: fixed; inset: 0; z-index: 30; max-height: none; padding: var(--s4); background: var(--paper); gap: var(--s4) }
   .gv-help.open .gv-sheet-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: calc(-1 * var(--s4)); margin: calc(-1 * var(--s4)) calc(-1 * var(--s4)) 0; padding: var(--s3) var(--s4); background: var(--paper); border-bottom: 1px solid var(--rule); z-index: 1 }
   .gv-help.open .chat { min-height: 60vh }
