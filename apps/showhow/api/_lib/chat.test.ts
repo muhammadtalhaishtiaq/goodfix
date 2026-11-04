@@ -38,7 +38,7 @@ describe('POST /api/chat', () => {
     wit.speak.mockResolvedValue(Buffer.from('mp3'))
     const out = await (await call({ speak: true })).json()
     expect(out).toMatchObject({ covered: false, tip: 'Use a jug.', audio: Buffer.from('mp3').toString('base64') })
-    expect(wit.speak.mock.calls[0][0]).toMatch(/doesn’t cover that\. AI suggestion, not from the creator: Use a jug\./)
+    expect(wit.speak.mock.calls[0][0]).toMatch(/doesn’t cover that, so here’s general guidance instead\. AI suggestion, not from the creator: Use a jug\./)
     wit.speak.mockRejectedValue(new Error('wit down'))
     expect((await call({ speak: true })).status).toBe(200)
   })

@@ -21,7 +21,7 @@ export const ChatSchema = z.object({
 })
 export const chatJsonSchema = z.toJSONSchema(ChatSchema)
 
-export const NOT_COVERED = 'The creator’s guide doesn’t cover that.'
+export const NOT_COVERED = 'The creator’s guide doesn’t cover that, so here’s general guidance instead.'
 
 const strip = (s: string) => s.replace(/"""/g, '').trim()
 
@@ -38,8 +38,8 @@ export function chatPrompt(o: { title: string; steps: ChatStep[]; stepIdx: numbe
     'Reply to the learner\'s last message.',
     'answer: 1-4 short, warm, conversational sentences using ONLY what the creator says above (you may rephrase and combine it, and refer to steps by number). If the creator\'s words do not answer it, from_guide is false and answer is "".',
     'step_refs: the step numbers your answer uses, most relevant first; empty if none.',
-    'ai_tip: when from_guide is false and the question is about this task, give one or two sentences of everyday, common-sense help (e.g. a common household alternative, and how to try it carefully). When from_guide is true, add a tip only if it clearly adds something the creator did not say; otherwise "".',
-    'ai_tip is never about electrical wiring, gas, medicine or health, vehicle brakes or steering, weapons, or mixing cleaning chemicals; it never says something is safe or guaranteed and never contradicts the creator. For anything risky or off-topic, ai_tip is "".',
+    'ai_tip: when from_guide is false and the question relates to this task, the object, or similar objects (a bigger model, another brand, a variation), ALWAYS give 2-3 helpful sentences of general guidance from common knowledge: how it usually works and what to check, then end with a short reminder to confirm with their model\'s manual. When from_guide is true, add a tip only if it clearly adds something the creator did not say; otherwise "".',
+    'ai_tip is "" only for anything about electrical wiring, gas, medicine or health, vehicle brakes or steering, weapons, or mixing cleaning chemicals, or anything unrelated to the task. It never says something is safe or guaranteed and never contradicts the creator.',
   ].join('\n')
 }
 
@@ -49,7 +49,7 @@ export function gateChat(raw: unknown, steps: ChatStep[]): ChatReply | null {
   if (!r.success) return null
   const refs = [...new Set(r.data.step_refs)].map(n => steps[n - 1]?.idx).filter((i): i is number => i !== undefined).slice(0, 3)
   const answer = r.data.from_guide ? r.data.answer.trim().slice(0, 700) : ''
-  let tip: string | null = r.data.ai_tip.trim().slice(0, 400) || null
+  let tip: string | null = r.data.ai_tip.trim().slice(0, 600) || null
   if (tip && (blockedTopic(tip) || /\b(is|are|it's|it’s|totally|completely|perfectly) (safe|guaranteed)\b|\bverified\b/i.test(tip))) tip = null
   const covered = !!answer && !blockedTopic(answer)
   return { covered, answer: covered ? answer : '', steps: covered ? refs : [], tip }
