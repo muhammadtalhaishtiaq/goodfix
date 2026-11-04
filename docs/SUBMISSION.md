@@ -7,7 +7,7 @@ Meta Global AI Developer Hackathon · **Indie Developer** track · problem state
 - **Live product:** https://goodfix-alpha.vercel.app
 - **Judge link (access code pre-filled):** https://goodfix-alpha.vercel.app/?code=Meta2026#/create
 - **Public repo:** https://github.com/muhammadtalhaishtiaq/goodfix
-- **Demo video (3 min max; ours is 1:53):** `<paste YouTube link>`
+- **Demo video (1:53):** https://youtu.be/b4OJqQHIMVg
 - **X post (Most Viral bonus):** `<paste X post link>`
 
 ## Project name

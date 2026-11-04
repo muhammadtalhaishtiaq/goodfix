@@ -4,7 +4,7 @@
 
 Showhow turns a creator's narrated how-to video, or just a spoken explanation, into a step-by-step guide that can check your work. Follow along one step at a time; only when you're stuck, send one photo. Meta's models compare it with the creator's real frame for that step and outline what looks different on *your* photo.
 
-**Live:** https://goodfix-alpha.vercel.app · **Demo video:** *link added at submission* · Built for the Meta Global AI Developer Hackathon (2026-10-27 → 2026-11-04)
+**Live:** https://goodfix-alpha.vercel.app · **Demo video:** https://youtu.be/b4OJqQHIMVg · Built for the Meta Global AI Developer Hackathon (2026-10-27 → 2026-11-04)
 
 Watching guides, "I'm stuck" and the step chat are open to everyone (18+). Creating a guide uses the demo access code **`Meta2026`**, already filled in on the Create page ([judge link](https://goodfix-alpha.vercel.app/?code=Meta2026#/create)); daily caps protect the credits.
 
