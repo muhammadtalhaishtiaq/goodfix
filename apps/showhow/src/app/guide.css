@@ -106,6 +106,7 @@
   .gv-help.open { display: flex; position: fixed; inset: 0; z-index: 30; max-height: none; padding: var(--s4); background: var(--paper); gap: var(--s4) }
   .gv-help.open .gv-sheet-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: calc(-1 * var(--s4)); margin: calc(-1 * var(--s4)) calc(-1 * var(--s4)) 0; padding: var(--s3) var(--s4); background: var(--paper); border-bottom: 1px solid var(--rule); z-index: 1 }
   .gv-help.open .chat { min-height: 60vh }
+  .gv-help.open .chat-head h3 { display: none } /* the sheet header already says "Chat · step N" */
   .gv-phead { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); align-items: center; margin-bottom: var(--s4) }
   .gv-segs { grid-column: 1 / -1; display: flex; gap: 3px }
   .gv-segs i { flex: 1; height: 4px; background: var(--surface-2) }
